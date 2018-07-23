@@ -1,0 +1,9 @@
+.buildpath
+.idea/
+.vscode/
+__pycache__/
+.env
+.project
+.settings/
+*.pyc
+*.sqlite
