@@ -3,7 +3,7 @@
 rentabfundos_mod.py
 This module contains the RentabFundo class
 """
-import models.db_util_mod as dbu
+import fs.db.dbbase_mod as dbu
 
 
 class RentabFundo:
