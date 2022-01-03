@@ -19,7 +19,7 @@ class RentabFundo:
     self.grossvalue = grossvalue
     self.db_rentab = dbu.DBRentabFundo()
 
-  def db_insert(self, name, bank=None):
+  def db_insert(self):  # , bank=None
     tuplevalues = (
       self.name,
       self.monthref,
@@ -35,8 +35,7 @@ class RentabFundo:
     sql = 'SELECT from %(tablename)s ORDER BY monthref;'
     rowlist = self.db_rentab.select_with_sql(sql)
     for tuplevalue in rowlist:
-      rentabfundo = eval(self.__class__)(
-        _id=tuplevalue[0],
+      rentabfundo = self.__class__(
         name=tuplevalue[1],
         monthref=tuplevalue[1],
         monthrate=tuplevalue[1],
@@ -45,7 +44,8 @@ class RentabFundo:
         netvalue=tuplevalue[1],
         grossvalue=tuplevalue[1],
       )
-      print (rentabfundo)
+      rentabfundo._id = tuplevalue[0],
+      print(rentabfundo)
 
   def as_dict(self):
     outdict = {
@@ -66,4 +66,12 @@ class RentabFundo:
       monthrate=%(monthrate)s | yearaccrate=%(yearaccrate)s
           
     '''
+    return outstr
 
+
+def process():
+  pass
+
+
+if __name__ == '__main__':
+  process()
