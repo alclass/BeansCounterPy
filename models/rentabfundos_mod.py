@@ -3,7 +3,7 @@
 rentabfundos_mod.py
 This module contains the RentabFundo class
 """
-import fs.db.dbbase_mod as dbu
+import fs.db.dbbase_cm as dbu
 
 
 class RentabFundo:
@@ -17,7 +17,7 @@ class RentabFundo:
     self.yearrate = yearrate
     self.netvalue = netvalue
     self.grossvalue = grossvalue
-    self.db_rentab = dbu.DBRentabFundo()
+    self.db_rentab = dbu.DBBase()  # DBRentabFundo()
 
   def db_insert(self):  # , bank=None
     tuplevalues = (
@@ -39,7 +39,7 @@ class RentabFundo:
         name=tuplevalue[1],
         monthref=tuplevalue[1],
         monthrate=tuplevalue[1],
-        yearaccrate=tuplevalue[1],
+        yearaccratre=tuplevalue[1],
         yearrate=tuplevalue[1],
         netvalue=tuplevalue[1],
         grossvalue=tuplevalue[1],

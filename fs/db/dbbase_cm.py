@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dbbase_mod.py
+dbbase_cm.py
 
 Schema
 table accrecords
@@ -20,24 +20,25 @@ table rentabfundos
 """
 import os.path
 import sqlite3
-import unittest
-import defaults_mod as defm
+# import unittest
+# import defaults_mod as defm
 
 
-mountpath = None
-sqlitefilename = '.beans_counter.sqlite'
 maintablename = 'accounts'
 fieldnames = [
- 'id', 'codename', 'name', 'monthref', 'rendmes', 'rendnoano', 'rend12meses',
-  'saldobrutofimmes', 'saldobrutomesanterior', 'quantcotafimmes', 'quantcotamesanterior',
-  'rendliq', 'irrf'
+   'id', 'codename', 'name', 'monthref', 'rendmes', 'rendnoano', 'rend12meses',
+   'saldobrutofimmes', 'saldobrutomesanterior', 'quantcotafimmes', 'quantcotamesanterior',
+   'rendliq', 'irrf'
 ]
 
 
 class Default:
   mountpath = ''
   sqlitefilename = 'personal_finance_accounting_beans_counter.sqlite'
+  # sqlitefilename = '.beans_counter.sqlite'
   tablename = 'fundos'
+  limit = 50
+  offset = 50
 
 
 class DBBase:
@@ -47,6 +48,14 @@ class DBBase:
     self.sqlitefilename = sqlitefilename
     self.tablename = tablename
     self.treat_init_params()
+
+  @property
+  def fieldnames(self):
+    """
+        id | name | monthref | monthrate | yearaccrate | yearrate
+    """
+    _fieldnames = ['id', 'name', 'monthref', 'monthrate', 'yearaccrate', 'yearrate']
+    return _fieldnames
 
   def treat_init_params(self):
     if self.mountpath is None or not os.path.isdir(self.mountpath):
@@ -69,18 +78,16 @@ class DBBase:
   def db_select_with_sql_n_tuplevalues(self, sql, tuplevalues):
     conn = self.get_connection()
     cursor = conn.cursor()
-    rows = cursor.execute(sql, tuplevalues)
-    rowlist = rows.fetch_all()
+    fetched_list = cursor.execute(sql, tuplevalues)
     cursor.close()
     conn.commit()
     conn.close()
-    return rowlist
+    return fetched_list
 
   def db_create_table_rentabfundos(self):
-    '''
+    """
     id | name | monthref | monthrate | yearaccrate | yearrate
-
-    '''
+    """
     sql = '''
     CREATE TABLE IF NOT EXISTS rentabfundos (
       id INTEGER PRIMARY KEY AUTO INCREMENT,
@@ -91,6 +98,9 @@ class DBBase:
       yearrate DECIMAL
     )
     '''
+    conn = self.get_connection()
+    result = conn.execute(sql)
+    return result
 
   def db_insert_with_sql_n_tuplevalues(self, sql, tuplevalues):
     conn = self.get_connection()
@@ -100,10 +110,6 @@ class DBBase:
     conn.commit()
     conn.close()
     return res
-
-
-  def get_connection(self):
-    return sqlite3.Connection(self.sqlitefile_abspath)
 
   def form_fields_line_for_createtable(self):
     """
@@ -229,12 +235,12 @@ class DBBase:
   def do_select_sql_n_tuplevalues_w_limit_n_offset(self, sql, tuplevalues=None, plimit=None, poffset=None):
     limit = plimit
     if limit is None:
-      limit = self.default_limit
+      limit = Default.limit
     else:
       limit = int(limit)
     offset = poffset
     if offset is None:
-      offset = self.default_offset
+      offset = Default.offset
     else:
       offset = int(offset)
     conn = self.get_connection()
@@ -269,12 +275,12 @@ class DBBase:
     """
     limit = plimit
     if limit is None:
-      limit = self.default_limit
+      limit = Default.limit
     else:
       limit = int(limit)
     offset = poffset
     if offset is None:
-      offset = self.default_offset
+      offset = Default.offset
     else:
       offset = int(offset)
     sql = 'SELECT * FROM %(tablename)s LIMIT %(limit)d OFFSET %(offset)d ;' \

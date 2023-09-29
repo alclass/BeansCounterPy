@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import datetime
-import hashlib
-import os
-import sqlite3
+# import datetime
+# import hashlib
+# import os
+# import sqlite3
 # import fs.hashfunctions.hash_mod as hm
-import fs.db.dbbase_mod as dbb
+import fs.db.dbbase_cm as dbb
 
 
 class DBRentabFundos(dbb.DBBase):

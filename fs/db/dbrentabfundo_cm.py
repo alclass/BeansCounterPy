@@ -4,7 +4,7 @@
 # import os
 # import sqlite3
 # import fs.hashfunctions.hash_mod as hm
-import fs.db.dbbase_mod as dbb
+import fs.db.dbbase_cm as dbb
 import unittest
 
 
@@ -18,6 +18,15 @@ class DBRentabFundo(dbb.DBBase):
     self.tablename = tablename
     super().__init__(name, tablename)
     self.treat_params()
+
+  def fetch_tuplerentabfundo_from_name_n_monthref(self, name, monthref):
+    """
+    To implement
+    """
+    _ = self.name
+    _ = name
+    _ = monthref
+    return True
 
   def treat_params(self):
     if self.name is None:
@@ -49,7 +58,6 @@ class DBRentabFundo(dbb.DBBase):
     return self.db_insert_via_tuplevalues(tuplevalues)
 
 
-
 def process():
   """
   adhoc_select()
@@ -70,7 +78,6 @@ class TestCaseBeansCounter(unittest.TestCase):
   def setUp(self):
     self.db = DBRentabFundo(None, 'testdb.sqlite')
     self.rentfundo = DBRentabFundo()
-
 
   def test1_rentabfundo(self):
     self.assertEqual('testdb.sqlite', self.db.sqlitefilename)
