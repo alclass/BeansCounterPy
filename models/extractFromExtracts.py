@@ -3,8 +3,11 @@
 """
 import os.path
 
-# datadir = '/home/grayacer/OurDocs/Banks OD/Banco do Brasil BB OD/Investimentos (Fundos etc) BB OD/Fundos de Investimentos BB OD/FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB'
-DEFAULT_DATADIR = '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB'
+# datadir = '/home/grayacer/OurDocs/Banks OD/
+# Banco do Brasil BB OD/Investimentos (Fundos etc) BB OD/Fundos de Investimentos BB OD/
+# FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB'
+DEFAULT_DATADIR = ('/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/'
+                   'FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB')
 DEFAULT_FILENAME = '2023-04 FI extrato BB.txt'
 
 
@@ -59,13 +62,20 @@ class BBFundoExtractScraper:
         txttrunk = self.readon_til_next_dashedline()
         self.txttrunks.append(txttrunk)
 
+  def printout_trunks(self):
+    for i, txttrunk in enumerate(self.txttrunks):
+      seq = i + 1
+      print('[', seq, ']')
+      print('-*-|-*-'*10)
+      print(txttrunk)
+
   def __str__(self):
     outstr = 'Number of fundos = ' + str(len(self.txttrunks))
     return outstr
 
 
-
 if __name__ == '__main__':
   fundo_extractor = BBFundoExtractScraper()
   fundo_extractor.process()
+  fundo_extractor.printout_trunks()
   print(fundo_extractor)
