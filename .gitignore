@@ -8,4 +8,4 @@ venv/
 .settings/
 *.pyc
 *.sqlite
-local_settings2.py
+local_settings.py

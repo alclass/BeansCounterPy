@@ -8,7 +8,7 @@ import os
 import sys
 
 try:
-  import local_settings2 as locset
+  import local_settings as locset
 except ImportError:
   print('Please, create configuration file local_setting2.py and rerun.')
   sys.exit(1)

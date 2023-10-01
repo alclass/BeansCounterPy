@@ -1,0 +1,28 @@
+Important observation when composing the requirements.txt file
+
+1) packages such as xlsxwriter (a lib to help output Excel files from Python) were installed into the local virtualenv (here venv);
+
+2) packages such as pandas (a lib to help organize numeric data with Series & DataFrameoutput) were installed "globally" [notice pandas depends on numpy et al];
+
+To allow virtualenv to search packages outside "itself", use parameter --system-site-packages when creating it, ie:
+
+$python -m venv --system-site-packages venv
+
+	If this parameter (--system-site-packages) is not used, the "enclosed venv" will not find global packages elsewhere.
+
+For a full "closed" virtualenv (ie, a strategy different than the one above), recreate it without the --system-site-packages parameter, ie:
+
+$python -m venv venv
+
+and then install all necessary packages with "pip install" from within the virtualenv itself.
+
+Example:
+(venv) $ pip install xlsxwriter
+(venv) $ pip install pandas
+"etc"
+
+Then recomposing the requirements.txt file with:
+
+(venv) $ pip freeze > requirements.txt
+
+To find all packages without inspecting each module one by one, run the system (or peruse it statistically) inside the "closed virtualenv" and observe the errors due to missing packages.
