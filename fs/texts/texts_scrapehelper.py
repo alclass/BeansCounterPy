@@ -79,7 +79,10 @@ class NameCnpjScraper:
 
 
 def slice_fundofile_into_fundoscrapetexts(fundofilepath):
+  # obs: client caller must enclose the call into a try/except caching FileNotFoundError
   wholetext = open(fundofilepath, encoding='latin1').read()
+  # if FileNotFoundError is raised, flow will return from here
+  # and scrapetexts.append() below will not happen, resulting in a missing month (for the file itself is missing)
   scrapetexts = []
   scrapetext = ''
   lines = wholetext.split('\n')

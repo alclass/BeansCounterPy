@@ -5,7 +5,7 @@
 """
 import fs.texts.texts_scrapehelper as scrapehelper
 import settings as sett
-import models.extractFromWithinAFundoReport as extScr
+import models.fundos.extractFromWithinAFundoReport as extScr
 
 
 def get_scrapetest(year, month, fundoname):

@@ -3,6 +3,7 @@
 datefs.py
   Module with date & time (helper) functions
 """
+import copy
 import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -193,22 +194,6 @@ def transform_yyyydashmm_to_daterange_in_refmonth_dict(str_refmonth_range_dict):
   return refmonth_range_dict
 
 
-def test_some():
-  # 1 pass None
-  pdate = transform_strdate_to_date_or_today()
-  print('None =>', pdate)
-  # 2 pass a dd/mm/yyyy
-  strdate = '1/1/1999'
-  pdate = transform_strdate_to_date_or_today(strdate)
-  print(strdate, ' =>', pdate)
-  # 3 pass a non-consistent date dd/mm/yyyy expecting None (may go to unittest later on)
-  strdate = '31/11/2999'
-  pdate = transform_strdate_to_date(strdate)
-  print(strdate, ' =>', pdate)
-  # 4 pass a consistent date (though welll in the future) dd/mm/yyyy expecting a valid date
-  strdate = '31/10/2999'
-  pdate = transform_strdate_to_date(strdate)
-  print(strdate, ' =>', pdate)
 
 
 def validate_refmonthdate_or_none(refmonthdate=None):
@@ -235,7 +220,7 @@ def validate_refmonthdate_or_morerecent(refmonthdate=None):
   return refmonthdate
 
 
-def validate_refmonthdate_ini_fim_or_1monthbefore(refmonthdate_ini, refmonthdate_fim):
+def validate_refmonthdate_or_1monthbefore_the_2ndparam(refmonthdate_ini, refmonthdate_fim):
   """"
   There are 2 rules to be followed here:
     r1 refmonthdates are dates that have day=1
@@ -250,5 +235,79 @@ def validate_refmonthdate_ini_fim_or_1monthbefore(refmonthdate_ini, refmonthdate
   return refmonthdate_ini, refmonthdate_fim
 
 
+def test_some():
+  # 1 pass None
+  pdate = transform_strdate_to_date_or_today()
+  print('None =>', pdate)
+  # 2 pass a dd/mm/yyyy
+  strdate = '1/1/1999'
+  pdate = transform_strdate_to_date_or_today(strdate)
+  print(strdate, ' =>', pdate)
+  # 3 pass a non-consistent date dd/mm/yyyy expecting None (may go to unittest later on)
+  strdate = '31/11/2999'
+  pdate = transform_strdate_to_date(strdate)
+  print(strdate, ' =>', pdate)
+  # 4 pass a consistent date (though welll in the future) dd/mm/yyyy expecting a valid date
+  strdate = '31/10/2999'
+  pdate = transform_strdate_to_date(strdate)
+  print(strdate, ' =>', pdate)
+
+
+def make_date_with_day1(pdate=None):
+  if pdate is None:
+    pdate = datetime.date.today()
+  if type(pdate) != datetime.date:
+    try:
+      pdate = str(pdate)
+      pdate = transform_strdate_to_date(pdate)
+    except ValueError:
+      pdate = datetime.date.today()
+  if pdate.day == 1:
+    return pdate
+  odate = datetime.date(year=pdate.year, month=pdate.month, day=1)
+  return odate
+
+
+def generate_monthrange(refmonthdate_ini=None, refmonthdate_fim=None):
+  refmonthdate_ini = make_date_with_day1(refmonthdate_ini)
+  refmonthdate_fim = make_date_with_day1(refmonthdate_fim)
+  today = datetime.date.today()
+  refmonthtoday = make_date_with_day1(today)
+  if refmonthdate_fim > refmonthtoday:
+    refmonthdate_fim = refmonthtoday
+  if refmonthdate_ini > refmonthtoday:
+    return []
+  if refmonthdate_ini > refmonthdate_fim:
+    return []
+  if refmonthdate_ini == refmonthdate_fim:
+    return [refmonthdate_ini]
+  current_refmonthdate = copy.copy(refmonthdate_ini)
+  while current_refmonthdate <= refmonthdate_fim:
+    yield current_refmonthdate
+    current_refmonthdate = current_refmonthdate + relativedelta(months=1)
+  return
+
+
+def adhoctest_some_yyyydashmm_dates():
+  """
+  print('test_some_yyyydashmm_dates')
+  strdaterange_tuplelist = [('2022-04', '2023-04'), ('2018-10', '2020-01')]
+  for strdaterange_tuple in strdaterange_tuplelist:
+    monthref_ini = strdaterange_tuple[0]
+    monthref_fim = strdaterange_tuple[1]
+    strdaterange_dict = {'monthref_ini': monthref_ini, 'monthref_fim': monthref_fim}
+    daterange_dict = transform_yyyydashmm_to_daterange_in_refmonth_dict(strdaterange_dict)
+    print(strdaterange_dict, '=>', daterange_dict)
+  """
+  refmonthdate_ini = '2023-01-15'
+  refmonthdate_fim = '2023-08-11'
+  generator = generate_monthrange(refmonthdate_ini=refmonthdate_ini, refmonthdate_fim=refmonthdate_fim)
+  for refmonthdate in generator:
+    print(refmonthdate)
+
+
 if __name__ == '__main__':
+  """
   test_some()
+  """
+  adhoctest_some_yyyydashmm_dates()

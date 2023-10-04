@@ -7,7 +7,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import settings as sett
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
-import models.extractFromWithinAFundoReport as extScr
+import models.fundos.extractFromWithinAFundoReport as extScr
 import fs.texts.texts_scrapehelper as scrapehelper
 YEARMONTH_INI = datetime.date(year=2022, month=8, day=1)
 YEARMONTH_FIM = datetime.date(year=2023, month=8, day=1)
@@ -29,7 +29,10 @@ class MonthlyRoller:
 
   def scrape_sliced_fundos_for_refmonth(self, current_yearmonth):
     fundofilepath = sett.get_bb_fi_extract_filepath_by_year_month(current_yearmonth.year, current_yearmonth.month)
-    scrapetexts = scrapehelper.slice_fundofile_into_fundoscrapetexts(fundofilepath)
+    try:
+      scrapetexts = scrapehelper.slice_fundofile_into_fundoscrapetexts(fundofilepath)
+    except FileNotFoundError:
+      return
     for scrapetext in scrapetexts:
       fundoresult = extScr.WithinFundoExtractScraper(scrapetext, refmonthdate=current_yearmonth)
       fundoresult.process()

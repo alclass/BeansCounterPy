@@ -70,6 +70,34 @@ class WithinFundoExtractScraper:
       outdict[fieldname] = value
     return outdict
 
+  @property
+  def sql_fieldnames(self):
+    """
+    Usage:
+      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
+      (same as tuplevalues below)
+    """
+    fields = self.attrs()
+    _sql_fieldnames = '('
+    for fieldname in fields:
+      _sql_fieldnames += '"' + fieldname + '",'
+    _sql_fieldnames = _sql_fieldnames[:-1] + ')'
+    return _sql_fieldnames
+
+  @property
+  def tuplevalues(self):
+    """
+    Usage:
+      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
+      (same as fieldnames above)
+    """
+    fields = self.attrs()
+    outlist = []
+    for fieldname in fields:
+      value = eval('self.' + fieldname)
+      outlist.append(value)
+    return tuple(outlist)
+
   def adjust_scrapetext(self):
     """
 
@@ -347,8 +375,17 @@ class WithinFundoExtractScraper:
     return outstr
 
 
-if __name__ == '__main__':
+def process():
   withinfundo_scraper = WithinFundoExtractScraper()
   withinfundo_scraper.process()
   print(withinfundo_scraper)
+  print('withinfundo_scraper.datadict')
   print(withinfundo_scraper.datadict)
+  print('withinfundo_scraper.tuplevalues')
+  print(withinfundo_scraper.tuplevalues)
+  print('withinfundo_scraper.attrs()')
+  print(withinfundo_scraper.attrs())
+
+
+if __name__ == '__main__':
+  process()

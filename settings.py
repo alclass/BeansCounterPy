@@ -18,7 +18,7 @@ BB_FI_EXTRACTS_ROOT_FOLDERNAME = "FI Extratos Mensais Ano a Ano BB OD"  # conven
 BB_FI_EXTRACTS_FOLDERNAME_YEAR_INTERPOL = "{year} FI Extratos Mensais BB"  # conventioned: notice the str interpolation
 BB_FI_EXTRACT_FILENAME_YEARMONTH_INTERPOL = '{year}-{month:02d} FI extrato BB.txt'  # also conventioned:yyyy/mm interpol
 DEFAULT_DATADIR_FOLDERNAME = 'dados'  # this one is parameterized, a different one may be set in local_settings.py
-BBFI_SQLITE_FILENAME = 'bbfi'  # this one is parameterized, a different one may be set in local_settings.py
+BBFI_SQLITE_FILENAME = 'bbfi.sqlite'  # this one is parameterized, a different one may be set in local_settings.py
 APP_ROOTFOLDER = os.path.dirname(__file__)
 
 
@@ -37,9 +37,14 @@ def get_apps_data_abspath():
   return datapath
 
 
-def get_bb_fi_extracts_datafolder_abspath_by_year(year):
+def get_bb_fi_rootfolder_abspath():
   apps_data_abspath = get_apps_data_abspath()
   bb_fi_rootfolder_abspath = os.path.join(apps_data_abspath, BB_FI_EXTRACTS_ROOT_FOLDERNAME)
+  return bb_fi_rootfolder_abspath
+
+
+def get_bb_fi_extracts_datafolder_abspath_by_year(year):
+  bb_fi_rootfolder_abspath = get_bb_fi_rootfolder_abspath()
   bb_fi_yearfoldername = BB_FI_EXTRACTS_FOLDERNAME_YEAR_INTERPOL.format(year=year)
   bb_fi_yearfolder_abspath = os.path.join(bb_fi_rootfolder_abspath, bb_fi_yearfoldername)
   return bb_fi_yearfolder_abspath

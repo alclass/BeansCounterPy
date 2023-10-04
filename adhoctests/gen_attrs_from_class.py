@@ -3,18 +3,18 @@
 scraper_monthly_rendextracts.py
   Organizes the month range and then calls extractFromWithinAFundoReport.py month to month
 """
-import models.extractFromWithinAFundoReport as fundoreport
+import models.fundos.extractFromWithinAFundoReport as fundoReport
 
 
 def get_attrs_as_dict():
-  pdict = vars(fundoreport.WithinFundoExtractScraper())
+  pdict = vars(fundoReport.WithinFundoExtractScraper())
   for elem in pdict:
     print(elem, '||||||||', pdict[elem])
   # print(fundoreport.WithinFundoExtractScraper.__dict__)
 
 
 def get_attrs_as_list():
-  attrs = fundoreport.WithinFundoExtractScraper.attrs()
+  attrs = fundoReport.WithinFundoExtractScraper.attrs()
   for attr in attrs:
     print(attr)
   print(len(attrs), 'attributes')

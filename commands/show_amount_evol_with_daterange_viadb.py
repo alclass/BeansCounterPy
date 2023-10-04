@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """"
-show_amount_evol_with_daterange_viadb.py
+show_amount_evol_with_daterange_viadatafile.py
   prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses) for all fundos with a date range
-  (this script searches via db [there's another version that searches via data files])
+  (this script searches via extract text files [there's another version that searches via db])
 """
 import sys
 import fs.datesetc.datefs as dtfs
+import fs.numbers.transform_numbers as transfn
 import scrapers.bbfi.scraper_monthly_rendextracts as scr_bb_extrs
 
 
@@ -59,19 +60,27 @@ def get_fundo_results_dictlist_within_daterange(monthref_ini, monthref_fim):
 
 
 def show_results(transpose_to_triplerend_dict):
+  total_rend_bruto = 0
+  total_monthfundos = 0
   for fundoname in transpose_to_triplerend_dict:
     dict_for_name = transpose_to_triplerend_dict[fundoname]
     print(fundoname)
     refmonthdates = dict_for_name.keys()
     sorted(refmonthdates)
     for refmonthdate in refmonthdates:
+      total_monthfundos += 1
       tripledict = dict_for_name[refmonthdate]
       print('\t ', refmonthdate)
-      print('\t rend_bruto', tripledict['rend_bruto'])
+      rend_bruto = tripledict['rend_bruto']
+      print('\t rend_bruto', )
+      total_rend_bruto += rend_bruto
       print('\t rend_liq', tripledict['rend_liq'])
       print('\t prct_rend_mes', tripledict['prct_rend_mes'])
       print('\t saldo_atual', tripledict['saldo_atual'])
-    print()
+    strmoney = '${:,.2f}'.format(total_rend_bruto)
+    strmoney = transfn.place_thousand_dots_in_number_as_strnumber(strmoney)
+    print('total_rend_bruto', strmoney)
+    print('total_monthfundos', total_monthfundos)
 
 
 def process():
