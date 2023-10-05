@@ -6,12 +6,15 @@ discover_bbfi_datadirections.py
 import os
 import pdfquery
 import settings as sett
+import fs.os.discover_levels_for_datafolders as disc
 
 
 class PDFScraper:
 
-  def __init__(self, datadir_abspath=None):
-    self.datadir_abspath = sett.get_cef_fi_rootfolder_abspath()
+  def __init__(self, folderpath=None):
+    if folderpath is None or not os.path.isdir(folderpath):
+      error_msg = 'Error: folderpath %s does not exist.'
+      raise OSError
     filenames = os.listdir(self.datadir_abspath)
     self.pdffilenames = list(filter(lambda f: f.endswith('.pdf'), filenames))
 
@@ -50,7 +53,11 @@ class PDFScraper:
 
 
 def process():
-  scraper = PDFScraper()
+  cef_rootfolderpath = sett.get_cef_fi_rootfolder_abspath()
+  discoverer = disc.FolderYearMonthLevelDiscoverer(cef_rootfolderpath)
+  discoverer.process()
+  yearmonthfolderpath = discoverer.get_folderpath_by_year(2023)
+  scraper = PDFScraper(yearmonthfolderpath)
   scraper.process()
   print(scraper)
 

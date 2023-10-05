@@ -25,7 +25,7 @@ class Insertor:
 
   def treat_sqlitefilepath(self):
     if self.sqlitefilepath is None or not os.path.isfile(self.sqlitefilepath):
-      self.sqlitefilepath = sett.get_dbfi_sqlite_filepath()
+      self.sqlitefilepath = sett.get_app_sqlite_filepath()
 
   def get_connection(self):
     conn = sqlite3.connect(self.sqlitefilepath)

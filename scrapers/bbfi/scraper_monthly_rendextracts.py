@@ -6,6 +6,7 @@ scraper_monthly_rendextracts.py
 import datetime
 from dateutil.relativedelta import relativedelta
 import settings as sett
+import fs.os.discover_levels_for_datafolders as disc
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
 import models.fundos.extractFromWithinAFundoReport as extScr
 import fs.texts.texts_scrapehelper as scrapehelper
@@ -28,6 +29,8 @@ class MonthlyRoller:
       self.yearmonth_fim = YEARMONTH_FIM
 
   def scrape_sliced_fundos_for_refmonth(self, current_yearmonth):
+    fundodirbase = sett.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
+    discoverer = disc.FolderYearMonthLevelDiscoverer(fundodirbase)
     fundofilepath = sett.get_bb_fi_extract_filepath_by_year_month(current_yearmonth.year, current_yearmonth.month)
     try:
       scrapetexts = scrapehelper.slice_fundofile_into_fundoscrapetexts(fundofilepath)

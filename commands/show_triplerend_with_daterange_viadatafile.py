@@ -29,7 +29,7 @@ class TripleRend:
         refmonthdate <= %
     """
     tuplevalues = (refmonthdate_ini, refmonthdate_fim)
-    conn = sqlite3.connect(sett.get_dbfi_sqlite_filepath())
+    conn = sqlite3.connect(sett.get_app_sqlite_filepath())
     cursor = conn.cursor()
     cursor.execute(sql, tuplevalues)
 
