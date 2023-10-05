@@ -69,7 +69,7 @@ class SqliteBBTripleRend:
 
   @property
   def sqlitefilepath(self):
-    apps_data_abspath = sett.get_apps_data_abspath()
+    apps_data_abspath = sett.get_apps_data_rootdir_abspath()
     _sqlitefilepath = os.path.abspath(apps_data_abspath, SQLITE_FILENAME)
     return _sqlitefilepath
 

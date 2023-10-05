@@ -3,44 +3,55 @@
 scraper_monthly_rendextracts.py
   Organizes the month range and then calls extractFromWithinAFundoReport.py month to month
 """
-import datetime
 import os
 import sys
 
 try:
   import local_settings as locset
 except ImportError:
-  print('Please, create configuration file local_setting2.py and rerun.')
+  print('Please, create configuration file local_setting.py and rerun.')
   sys.exit(1)
-MONTH_INI = datetime.date(year=2022, month=8, day=1)
-MONTH_FIM = datetime.date(year=2023, month=8, day=1)
 BB_FI_EXTRACTS_ROOT_FOLDERNAME = "FI Extratos Mensais Ano a Ano BB OD"  # conventioned: do not change it
 BB_FI_EXTRACTS_FOLDERNAME_YEAR_INTERPOL = "{year} FI Extratos Mensais BB"  # conventioned: notice the str interpolation
 BB_FI_EXTRACT_FILENAME_YEARMONTH_INTERPOL = '{year}-{month:02d} FI extrato BB.txt'  # also conventioned:yyyy/mm interpol
 DEFAULT_DATADIR_FOLDERNAME = 'dados'  # this one is parameterized, a different one may be set in local_settings.py
+SUBFOLDER_BANKDATA = 'bankdata'
 BBFI_SQLITE_FILENAME = 'bbfi.sqlite'  # this one is parameterized, a different one may be set in local_settings.py
 APP_ROOTFOLDER = os.path.dirname(__file__)
 
 
 def get_datadir_foldername_or_default():
-  datadif_foldername = None
+  datadir_foldername = None
   try:
-    datadif_foldername = locset.DATADIR_FOLDERNAME
+    datadir_foldername = locset.DATADIR_FOLDERNAME
   except ValueError:
     pass
-  return datadif_foldername or DEFAULT_DATADIR_FOLDERNAME
+  return datadir_foldername or DEFAULT_DATADIR_FOLDERNAME
 
 
-def get_apps_data_abspath():
+def get_apps_data_rootdir_abspath():
   datadir_foldername = get_datadir_foldername_or_default()
   datapath = os.path.join(APP_ROOTFOLDER, datadir_foldername)
   return datapath
 
 
+def get_apps_bankdata_abspath():
+  apps_data_abspath = get_apps_data_rootdir_abspath()
+  bankdata_abspath = os.path.join(apps_data_abspath, SUBFOLDER_BANKDATA)
+  return bankdata_abspath
+
+
 def get_bb_fi_rootfolder_abspath():
-  apps_data_abspath = get_apps_data_abspath()
-  bb_fi_rootfolder_abspath = os.path.join(apps_data_abspath, BB_FI_EXTRACTS_ROOT_FOLDERNAME)
+  bankdata_abspath = get_apps_bankdata_abspath()
+  bb_fi_rootfolder_abspath = os.path.join(bankdata_abspath, BB_FI_EXTRACTS_ROOT_FOLDERNAME)
   return bb_fi_rootfolder_abspath
+
+
+def get_cef_fi_rootfolder_abspath():
+  apps_bankdata_abspath = get_apps_bankdata_abspath()
+  middlepath = 'CEF bankdata OD/FI Extratos Mensais Ano a Ano CEF OD/2023 FI extratos mensais CEF'
+  cef_fi_dir_abspath = os.path.join(apps_bankdata_abspath, middlepath)
+  return cef_fi_dir_abspath
 
 
 def get_bb_fi_extracts_datafolder_abspath_by_year(year):
@@ -63,11 +74,11 @@ def get_bb_fi_extract_filepath_by_year_month(year, month):
 
 
 def get_dbfi_sqlite_filepath():
-  return os.path.join(get_apps_data_abspath(), BBFI_SQLITE_FILENAME)
+  return os.path.join(get_apps_data_rootdir_abspath(), BBFI_SQLITE_FILENAME)
 
 
 def show_paths():
-  datapath = get_apps_data_abspath()
+  datapath = get_apps_data_rootdir_abspath()
   print('datapath =', datapath)
   year = 2023
   bb_fi_yearfolder_abspath = get_bb_fi_extracts_datafolder_abspath_by_year(year)

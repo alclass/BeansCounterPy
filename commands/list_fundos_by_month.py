@@ -61,7 +61,7 @@ def gen_report_with_monthrange(refmonthdate_ini, refmonthdate_fim):
   dictlist = diminish_some_columns_in_dictlist(dictlist)
   pd_data = pd.DataFrame(dictlist)
   excel_filename = str(refmonthdate_fim)[:7] + '_pandas_excel.xlsx'
-  excel_filepath = os.path.join(sett.get_apps_data_abspath(), excel_filename)
+  excel_filepath = os.path.join(sett.get_apps_data_rootdir_abspath(), excel_filename)
   print('writing', excel_filepath)
   pd_data.to_excel(excel_writer=excel_filepath)
   print(pd_data)
