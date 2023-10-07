@@ -123,6 +123,26 @@ class BANK:
     fi_foldername = list(filtered)[0]
     return os.path.join(folderpath, fi_foldername)
 
+  @classmethod
+  def list_available_banks(cls):
+    """
+    lists all bank registers here (*) available :: (*) here means "directery in this module or in settings.py"
+    this method is almost a __str__(), name not chosen due to the class-methods in-here
+    """
+    outstr = "*** list_available_banks ***\n"
+    for banknumber in cls.BANKDICT:
+      pdict = {
+        'banknumber': banknumber,
+        'bank3letter': cls.BANKDICT[banknumber][0],
+        'bankdescr': cls.BANKDICT[banknumber][1],
+      }
+
+      line = '{banknumber} - {bank3letter} - {bankdescr}\n'.format(
+        **pdict,
+      )
+      outstr += line
+    return outstr
+
 
 def get_datadir_foldername_or_default():
   datadir_foldername = None
@@ -151,6 +171,7 @@ def show_paths():
     banknumber = BANK.get_banknumber_by_its3letter(bank3letter_sought)
     bank_folderpath = BANK.get_bank_folderpath_by_number(banknumber)
     print('bank3letter_sought [', bank3letter_sought, '] bank_folderpath =', bank_folderpath)
+  print(BANK.list_available_banks())
 
 
 if __name__ == '__main__':

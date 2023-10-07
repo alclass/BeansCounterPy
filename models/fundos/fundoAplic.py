@@ -19,9 +19,11 @@ class FundoAplic:
     self.data_saldo_ant = None
     self.saldo_anterior = -1
     self.qtd_cotas_ant = -1
+    self.valor_cota_ant = -1
     self.data_saldo_atu = None
     self.saldo_atual = -1
     self.qtd_cotas_atu = -1
+    self.valor_cota_atu = -1
     self.prct_rend_mes = -1
     self.prct_rend_desdeano = -1
     self.prct_rend_12meses = -1
@@ -110,9 +112,11 @@ class FundoAplic:
   data_saldo_ant    = {data_saldo_ant}    
   saldo_anterior    = {saldo_anterior}
   qtd_cotas_ant     = {qtd_cotas_ant}    
+  valor_cota_ant     = {valor_cota_ant}    
   data_saldo_atu    = {data_saldo_atu}   
   saldo_atual       = {saldo_atual}
   qtd_cotas_atu     = {qtd_cotas_atu}    
+  valor_cota_atu     = {valor_cota_atu}    
   prct_rend_mes     = {prct_rend_mes}      
   prct_rend_desdeano = {prct_rend_desdeano}     
   prct_rend_12meses = {prct_rend_12meses}

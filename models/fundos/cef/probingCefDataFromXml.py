@@ -16,6 +16,50 @@ import models.fundos.fundoAplic as fAplic
 
 
 class XMLDataExtractor:
+  """
+  Measuring line positions
+
+observed: 2023-08 Especial RF LP 94528,97 Extrato Mensal CEF.xml
+----------------------------------
+8 text CAIXA FIC EXPERTISE RF CREDITO PRIV  # Fundo
+10 seq1 1,2242 # No Mês(%)
+12 seq1 8,6302 # No Ano(%)
+14 seq1 13,3508 # Nos Últimos 12 Meses(%)
+16 seq1 7,492091 # Cota em: 31/07/2023
+18 seq1 7,583812 # Cota em: 31/08/2023
+24 seq1 00.360.305/0001-04 # CNPJ da Administradora
+45 seq1 12.464,572458 Qtde de Cotas
+----------------------------------
+28 seq2 93.385,71C saldo anterior
+29 seq2  1.143,26C Rendimento Bruto no Mês
+30 seq2 saldo bruto 94.528,97C
+31 seq2 0,00  # resgate bruto em trânsito
+32 seq2 12.464,572458  cotas ini
+37 seq2 text 0,00 # Rendimento Base
+39 seq2 text 0,00 # IRRF
+  """
+
+  LINENUMBERDICT_S1 = {  # LTTextLineHorizontal
+    10: 'prct_rend_mes',
+    12: 'prct_rend_desdeano',
+    14: 'prct_rend_12meses',
+    16: 'data_saldo_ant',
+    21: 'data_saldo_atu',
+    24: 'cnpj',
+    39: 'aplicacoes',
+    40: 'resgates',
+    41: 'ir',
+    42: 'iof',
+    # 43: 'tx_de_saida',  # not in db
+  }
+  LINENUMBERDICT_S2 = {  # LTTextBoxHorizontal
+    72: 'data_saldo_atu',
+    89: 'saldo_anterior',
+    90: 'rendimento_bruto',
+    93: 'qtd_cotas_ant',
+    94: 'saldo_bruto',
+
+  }
 
   def __init__(self, folderpath=None):
     if folderpath is None or not os.path.isdir(folderpath):
@@ -38,6 +82,9 @@ class XMLDataExtractor:
     return os.path.join(self.folderpath, filename)
 
   def extract_data(self):
+    """
+
+    """
     self.fundos = []
     for i, xmlfilename in enumerate(self.xmlfilenames):
       seqfile = i + 1
@@ -49,40 +96,13 @@ class XMLDataExtractor:
       fundo = fAplic.FundoAplic()  # instantiate an empty FunooAplic obj
       for item in xmlroot.findall('./LTPage/LTTextBoxHorizontal/LTTextLineHorizontal'):
         seq1 += 1
-        if seq1 == 8:
-          fundo.name = item.text
-        elif seq1 == 10:
-          fundo.rend_no_mes = item.text
-        elif seq1 == 12:
-          fundo.rend_no_ano = item.text
-        elif seq1 == 14:
-          fundo.rend_ults_12meses = item.text
-        elif seq1 == 16:
-          fundo.data_ini_cota = item.text
-        elif seq1 == 18:
-          fundo.data_fim_cota = item.text
-        elif seq1 == 24:
-          fundo.cnpj = item.text
-        elif seq1 == 45:
-          fundo.qtd_cotas = item.text
+        print(seq1, item)
+        print(item.text)
       seq2 = 0
       for item in xmlroot.findall('./LTPage/LTTextLineHorizontal/LTTextBoxHorizontal'):
         seq2 += 1
-        if seq2 == 28:
-          fundo.saldo_anterior = item.text
-        elif seq2 == 29:
-          fundo.rendimento_bruto = item.text
-        elif seq2 == 30:
-          fundo.saldo_atual = item.text
-        elif seq2 == 31:
-          fundo.resg_bru_em_trans = item.text
-        elif seq2 == 32:
-          fundo.qtd_cotas_anterior = item.text
-        elif seq2 == 37:
-          fundo.rendimento_base = item.text
-        elif seq2 == 39:
-          fundo.ir = item.text
-        print(seq2, 'seq2', item, 'text', item.text)
+        print(seq2, item)
+        print(item.text)
       if seq1 == 0 and seq2 == 0:
         print('\tnothing found for both seq1 & seq2')
       self.fundos.append(fundo)
@@ -100,11 +120,14 @@ class XMLDataExtractor:
 
   def __str__(self):
     outstr = "<obj XMLDataExtractor total_xmlfiles=%d>\n" % self.total_files
-    for fn in self.xmlfilenames:
+    for i, fn in enumerate(self.xmlfilenames):
       outstr += '\t' + fn + '\n'
-    outstr += str(self.outdict())
+      outstr += str(self.fundos[i])
+    outstr += '================\n'
+    pdict = self.outdict()
+    for p in pdict:
+      outstr += '{item} = {value}\n'.format(item=p, value=pdict[p])
     return outstr
-
 
 def adhoctest():
   pass
@@ -116,6 +139,7 @@ def process():
   yearmonthfolderpath = discoverer.get_folderpath_by_year(2023)
   extractor = XMLDataExtractor(yearmonthfolderpath)
   extractor.process()
+  print('extractor')
   print(extractor)
 
 

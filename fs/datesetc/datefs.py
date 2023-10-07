@@ -258,12 +258,28 @@ def make_date_with_day1(pdate=None):
     try:
       pdate = str(pdate)
       pdate = transform_strdate_to_date(pdate)
+      if pdate is None:
+        pdate = datetime.date.today()
     except ValueError:
       pdate = datetime.date.today()
   if pdate.day == 1:
     return pdate
   odate = datetime.date(year=pdate.year, month=pdate.month, day=1)
   return odate
+
+
+def make_refmonthdate_from_conventioned_filename(conventioned_filename):
+  try:
+    pp = conventioned_filename.split(' ')
+    yearmonth = pp[0]
+    ppp = yearmonth.split('-')
+    year = int(ppp[0])
+    month = int(ppp[1])
+    refmonthdate = datetime.date(year, month, day=1)
+    return refmonthdate
+  except (AttributeError, IndexError, ValueError):
+    pass
+  return None
 
 
 def generate_monthrange(refmonthdate_ini=None, refmonthdate_fim=None):
