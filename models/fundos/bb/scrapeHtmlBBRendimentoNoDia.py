@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import os
 import sys
-import time
-import downloadTabelaRendimentosBB
+from commands.download import downloadTabelaBBRendimentos
+
 datadir = '/home/grayacer/OurDocs/Banks OD/Banco do Brasil BB OD/Investimentos (Fundos etc) BB OD/Fundos de Investimentos BB OD/FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB'
 datadir = '/home/grayacer/OurDocs/Banks OD/Banco do Brasil BB OD/Investimentos (Fundos etc) BB OD/Fundos de Investimentos BB OD/FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB'
 

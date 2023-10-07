@@ -9,7 +9,7 @@ import sqlite3
 # import unittest
 # import defaults_mod as defm
 # import scrapers.bbfi.scraper_monthly_rendextracts as scrpmonths
-import fs.db.dbasfolder.discover_bbfi_datadirections as discbbfi
+import fs.db.dbasfolder.bankFoldersDiscover as discbbfi
 
 
 class DBReader:

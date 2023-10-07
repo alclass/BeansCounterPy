@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """"
-extractFromWithinAFundoReport.py
+extractSpecificBBFundos.py
 
 saldo anterior & cotas
   regexp => dd/dd/yyyy SALDO ANTERIOR
@@ -15,7 +15,9 @@ import os.path
 import re
 from fs.numbers.transform_numbers import transform_european_stringnumber_to_pythonfloat
 from fs.texts.texts_scrapehelper import get_name_n_cnpj_from_fundotext
+import fs.texts.exampleFundofileNTContent as exMod
 import fs.datesetc.datefs as dtfs
+import models.fundos.fundoAplic as fAplic
 SALDOANT_RESTR = r"(\d{2}/\d{2}/\d{4}).(SALDO.ANTERIOR)(.+)"
 SALDOATU_RESTR = r"(\d{2}/\d{2}/\d{4}).(SALDO.ATUAL)(.+)"
 # SALDOANT_RESTR = "(\d{2}/\d{2}/\d{4}).SALDO.ANTERIOR.+(\d+(?:[\.\,]\d{2})?)"  # ([\d]) \.\,]+)"  # \b+(\d+|\.|\,)"
@@ -29,81 +31,25 @@ DEFAULT_FILENAME = 'fundo_report_example.txt'
 example_filepath = os.path.join(DEFAULT_DATADIR, DEFAULT_FILENAME)
 
 
-class WithinFundoExtractScraper:
+class SpecificCEFExtractScraper(fAplic.FundoAplic):
 
   def __init__(self, scrapetext=None, refmonthdate=None):
-    self._scrapetext = scrapetext
     self.refmonthdate = refmonthdate
-    self.name = 'no-name'
-    self.cnpj = 'no-cnpj'
-    self.data_saldo_ant = 'dd/mm/aaaa'
-    self.saldo_anterior = -1
-    self.qtd_cotas_anterior = -1
-    self.data_saldo_atu = 'dd/mm/aaaa'
-    self.saldo_atual = -1
-    self.qtd_cotas_atual = -1
-    self.prct_rend_mes = -1
-    self.prct_rend_desdeano = -1
-    self.prct_rend_12meses = -1
-    self.aplicacoes = -1
-    self.resgates = -1
-    self.rend_bruto = -1
-    self.ir = -1
-    self.iof = -1
-    self.rend_liq = -1
+    self._scrapetext = scrapetext
+    super().__init__()  # notice that FunooAplic's constructor instanced an "empty" object
     self.adjust_scrapetext()
 
   @property
   def scrapetext(self):
     return self._scrapetext
 
-  @property
-  def datadict(self):
-    """
-    Usage:
-      one possible "outside" use of this method is to get data for a db-saving function
-    """
-    fields = self.attrs()
-    outdict = {}
-    for fieldname in fields:
-      value = eval('self.' + fieldname)
-      outdict[fieldname] = value
-    return outdict
-
-  @property
-  def sql_fieldnames(self):
-    """
-    Usage:
-      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
-      (same as tuplevalues below)
-    """
-    fields = self.attrs()
-    _sql_fieldnames = '('
-    for fieldname in fields:
-      _sql_fieldnames += '"' + fieldname + '",'
-    _sql_fieldnames = _sql_fieldnames[:-1] + ')'
-    return _sql_fieldnames
-
-  @property
-  def tuplevalues(self):
-    """
-    Usage:
-      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
-      (same as fieldnames above)
-    """
-    fields = self.attrs()
-    outlist = []
-    for fieldname in fields:
-      value = eval('self.' + fieldname)
-      outlist.append(value)
-    return tuple(outlist)
-
   def adjust_scrapetext(self):
     """
 
     """
+    example = exMod.ExampleFundoFile()
     if self.scrapetext is None:
-      self._scrapetext = open(example_filepath, encoding='latin1').read()
+      self._scrapetext = example.read_n_return_example_fundofile_text()
 
   def find_name_n_cnpj(self):
     self.name, self.cnpj = get_name_n_cnpj_from_fundotext(self.scrapetext)
@@ -121,7 +67,7 @@ class WithinFundoExtractScraper:
         strnumber = nextfindall[0]
         self.saldo_anterior = transform_european_stringnumber_to_pythonfloat(strnumber)
         strnumber = nextfindall[-1]
-        self.qtd_cotas_anterior = transform_european_stringnumber_to_pythonfloat(strnumber)
+        self.qtd_cotas_ant = transform_european_stringnumber_to_pythonfloat(strnumber)
 
   def find_saldo_atu_n_cotas(self):
     """
@@ -140,7 +86,7 @@ class WithinFundoExtractScraper:
         strnumber = nextfindall[0]
         self.saldo_atual = transform_european_stringnumber_to_pythonfloat(strnumber)
         strnumber = nextfindall[-1]
-        self.qtd_cotas_atual = transform_european_stringnumber_to_pythonfloat(strnumber)
+        self.qtd_cotas_atu = transform_european_stringnumber_to_pythonfloat(strnumber)
 
   def find_mes_ano_ults12meses(self):
     """
@@ -239,7 +185,7 @@ class WithinFundoExtractScraper:
       nexfindall = afterline_for_saldo_n_cota_recomp.findall(line)
       if nexfindall:
         strnumber = nexfindall[-1]
-        self.rend_bruto = transform_european_stringnumber_to_pythonfloat(strnumber)
+        self.rendimento_bruto = transform_european_stringnumber_to_pythonfloat(strnumber)
     # R$ IR imposto de renda
     repstr = r"IMPOSTO DE RENDA.+\(\-\).+"
     recomp = re.compile(repstr)
@@ -269,7 +215,7 @@ class WithinFundoExtractScraper:
       nexfindall = afterline_for_saldo_n_cota_recomp.findall(line)
       if nexfindall:
         strnumber = nexfindall[-1]
-        self.rend_liq = transform_european_stringnumber_to_pythonfloat(strnumber)
+        self.rendimento_liq = transform_european_stringnumber_to_pythonfloat(strnumber)
     else:  # "fallback" try UTF-8 instead of latin1
       repstr = r"RENDIMENTO LÍQUIDO.+"
       recomp = re.compile(repstr)
@@ -279,7 +225,7 @@ class WithinFundoExtractScraper:
       nexfindall = afterline_for_saldo_n_cota_recomp.findall(line)
       if nexfindall:
         strnumber = nexfindall[-1]
-        self.rend_liq = transform_european_stringnumber_to_pythonfloat(strnumber)
+        self.rendimento_liq = transform_european_stringnumber_to_pythonfloat(strnumber)
 
   def transform_refmonth_to_date_if_needed(self):
     if type(self.refmonthdate) == datetime.date:
@@ -316,75 +262,16 @@ class WithinFundoExtractScraper:
     self.find_apli_resg_brut_ir_iof_n_liq()
     self.treat_the_3_dates()
 
-  @staticmethod
-  def attrs():
-    """
-    Notice:
-      we've the convention "_" for "inner/working" attributes, so that all the others
-      are "exportable" (@see property datadict above)
-    """
-    pdict = vars(__class__())
-    plist = pdict.keys()
-    plist = list(filter(lambda attr: not attr.startswith('_'), plist))
-    return plist
-
-  def outdict(self):
-    return {
-      'name': self.name,
-      'cnpj': self.cnpj,
-      'refmonthdate': self.refmonthdate,
-      'data_saldo_ant': self.data_saldo_ant,
-      'saldo_anterior': self.saldo_anterior,
-      'qtd_cotas_anterior': self.qtd_cotas_anterior,
-      'data_saldo_atu': self.data_saldo_atu,
-      'saldo_atual': self.saldo_atual,
-      'qtd_cotas_atual': self.qtd_cotas_atual,
-      'prct_rend_mes': self.prct_rend_mes,
-      'prct_rend_desdeano': self.prct_rend_desdeano,
-      'prct_rend_12meses': self.prct_rend_12meses,
-      'aplicacoes': self.aplicacoes,
-      'resgates': self.resgates,
-      'rend_bruto': self.rend_bruto,
-      'ir': self.ir,
-      'iof': self.iof,
-      'rend_liq': self.rend_liq,
-    }
-
   def __str__(self):
-    outstr = """
-      name               = %(name)s
-      cnpj               = %(cnpj)s
-      refmonthdate       = %(refmonthdate)s
-      saldo_anterior     = %(saldo_anterior)f
-      data_saldo_ant     = %(data_saldo_ant)s
-      saldo_anterior     = %(saldo_anterior)f
-      qtd_cotas_anterior = %(qtd_cotas_anterior)f
-      data_saldo_atu     = %(data_saldo_atu)s
-      saldo_atual        = %(saldo_atual)f
-      qtd_cotas_atual    = %(qtd_cotas_atual)f
-      prct_rend_mes      = %(prct_rend_mes)f
-      prct_rend_desdeano = %(prct_rend_desdeano)f
-      prct_rend_12meses  = %(prct_rend_12meses)f 
-      aplicacoes         = %(aplicacoes)f
-      resgates           = %(resgates)f
-      rend_bruto         = %(rend_bruto)f
-      ir                 = %(ir)f
-      iof                = %(iof)f
-      rend_liq           = %(rend_liq)f
-      """ % self.outdict()
+    outstr = super().__str__()
+    outstr = "<WithinFundoExtractScraper refmonthdate= %(refmonthdate)s>\n" + outstr
     return outstr
 
 
 def process():
-  withinfundo_scraper = WithinFundoExtractScraper()
+  withinfundo_scraper = SpecificCEFExtractScraper()
   withinfundo_scraper.process()
   print(withinfundo_scraper)
-  print('withinfundo_scraper.datadict')
-  print(withinfundo_scraper.datadict)
-  print('withinfundo_scraper.tuplevalues')
-  print(withinfundo_scraper.tuplevalues)
-  print('withinfundo_scraper.attrs()')
-  print(withinfundo_scraper.attrs())
 
 
 if __name__ == '__main__':

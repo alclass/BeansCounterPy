@@ -8,8 +8,8 @@ import os.path
 import sqlite3
 # import unittest
 # import defaults_mod as defm
-import scrapers.bbfi.scraper_monthly_rendextracts as scrpmonths
-import fs.db.dbasfolder.discover_bbfi_datadirections as discbbfi
+import commands.scrape.scrape_monthly_rendextracts as scrpmonths
+import fs.db.dbasfolder.bankFoldersDiscover as bankFoldersDisc
 
 
 class Insertor:
@@ -34,21 +34,25 @@ class Insertor:
   def create_db_if_not_exists(self):
     sqlcreatetable_to_interpol = """CREATE TABLE IF NOT EXISTS %(tablename)s (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bank3letter CHAR(3),
       refmonthdate TEXT,
       name TEXT NOT NULL,
       cnpj TEXT,
       data_saldo_ant DATE NOT NULL,
       saldo_anterior FLOAT NOT NULL,
-      qtd_cotas_anterior FLOAT,
+      qtd_cotas_ant FLOAT,
       data_saldo_atu FLOAT NOT NULL,
       saldo_atual FLOAT NOT NULL,
-      qtd_cotas_atual FLOAT,
+      qtd_cotas_atu FLOAT,
       prct_rend_mes FLOAT NOT NULL,
       prct_rend_desdeano FLOAT NOT NULL,
       prct_rend_12meses FLOAT NOT NULL,
       aplicacoes FLOAT,
       resgates FLOAT,
-      rend_bruto FLOAT NOT NULL,
+      resg_bru_em_trans FLOAT,
+      rendimento_bruto FLOAT NOT NULL,
+      rendimento_liq FLOAT NOT NULL,
+      rendimento_base FLOAT NOT NULL,
       ir FLOAT,
       iof FLOAT,
       rend_liq FLOAT NOT NULL,
@@ -62,13 +66,14 @@ class Insertor:
 
   def do_insert(self, fundo_result_record):
     """
-  (fieldnames up till this moment):
+  (fieldnames up till this moment: to generate list below calls FundoAplic.attrs()):
   fieldnames = [
-    'refmonthdate', 'name', 'cnpj', 'data_saldo_ant', 'saldo_anterior',
-    'qtd_cotas_anterior', 'data_saldo_atu', 'saldo_atual', 'qtd_cotas_atual', 'prct_rend_mes',
-    'prct_rend_desdeano', 'prct_rend_12meses', 'aplicacoes',
-    'resgates', 'rend_bruto', 'ir', 'iof', 'rend_liq'
+    'bank3letter', 'refmonthdate', 'name', 'cnpj', 'data_saldo_ant', 'saldo_anterior',
+    'qtd_cotas_ant', 'data_saldo_atu', 'saldo_atual', 'qtd_cotas_atu', 'prct_rend_mes',
+    'prct_rend_desdeano', 'prct_rend_12meses', 'ir', 'iof', 'rendimento_liq',
+    'aplicacoes', 'resgates', 'rendimento_bruto', 'resg_bru_em_trans', 'rendimento_base'
   ]
+
     @see also script adhoctests/gen_attrs_from_class.py
     """
     sqlinsert_to_interpol = """
@@ -118,8 +123,10 @@ class Insertor:
 
 
 def process():
-  dbfi_finder = discbbfi.get_dbfi_finder()
-  insertor = Insertor(dbfi_finder.lesser_refmonthdate, dbfi_finder.greater_refmonthdate)
+  discover = bankFoldersDisc.BankFoldersDiscover()
+  lesser_refmonthdate = discover.finder.lesser_refmonthdate
+  greater_refmonthdate = discover.finder.greater_refmonthdate
+  insertor = Insertor(lesser_refmonthdate, greater_refmonthdate)
   insertor.process()
 
 

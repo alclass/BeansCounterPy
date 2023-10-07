@@ -1,22 +1,32 @@
 #!/usr/bin/env python3
 """"
-scraper_monthly_rendextracts.py
-  Organizes the month range and then calls extractFromWithinAFundoReport.py month to month
+scrape_monthly_rendextracts.py
+  Organizes the month range and then calls extractSpecificBBFundos.py month to month
 """
 import datetime
 from dateutil.relativedelta import relativedelta
-import settings as sett
 import fs.os.discover_levels_for_datafolders as disc
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
-import models.fundos.extractFromWithinAFundoReport as extScr
+import models.fundos.bb.extractSpecificBBFundos as extScr
 import fs.texts.texts_scrapehelper as scrapehelper
+import settings
+
 YEARMONTH_INI = datetime.date(year=2022, month=8, day=1)
 YEARMONTH_FIM = datetime.date(year=2023, month=8, day=1)
 
 
 class MonthlyRoller:
 
-  def __init__(self, yearmonth_ini=None, yearmonth_fim=None):
+  def __init__(self, yearmonth_ini=None, yearmonth_fim=None, bank3letter=None, financkind=None):
+    self.bank3letter = bank3letter
+    if self.bank3letter is None or not settings.BANK.does_bank3letter_exist(bank3letter):
+      error_msg = 'Error: bank3letter [%s] does not exist.' % self.bank3letter
+      raise ValueError(error_msg)
+    self.financkind = financkind
+    self.discoverer = disc.FolderYearMonthLevelDiscovererForBankAndKind(
+      bank3letter=self.bank3letter,
+      financkind=self.financkind
+    )
     self.fundo_result_records = []
     self.yearmonth_ini = yearmonth_ini
     self.yearmonth_fim = yearmonth_fim
@@ -29,15 +39,13 @@ class MonthlyRoller:
       self.yearmonth_fim = YEARMONTH_FIM
 
   def scrape_sliced_fundos_for_refmonth(self, current_yearmonth):
-    fundodirbase = sett.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
-    discoverer = disc.FolderYearMonthLevelDiscoverer(fundodirbase)
-    fundofilepath = sett.get_bb_fi_extract_filepath_by_year_month(current_yearmonth.year, current_yearmonth.month)
+    fundofilepath = self.discoverer.get_filepath_by_yearmonth(current_yearmonth.year, current_yearmonth.month)
     try:
       scrapetexts = scrapehelper.slice_fundofile_into_fundoscrapetexts(fundofilepath)
     except FileNotFoundError:
       return
     for scrapetext in scrapetexts:
-      fundoresult = extScr.WithinFundoExtractScraper(scrapetext, refmonthdate=current_yearmonth)
+      fundoresult = extScr.SpecificCEFExtractScraper(scrapetext, refmonthdate=current_yearmonth)
       fundoresult.process()
       # str_curr_yearmonth = '{year}-{month:02d}'.format(
       #  year=current_yearmonth.year, month=current_yearmonth.month
@@ -65,5 +73,5 @@ class MonthlyRoller:
 
 
 if __name__ == '__main__':
-  roller = MonthlyRoller()
+  roller = MonthlyRoller(bank3letter='bdb')
   roller.process()

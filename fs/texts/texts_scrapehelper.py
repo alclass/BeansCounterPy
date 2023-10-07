@@ -10,15 +10,8 @@ Obs:
 
 This simple module helped show that "mÃªs" is the way mês[latin1-in-file] is printed as a UTF-8 Python string
 """
-import os
-import settings as sett
-EXAMPLE_FILENAME = 'fundo_report_example.txt'
-datafolder_abspath = sett.get_bb_fi_extracts_datafolder_abspath_by_year(year=2023)
-example_filepath = os.path.join(datafolder_abspath, EXAMPLE_FILENAME)
-
-
-def read_example_fundofile():
-  return open(example_filepath, encoding='latin1').read()
+import fs.os.discover_levels_for_datafolders as disc
+import fs.texts.exampleFundofileNTContent as exMod
 
 
 class NameCnpjScraper:
@@ -32,12 +25,20 @@ class NameCnpjScraper:
 
   def validate_scrapetext_or_get_example_if_any(self):
     if self.scrapetext is None:
-      self.scrapetext = read_example_fundofile()
-    if self.scrapetext is None:
-      error_msg = 'Unable to read the example fundofile @ %s' % example_filepath
-      raise OSError(error_msg)
+      example = exMod.ExampleFundoFile()
+      self.scrapetext = example.read_n_return_example_fundofile_text()
+      if self.scrapetext is None:
+        error_msg = 'Unable to read the example fundofile @ %s' % example.filepath
+        raise OSError(error_msg)
 
   def extract_miolo(self):
+    """
+      # raise an error due to miolo was not found
+
+      error_msg = ('Error when trying to name & cnpj'
+                   ' when looking up the miolo (the line inbetween the initial dashed lines)'
+      raise ValueError(error_msg)
+    """
     lines = self.scrapetext.split('\n')
     first_dashed_line = False
     for line in lines:
@@ -48,13 +49,6 @@ class NameCnpjScraper:
       if first_dashed_line and len(line) > 0:
         self.miolo = line
         return
-    '''
-    # raise an error due to miolo was not found
-    
-    error_msg = ('Error when trying to name & cnpj'
-                 ' when looking up the miolo (the line inbetween the initial dashed lines)')
-    raise ValueError(error_msg)
-    '''
 
   def separate_name_n_cnpj_from_miolo(self):
     """
@@ -130,7 +124,9 @@ def test_get_name_n_cnpj():
 
 
 def test_slice_fundos_scrapetexts():
-  filepath = sett.get_bb_fi_extract_filepath_by_year_month(2023, 4)
+  abank = 'bdb'
+  discoverer = disc.FolderYearMonthLevelDiscovererForBankAndKind(abank)
+  filepath = discoverer.get_filepath_by_yearmonth(2023, 4)
   scrapetexts = slice_fundofile_into_fundoscrapetexts(filepath)
   for scrapetext in scrapetexts:
     print('-*-|-*-'*20)
@@ -138,6 +134,14 @@ def test_slice_fundos_scrapetexts():
   print('total slices', len(scrapetexts))
 
 
+def adhoctests():
+  ex = exMod.ExampleFundoFile()
+  print(ex)
+
+
 if __name__ == '__main__':
+  """
   # test_get_name_n_cnpj()
   test_slice_fundos_scrapetexts()
+  """
+  adhoctests()

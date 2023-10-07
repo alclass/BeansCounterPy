@@ -128,6 +128,38 @@ class FolderYearMonthLevelDiscoverer:
     return outstr
 
 
+class FolderYearMonthLevelDiscovererForBankAndKind(FolderYearMonthLevelDiscoverer):
+  """
+  This inherited class just envelopes two attributes to the parent class. These are:
+    1) bank3letter
+    2) kind
+  "kind" is not yet fully implemented, because the idea
+     is to have different folders for different kinds
+     (only one exists as of now, ie "fi" meaning "fundo de investimento" in Portuguese)
+     Perhaps this trend or way may be changed for some other strategy.
+  """
+
+  def __init__(self, bank3letter, financkind=None):
+    self.bank3letter = bank3letter
+    self.financkind = financkind
+    if self.financkind is None:
+      self.financkind = 'fi'
+    if self.financkind == 'fi':
+      self.basefolderpath = sett.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
+    else:
+      error_msg = 'Bank kind %s is not yet implemented' % str(self.financkind)
+      raise ValueError(error_msg)
+    super().__init__(self.basefolderpath)
+    super().process()
+
+  def __str__(self):
+    baseoutstr = super().__str__()
+    outstr = "Bank: %s\n" % self.bank3letter
+    outstr += "=====================\n"
+    outstr += baseoutstr
+    return outstr
+
+
 def adhoctest():
   abank = 'cef'
   abank_fi_rootfolder_abspath = sett.BANK.get_bank_fi_folderpath_by_its3letter(abank)
@@ -143,6 +175,8 @@ def adhoctest():
   print(discoverer)
   filepath = discoverer.get_filepath_by_yearmonth(2022, 9)
   print('filepath', filepath)
+  discoverer = FolderYearMonthLevelDiscovererForBankAndKind(bank3letter=abank)
+  print('discoverer', discoverer)
 
 
 def process():

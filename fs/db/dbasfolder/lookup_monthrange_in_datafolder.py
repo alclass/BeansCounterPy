@@ -124,6 +124,7 @@ class PrefixDateFinder:
     self.greater_yearprefix_path = None
     self.lesser_yearmonthprefix_filename = None
     self.greater_yearmonthprefix_filename = None
+    self.process()
 
   @property
   def lesser_yearmonthprefix_filepath(self):
@@ -216,13 +217,6 @@ class PrefixDateFinder:
     return outstr
 
 
-def process():
-  bb_fi_rootfolder_abspath = sett.get_bb_fi_rootfolder_abspath()
-  dateprefixfinder = PrefixDateFinder(bb_fi_rootfolder_abspath)
-  dateprefixfinder.process()
-  print(dateprefixfinder)
-
-
 def adhoctest_yeardashmonth_regexp():
   s = '2023-09 test'
   result = yeardashmonthplusblank_re.match(s)
@@ -252,6 +246,12 @@ def adhoctest():
   v = 'fundo_report_example.txt'
   matchobj = yeardashmonthplusblank_re.match(v)
   print('text', v, '=>', matchobj)
+
+
+def process():
+  bb_fi_rootfolder_abspath = sett.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
+  dateprefixfinder = PrefixDateFinder(bb_fi_rootfolder_abspath)
+  print(dateprefixfinder)
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@
 """
 import fs.texts.texts_scrapehelper as scrapehelper
 import settings as sett
-import models.fundos.extractFromWithinAFundoReport as extScr
+import models.fundos.bb.extractSpecificBBFundos as extScr
 
 
 def get_scrapetest(year, month, fundoname):
@@ -23,7 +23,7 @@ def process_test():
   # refmonth = '2023-04'
   fundoname = 'RF LP Estrat Ativa'
   scrapetext = get_scrapetest(year, month, fundoname)
-  fundoresults = extScr.WithinFundoExtractScraper(scrapetext)
+  fundoresults = extScr.SpecificCEFExtractScraper(scrapetext)
   fundoresults.process()
   datadict = fundoresults.datadict
   print(fundoresults)

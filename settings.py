@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """"
-scraper_monthly_rendextracts.py
-  Organizes the month range and then calls extractFromWithinAFundoReport.py month to month
+scrape_monthly_rendextracts.py
+  Organizes the month range and then calls extractSpecificBBFundos.py month to month
 """
 import os
 import sys
@@ -34,11 +34,22 @@ class BANK:
 
   @classmethod
   def invert_dict(cls):
+    if cls.BANKDICT_BY_3LETTER is not None:
+      return
     cls.BANKDICT_BY_3LETTER = {}
     for banknumber in cls.BANKDICT:
       # banknumber is int
       code3letter, descr = cls.BANKDICT[banknumber]
       cls.BANKDICT_BY_3LETTER[code3letter] = (banknumber, descr)
+
+  @classmethod
+  def does_bank3letter_exist(cls, bank3letter=None):
+    if bank3letter is None:
+      return False
+    banknumber = cls.get_banknumber_by_its3letter(bank3letter)
+    if banknumber not in cls.BANKDICT.keys():
+      return False
+    return True
 
   @classmethod
   def get_bank3letter_by_number(cls, banknumber=None):

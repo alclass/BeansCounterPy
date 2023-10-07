@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """"
-scraper_monthly_rendextracts.py
-  Organizes the month range and then calls extractFromWithinAFundoReport.py month to month
+scrape_monthly_rendextracts.py
+  Organizes the month range and then calls extractSpecificBBFundos.py month to month
 """
-import models.fundos.extractFromWithinAFundoReport as fundoReport
+import models.fundos.bb.extractSpecificBBFundos as fundoReport
 
 
 def get_attrs_as_dict():
-  pdict = vars(fundoReport.WithinFundoExtractScraper())
+  pdict = vars(fundoReport.SpecificCEFExtractScraper())
   for elem in pdict:
     print(elem, '||||||||', pdict[elem])
   # print(fundoreport.WithinFundoExtractScraper.__dict__)
 
 
 def get_attrs_as_list():
-  attrs = fundoReport.WithinFundoExtractScraper.attrs()
+  attrs = fundoReport.SpecificCEFExtractScraper.attrs()
   for attr in attrs:
     print(attr)
   print(len(attrs), 'attributes')

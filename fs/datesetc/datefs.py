@@ -194,8 +194,6 @@ def transform_yyyydashmm_to_daterange_in_refmonth_dict(str_refmonth_range_dict):
   return refmonth_range_dict
 
 
-
-
 def validate_refmonthdate_or_none(refmonthdate=None):
   if refmonthdate is None:
     return None
@@ -297,13 +295,17 @@ def adhoctest_some_yyyydashmm_dates():
     monthref_fim = strdaterange_tuple[1]
     strdaterange_dict = {'monthref_ini': monthref_ini, 'monthref_fim': monthref_fim}
     daterange_dict = transform_yyyydashmm_to_daterange_in_refmonth_dict(strdaterange_dict)
-    print(strdaterange_dict, '=>', daterange_dict)
+    print(strdaterange_dict, '=>', daterange_dict
+
   """
   refmonthdate_ini = '2023-01-15'
   refmonthdate_fim = '2023-08-11'
   generator = generate_monthrange(refmonthdate_ini=refmonthdate_ini, refmonthdate_fim=refmonthdate_fim)
-  for refmonthdate in generator:
-    print(refmonthdate)
+  src_msg = 'adhoc test generator refmonthdate_ini = %s, refmonthdate_ini = %s' % (refmonthdate_ini, refmonthdate_fim)
+  print(src_msg)
+  for i, refmonthdate in enumerate(generator):
+    seq = i + 1
+    print(seq, refmonthdate)
 
 
 if __name__ == '__main__':

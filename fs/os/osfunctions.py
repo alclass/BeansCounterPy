@@ -12,6 +12,8 @@ import re
 
 
 def find_foldernames_from_path(basepath):
+  if basepath is None:
+    return None
   entries = os.listdir(basepath)
   abspath_entries = [os.path.join(basepath, e) for e in entries]
   abspath_direntries = filter(lambda e: os.path.isdir(e), abspath_entries)
