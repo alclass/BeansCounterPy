@@ -17,7 +17,7 @@ from fs.numbers.transform_numbers import transform_european_stringnumber_to_pyth
 from fs.texts.texts_scrapehelper import get_name_n_cnpj_from_fundotext
 import fs.texts.exampleFundofileNTContent as exMod
 import fs.datesetc.datefs as dtfs
-import models.fundos.fundoAplic as fAplic
+import models.banks.fundoAplic as fAplic
 SALDOANT_RESTR = r"(\d{2}/\d{2}/\d{4}).(SALDO.ANTERIOR)(.+)"
 SALDOATU_RESTR = r"(\d{2}/\d{2}/\d{4}).(SALDO.ATUAL)(.+)"
 # SALDOANT_RESTR = "(\d{2}/\d{2}/\d{4}).SALDO.ANTERIOR.+(\d+(?:[\.\,]\d{2})?)"  # ([\d]) \.\,]+)"  # \b+(\d+|\.|\,)"
@@ -31,7 +31,7 @@ DEFAULT_FILENAME = 'fundo_report_example.txt'
 example_filepath = os.path.join(DEFAULT_DATADIR, DEFAULT_FILENAME)
 
 
-class SpecificCEFExtractScraper(fAplic.FundoAplic):
+class SpecificBBExtractScraper(fAplic.FundoAplic):
 
   def __init__(self, scrapetext=None, refmonthdate=None):
     self.refmonthdate = refmonthdate
@@ -269,7 +269,7 @@ class SpecificCEFExtractScraper(fAplic.FundoAplic):
 
 
 def process():
-  withinfundo_scraper = SpecificCEFExtractScraper()
+  withinfundo_scraper = SpecificBBExtractScraper()
   withinfundo_scraper.process()
   print(withinfundo_scraper)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """"
 show_triplerend_with_daterange_viadatafile.py
-  prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses) for all fundos with a date range
+  prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses) for all banks with a date range
 """
 import sqlite3
 import sys

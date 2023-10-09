@@ -3,6 +3,8 @@
 discover_levels_for_datafolders.py
 """
 import os.path
+
+import models.banks.banksgeneral
 import settings as sett
 import fs.os.osfunctions as osfs
 
@@ -145,7 +147,7 @@ class FolderYearMonthLevelDiscovererForBankAndKind(FolderYearMonthLevelDiscovere
     if self.financkind is None:
       self.financkind = 'fi'
     if self.financkind == 'fi':
-      self.basefolderpath = sett.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
+      self.basefolderpath = models.banks.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
     else:
       error_msg = 'Bank kind %s is not yet implemented' % str(self.financkind)
       raise ValueError(error_msg)
@@ -162,14 +164,14 @@ class FolderYearMonthLevelDiscovererForBankAndKind(FolderYearMonthLevelDiscovere
 
 def adhoctest():
   abank = 'cef'
-  abank_fi_rootfolder_abspath = sett.BANK.get_bank_fi_folderpath_by_its3letter(abank)
+  abank_fi_rootfolder_abspath = models.banks.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter(abank)
   discoverer = FolderYearMonthLevelDiscoverer(abank_fi_rootfolder_abspath)
   discoverer.process()
   print(discoverer)
   filepath = discoverer.get_filepath_by_yearmonth(2022, 9)
   print('filepath', filepath)
   abank = 'bdb'
-  abank_fi_rootfolder_abspath = sett.BANK.get_bank_fi_folderpath_by_its3letter(abank)
+  abank_fi_rootfolder_abspath = models.banks.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter(abank)
   discoverer = FolderYearMonthLevelDiscoverer(abank_fi_rootfolder_abspath)
   discoverer.process()
   print(discoverer)

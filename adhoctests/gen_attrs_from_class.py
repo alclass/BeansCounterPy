@@ -3,7 +3,7 @@
 scrape_monthly_rendextracts.py
   Organizes the month range and then calls extractSpecificBBFundos.py month to month
 """
-import models.fundos.bb.extractSpecificBBFundos as fundoReport
+import models.banks.bb.extractSpecificBBFundos as fundoReport
 
 
 def get_attrs_as_dict():

@@ -10,7 +10,7 @@ import os
 import xml.etree.ElementTree as eT
 import fs.os.discover_levels_for_datafolders as disc
 import fs.datesetc.datefs as dtfs
-import models.fundos.fundoAplic as fAplic
+import models.banks.fundoAplic as fAplic
 
 
 class XMLDataExtractor:
@@ -68,17 +68,18 @@ class XMLDataExtractor:
     },
   }
 
-  def __init__(self, folderpath=None):
-    if folderpath is None or not os.path.isdir(folderpath):
+  def __init__(self, yearmonthfolderpath=None):
+    if yearmonthfolderpath is None or not os.path.isdir(yearmonthfolderpath):
       error_msg = 'Error: folderpath %s does not exist.'
       raise OSError(error_msg)
-    self.folderpath = folderpath
+    self.yearmonthfolderpath = yearmonthfolderpath
     self.xmlfilenames = []
     self.fundos = []
     self.init_xmlfilenames()
+    self.process()
 
   def init_xmlfilenames(self):
-    filenames = os.listdir(self.folderpath)
+    filenames = os.listdir(self.yearmonthfolderpath)
     self.xmlfilenames = sorted(filter(lambda f: f.endswith('.xml'), filenames))
 
   @property
@@ -86,7 +87,7 @@ class XMLDataExtractor:
     return len(self.xmlfilenames)
 
   def form_filepath_from_filename(self, filename):
-    return os.path.join(self.folderpath, filename)
+    return os.path.join(self.yearmonthfolderpath, filename)
 
   def extract_data(self):
     """
@@ -125,7 +126,7 @@ class XMLDataExtractor:
 
   def outdict(self):
     _outdict = {
-      'datadir_abspath': self.folderpath,
+      'datadir_abspath': self.yearmonthfolderpath,
       'total_xmlfiles': self.total_files,
       'total_fundos': len(self.fundos),
     }

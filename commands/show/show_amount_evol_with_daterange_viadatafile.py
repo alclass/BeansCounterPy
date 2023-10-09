@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """"
 show_amount_evol_with_daterange_viadb.py
-  prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses) for all fundos with a date range
+  prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses) for all banks with a date range
   (this script searches via db [there's another version that searches via data files])
 """
 import sys

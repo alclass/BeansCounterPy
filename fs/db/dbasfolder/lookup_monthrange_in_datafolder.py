@@ -5,12 +5,11 @@ lookup_monthrange_in_datafolder.py
 """
 import datetime
 import os
-import re
-import settings as sett
-str_yearplusblank_re = r'^\d{4}\ '
-yearplusblank_re = re.compile(str_yearplusblank_re)
-str_yeardashmonthplusblank_re = r'^\d{4}\-\d{2}\ '
-yeardashmonthplusblank_re = re.compile(str_yeardashmonthplusblank_re)
+import fs.os.osfunctions as osfs
+import fs.os.oshilofunctions as hilo
+# import models.banks.banksgeneral
+# import settings as sett
+
 
 
 def get_class_attrs(pclass):
@@ -20,125 +19,189 @@ def get_class_attrs(pclass):
   return plist
 
 
-def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
-  """
-  recuperates year plus a blank
-  """
-  newentries = []
-  for e in entries:
-    try:
-      _ = int(e[0:4])
-      if e[4:5] != ' ':
-        continue
-      newentries.append(e)
-    except (IndexError, ValueError):
-      pass
-  return newentries
-
-
-def find_entries_that_start_with_a_yeardashmonth_via_re(entries):
-  newentries = []
-  for e in entries:
-    if yeardashmonthplusblank_re.match(e):
-      newentries.append(e)
-  return newentries
-
-
-def find_entries_that_start_with_a_yeardashmonth_via_if(entries):
-  newentries = []
-  for e in entries:
-    try:
-      _ = int(e[0:4])  # suppose a year number
-      if e[4:5] != '-':
-        continue
-      mm = int(e[5:7])  # suppose a month number (including testing range 1..12 after in sequence)
-      if mm < 1 or mm > 12:
-        continue
-      newentries.append(e)
-    except (IndexError, ValueError):
-      continue
-  return newentries
-
-
-def find_lesser_n_greater_yearprefixpaths_from_basepath(folder_asbspath):
-  """
-  returns a tuple with lesser_year_path & greater_year_path in a base path
-
-  Example:
-    + base_directory:
-      + "2018 Extratos Mensais ..."
-      + "2019 Extratos Mensais ..."
-      + (...)
-      + "2023 Extratos Mensais ..."
-  In the scheme above, return will be:
-    ("base_directory/2018 Extratos Mensais ...", "base_directory/2023 Extratos Mensais ...")
-
-  Notice that this function looks up for the lesser year prefix foldername and the greater year prefix one.
-  """
-  if folder_asbspath is None or not os.path.isdir(folder_asbspath):
-    return None, None
-  entries = os.listdir(folder_asbspath)
-  # compose fullpaths from entries
-  fullpaths = list(map(lambda e: os.path.join(folder_asbspath, e), entries))
-  # maintain only those that are directories
-  direntries = list(filter(lambda e: os.path.isdir(e), fullpaths))
-  # filter out those that do not have year-blank as prefix
-  # recompose foldernames
-  foldernames = [os.path.split(fn)[-1] for fn in direntries]
-  yearprefix_foldernames = list(filter(lambda e: yearplusblank_re.match(e), foldernames))
-  if len(yearprefix_foldernames) == 0:
-    return None, None
-  yearprefix_foldernames.sort()
-  lesser_yearprefix_foldername = yearprefix_foldernames[0]
-  greater_yearprefix_foldername = yearprefix_foldernames[-1]
-  lesser_yearprefix_path = os.path.join(folder_asbspath, lesser_yearprefix_foldername)
-  greater_yearprefix_path = os.path.join(folder_asbspath, greater_yearprefix_foldername)
-  return lesser_yearprefix_path, greater_yearprefix_path
-
-
-def find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(basepath, is_lesser=True):
-  if basepath is None or not os.path.isdir(basepath):
-    return None
-  allentries = os.listdir(basepath)
-  # compose full paths to know which ones are file
-  fullpathentries = list(map(lambda e: os.path.join(basepath, e), allentries))
-  filepaths = list(filter(lambda e: os.path.isfile, fullpathentries))
-  filenames = [os.path.split(fp)[-1] for fp in filepaths]
-  yearmonth_prefixed_filenames = find_entries_that_start_with_a_yeardashmonth_via_if(filenames)
-  # somehow the line bellow is not filtering correctly, the solution was to use line above
-  # yearmonth_prefixed_filenames = list(filter(lambda e: yeardashmonthplusblank_re.findall, filenames))
-  if len(yearmonth_prefixed_filenames) == 0:
-    return None
-  yearmonth_prefixed_filenames.sort()
-  if is_lesser:
-    return yearmonth_prefixed_filenames[0]
-  else:
-    return yearmonth_prefixed_filenames[-1]
-
-
 class PrefixDateFinder:
 
   def __init__(self, p_folder_asbspath):
     self.folder_asbspath = p_folder_asbspath
-    self.lesser_yearprefix_path = None
-    self.greater_yearprefix_path = None
-    self.lesser_yearmonthprefix_filename = None
-    self.greater_yearmonthprefix_filename = None
-    self.process()
+    self._firstlevel_year_folderpaths = None
+    self._secondlevel_yearmonth_folderpaths = None
+
+    self._lesser_yearprefix_foldername = None
+    self._greater_yearprefix_foldername = None
+    self._lesser_yearmonthprefix_filename = None
+    self._greater_yearmonthprefix_filename = None
+    self._yearmonth_filenames = None
+    self._yearmonth_filepaths = None
+
+    self._lesser_yeardashmonth_filename = None
+    self._lesser_yeardashmonth_filepath = None
+    self._greater_yeardashmonth_filename = None
+    self._greater_yeardashmonth_filepath = None
+    self.fill_in_attrs()
 
   @property
-  def lesser_yearmonthprefix_filepath(self):
-    return os.path.join(self.folder_asbspath, self.lesser_yearmonthprefix_filename)
+  def firstlevel_year_folderpaths(self):
+    if self._firstlevel_year_folderpaths is None:
+      self._firstlevel_year_folderpaths = []
+      foldernames = osfs.find_foldernames_from_path(self.folder_asbspath)
+      foldernames = hilo.find_strinlist_that_starts_with_a_5charyearblank_via_if(foldernames)
+      self._firstlevel_year_folderpaths = sorted(map(lambda e: os.path.join(self.folder_asbspath, e), foldernames))
+    return self._firstlevel_year_folderpaths
 
   @property
-  def greater_yearmonthprefix_filepath(self):
-    return os.path.join(self.folder_asbspath, self.greater_yearmonthprefix_filename)
+  def firstlevel_year_foldernames(self):
+    """
+    This property (firstlevel_year_foldernames) is recomputed each time, ie, not stored in object
+    """
+    _firstlevel_year_foldernames = []
+    for firstlevel_year_folderpath in self.firstlevel_year_folderpaths:
+      foldername = os.path.split(firstlevel_year_folderpath)[-1]
+      return self.firstlevel_year_folderpaths[0]
+    _firstlevel_year_foldernames.sort()
+    return _firstlevel_year_foldernames
+
+  @property
+  def lesser_yearprefix_folderpath(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    return self.firstlevel_year_folderpaths[0]
+
+  @property
+  def lesser_yearprefix_foldername(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    folderpath = self.lesser_yearprefix_folderpath
+    return os.path.split(folderpath)[-1]
+
+  @property
+  def greater_yearprefix_folderpath(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    return self.firstlevel_year_folderpaths[-1]
+
+  @property
+  def greater_yearprefix_foldername(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    folderpath = self.greater_yearprefix_folderpath
+    return os.path.split(folderpath)[-1]
+
+  @property
+  def secondlevel_yearmonth_folderpaths(self):
+    if self._secondlevel_yearmonth_folderpaths is None:
+      self._secondlevel_yearmonth_folderpaths = []
+      for firstlevel_year_folderpath in self.firstlevel_year_folderpaths:
+        foldernames = osfs.find_foldernames_from_path(firstlevel_year_folderpath)
+        yeardashmonthfoldernames = hilo.find_entries_that_start_with_a_yeardashmonth_via_if(foldernames)
+        for yeardashmonthfoldername in yeardashmonthfoldernames:
+          ppath = os.path.join(firstlevel_year_folderpath, yeardashmonthfoldername)
+          self._secondlevel_yearmonth_folderpaths.append(ppath)
+      self._secondlevel_yearmonth_folderpaths.sort()
+    return self._secondlevel_yearmonth_folderpaths
+
+  @property
+  def secondlevel_yearmonth_foldernames(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    _secondlevel_yearmonth_foldernames = []
+    for secondlevel_yearmonth_folderpath in self.secondlevel_yearmonth_folderpaths:
+      foldername = os.path.split(secondlevel_yearmonth_folderpath)[-1]
+      _secondlevel_yearmonth_foldernames.append(foldername)
+      _secondlevel_yearmonth_foldernames.sort()
+    return _secondlevel_yearmonth_foldernames
+
+  @property
+  def lesser_secondlevel_yearmonth_folderpath(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    return self.secondlevel_yearmonth_folderpaths[0]
+
+  @property
+  def lesser_secondlevel_yearmonth_foldername(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    return self.secondlevel_yearmonth_foldernames[0]
+
+  @property
+  def greater_secondlevel_yearmonth_folderpath(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    return self.secondlevel_yearmonth_folderpaths[-1]
+
+  @property
+  def greater_secondlevel_yearmonth_foldername(self):
+    """
+      property not stored in object, recomputed each time
+    """
+    return self.secondlevel_yearmonth_foldernames[-1]
+
+  def find_n_set_yearmonth_filenames_n_paths(self, rerun=False):
+    if self._yearmonth_filenames is not None and self._yearmonth_filepaths is not None and not rerun:
+      return
+    self._yearmonth_filenames = []
+    self._yearmonth_filepaths = []
+    last_folderpath = None
+    for folderpath in self.secondlevel_yearmonth_folderpaths:
+      filenames = osfs.find_filenames_with_regexp_on_path(r'\d{4}\-\d{2}\ ', folderpath)
+      if len(filenames) == 0:
+        continue
+      filenames.sort()
+      if self._lesser_yeardashmonth_filename is None:
+        lesser_filename = filenames[0]
+        self._lesser_yeardashmonth_filename = lesser_filename
+        self._lesser_yeardashmonth_filepath = os.path.join(folderpath, lesser_filename)
+      self._yearmonth_filenames += filenames
+      filepaths = sorted(map(lambda e: os.path.join(folderpath, e), filenames))
+      self._yearmonth_filepaths += filepaths
+      last_folderpath = folderpath
+    if self._greater_yeardashmonth_filename is None:
+      self._greater_yeardashmonth_filename = self._yearmonth_filenames[-1]
+      self._greater_yeardashmonth_filepath = os.path.join(last_folderpath, self._greater_yeardashmonth_filename)
+
+  @property
+  def yearmonth_filenames(self):
+    if self._yearmonth_filenames is None:
+      self.find_n_set_yearmonth_filenames_n_paths()
+    return self._yearmonth_filenames
+
+  @property
+  def yearmonth_filepaths(self):
+    if self._yearmonth_filepaths is None:
+      self.find_n_set_yearmonth_filenames_n_paths()
+    return self._yearmonth_filepaths
+
+  @property
+  def lesser_yeardashmonth_filename(self):
+    """
+  self.greater_yearmonthprefix_filename = find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(
+      self.gre,
+      False
+    )
+
+    """
+    if self._lesser_yeardashmonth_filename is None:
+      self.find_n_set_yearmonth_filenames_n_paths()
+    return self._lesser_yeardashmonth_filename
+
+  @property
+  def greater_yeardashmonth_filepath(self):
+    if self._greater_yeardashmonth_filepath is None:
+      self.find_n_set_yearmonth_filenames_n_paths()
+    return self._greater_yeardashmonth_filepath
 
   @property
   def lesser_refmonthdate(self):
-    if self.lesser_yearmonthprefix_filename:
+    if self.lesser_yeardashmonth_filename:
       try:
-        yearmonthprefix = self.lesser_yearmonthprefix_filename.split(' ')[0]
+        yearmonthprefix = self.lesser_yeardashmonth_filename.split(' ')[0]
         pp = yearmonthprefix.split('-')
         year = int(pp[0])
         month = int(pp[1])
@@ -150,9 +213,9 @@ class PrefixDateFinder:
 
   @property
   def greater_refmonthdate(self):
-    if self.greater_yearmonthprefix_filename:
+    if self.lesser_yeardashmonth_filename:
       try:
-        yearmonthprefix = self.greater_yearmonthprefix_filename.split(' ')[0]
+        yearmonthprefix = self.lesser_yeardashmonth_filename.split(' ')[0]
         pp = yearmonthprefix.split('-')
         year = int(pp[0])
         month = int(pp[1])
@@ -162,27 +225,23 @@ class PrefixDateFinder:
         pass
     return None
 
-  def find_lesser_yeardashmonth_prefix_filename_from_yearprefixpath(self):
-    self.lesser_yearmonthprefix_filename = find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(
-      self.lesser_yearprefix_path,
-      True
-    )
-
-  def find_greater_yeardashmonth_prefix_filename_from_yearprefixpath(self):
-    self.greater_yearmonthprefix_filename = find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(
-      self.greater_yearprefix_path,
-      False
-    )
+  def find_yearmonth_folderpaths_by_year(self, year):
+    str_re = r'' + str(year) + r'\ '
+    fns = osfs.find_foldernames_with_regexp_on_path(str_re, self.firstlevel_year_foldernames)
+    if fns is None or len(fns) == 0:
+      return None
+    foldername = fns[0]
+    innerfolderpath = os.path.join(self.folder_asbspath, foldername)
+    folderpaths = osfs.find_foldernames_from_path(innerfolderpath)
+    return folderpaths
 
   def find_n_set_both_lesser_n_greater_year_firstlevel_paths_from_basepath(self):
-    self.lesser_yearprefix_path, self.greater_yearprefix_path = find_lesser_n_greater_yearprefixpaths_from_basepath(
-      self.folder_asbspath
-    )
+    """
+    """
+    return self.lesser_yearprefix_folderpath, self.greater_yearprefix_folderpath
 
-  def process(self):
-    self.find_n_set_both_lesser_n_greater_year_firstlevel_paths_from_basepath()
-    self.find_lesser_yeardashmonth_prefix_filename_from_yearprefixpath()
-    self.find_greater_yeardashmonth_prefix_filename_from_yearprefixpath()
+  def fill_in_attrs(self):
+    self.find_n_set_yearmonth_filenames_n_paths()
 
   def outdict_dyn(self):
     attrs = vars(self)
@@ -218,46 +277,72 @@ class PrefixDateFinder:
 
 
 def adhoctest_yeardashmonth_regexp():
+  print('='*40)
+  print('adhoctest_yeardashmonth_regexp')
+  print('='*40)
   s = '2023-09 test'
-  result = yeardashmonthplusblank_re.match(s)
+  result = hilo.yeardashmonthplusblank_re.match(s)
   seq = 1
   print(seq, '[', s, '] result => ', result)
   s = 'bla 2023-09 test'
-  result = yeardashmonthplusblank_re.match(s)
+  result = hilo.yeardashmonthplusblank_re.match(s)
   seq += 1
   print(seq, '[', s, '] result => ', result)
   s = '2023-09a test'
-  result = yeardashmonthplusblank_re.match(s)
+  result = hilo.yeardashmonthplusblank_re.match(s)
   seq += 1
   print(seq, '[', s, '] result => ', result)
   print('end adhoctest')
 
 
-def adhoctest():
+def adhoctest2():
+  print('='*40)
+  print('adhoctest2')
+  print('='*40)
   v = 'Worksheets 2018 Ext Men FI BB'
-  matchobj = yeardashmonthplusblank_re.match(v)
+  matchobj = hilo.yeardashmonthplusblank_re.match(v)
   print('text', v, '=>', matchobj)
   v = '2018-01 Ext Men FI BB'
-  matchobj = yeardashmonthplusblank_re.match(v)
+  matchobj = hilo.yeardashmonthplusblank_re.match(v)
   print('text', v, '=>', matchobj)
   v = ' 2018-01 Ext Men FI BB'
-  matchobj = yeardashmonthplusblank_re.match(v)
+  matchobj = hilo.yeardashmonthplusblank_re.match(v)
   print('text', v, '=>', matchobj)
   v = 'fundo_report_example.txt'
-  matchobj = yeardashmonthplusblank_re.match(v)
+  matchobj = hilo.yeardashmonthplusblank_re.match(v)
   print('text', v, '=>', matchobj)
+
+
+def adhoctest():
+  """
+  Notice that to avoid "circular imports" this module cannot import models.banks.banksgeneral
+    (because that imports this),
+    so the adhoctest here will have variable bb_fi_rootfolder_abspath hardcoded
+  If this path changes, for running this adhoctest(), variable must be updated too
+    bb_fi_rootfolder_abspath = models.banks.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
+  """
+  bb_fi_rootfolder_abspath = (
+      '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/'
+      '001 BDB bankdata/FI Extratos Mensais Ano a Ano BB OD'
+  )
+  dateprefixfinder = PrefixDateFinder(bb_fi_rootfolder_abspath)
+  print('='*40)
+  print('adhoctest')
+  print('='*40)
+  print(dateprefixfinder)
+  print('dateprefixfinder.lesser_yearmonthprefix_folderpath()')
 
 
 def process():
-  bb_fi_rootfolder_abspath = sett.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
-  dateprefixfinder = PrefixDateFinder(bb_fi_rootfolder_abspath)
-  print(dateprefixfinder)
+  pass
 
 
 if __name__ == '__main__':
   """
   adhoctest_yeardashmonth_regexp()
   bb_fi_rootfolder_abspath = sett.get_bb_fi_rootfolder_abspath()
-  adhoctest()
-  """
   process()
+  """
+  adhoctest()
+  adhoctest2()
+  adhoctest_yeardashmonth_regexp()

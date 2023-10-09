@@ -6,8 +6,9 @@ scrape_monthly_rendextracts.py
 import datetime
 from dateutil.relativedelta import relativedelta
 import fs.os.discover_levels_for_datafolders as disc
+import models.banks.banksgeneral
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
-import models.fundos.bb.extractSpecificBBFundos as extScr
+import models.banks.bb.extractSpecificBBFundos as extScr
 import fs.texts.texts_scrapehelper as scrapehelper
 import settings
 
@@ -19,7 +20,7 @@ class MonthlyRoller:
 
   def __init__(self, yearmonth_ini=None, yearmonth_fim=None, bank3letter=None, financkind=None):
     self.bank3letter = bank3letter
-    if self.bank3letter is None or not settings.BANK.does_bank3letter_exist(bank3letter):
+    if self.bank3letter is None or not models.banks.banksgeneral.BANK.does_bank3letter_exist(bank3letter):
       error_msg = 'Error: bank3letter [%s] does not exist.' % self.bank3letter
       raise ValueError(error_msg)
     self.financkind = financkind

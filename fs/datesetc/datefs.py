@@ -186,11 +186,37 @@ def transform_yyyydashmm_to_date(strdate):
   return None
 
 
+def transform_yyyydashmm_to_daterange_from_strlist(yyyydashmmstrlist):
+  """
+
+  """
+  try:
+    yyyydashmmstrlist = list(yyyydashmmstrlist)
+    if None in yyyydashmmstrlist:
+      # this variable may be itself a list, okay, but
+      # inside there may be None's, so this 'if' is necessary for caughting the excepting
+      raise TypeError
+  except (TypeError, ValueError):  # TypeError covers year is None, ValueError covers it's not convertible to int
+    return None
+  refmonth_range_list = []
+  for yyyydashmm in yyyydashmmstrlist:
+    refmonthdate = transform_yyyydashmm_to_date(yyyydashmm)
+    refmonth_range_list.append(refmonthdate)
+  return list(refmonth_range_list)
+
+
+def transform_yyyydashmm_to_daterange_from_strlist_or_recentyear(yyyydashmmstrlist):
+  refmonth_list = transform_yyyydashmm_to_daterange_from_strlist(yyyydashmmstrlist)
+  if refmonth_list is not None:
+    return refmonth_list
+  return transform_year_into_refmonthrange_or_recent_year()
+
+
 def transform_yyyydashmm_to_daterange_in_refmonth_dict(str_refmonth_range_dict):
   refmonth_range_dict = {}
   for e in str_refmonth_range_dict:
-    yyyy_mm = str_refmonth_range_dict[e]
-    refmonth_range_dict[e] = transform_yyyydashmm_to_date(yyyy_mm)
+    yyyydashmm = str_refmonth_range_dict[e]
+    refmonth_range_dict[e] = transform_yyyydashmm_to_date(yyyydashmm)
   return refmonth_range_dict
 
 
@@ -302,6 +328,33 @@ def generate_monthrange(refmonthdate_ini=None, refmonthdate_fim=None):
   return
 
 
+def transform_year_into_refmonthrange_private(year):
+  """
+  The _private in function name here guarantees year is an int.
+    So do not call this function outside of this module (though Python does not enforce this rule).
+  """
+  refmonthdate_ini = datetime.date(year=year, month=1, day=1)
+  refmonthdate_fim = datetime.date(year=year, month=12, day=1)
+  return refmonthdate_ini, refmonthdate_fim
+
+
+def transform_year_into_refmonthrange(year):
+  try:
+    int_year = int(year)
+    return transform_year_into_refmonthrange_private(int_year)
+  except (TypeError, ValueError):  # TypeError covers year is None, ValueError covers it's not convertible to int
+    pass
+  return None
+
+
+def transform_year_into_refmonthrange_or_recent_year(year=None):
+  rdmrange = transform_year_into_refmonthrange(year)
+  if rdmrange is not None:
+    return rdmrange
+  today = datetime.date.today()
+  return transform_year_into_refmonthrange_private(today.year)
+
+
 def adhoctest_some_yyyydashmm_dates():
   """
   print('test_some_yyyydashmm_dates')
@@ -322,6 +375,14 @@ def adhoctest_some_yyyydashmm_dates():
   for i, refmonthdate in enumerate(generator):
     seq = i + 1
     print(seq, refmonthdate)
+  print('transform_year_into_refmonthrange_or_recent_year()')
+  rdmrange = transform_year_into_refmonthrange_or_recent_year()
+  print('\t', rdmrange)
+  yyyydashmms = ('2023-01', '2023-11')
+  screenmsg = 'transform_yyyydashmm_to_daterange_from_strlist(yyyydashmms=%s)' % str(yyyydashmms)
+  print(screenmsg)
+  yyyydashmmtuple = transform_yyyydashmm_to_daterange_from_strlist(yyyydashmms)
+  print('\t', yyyydashmmtuple)
 
 
 if __name__ == '__main__':

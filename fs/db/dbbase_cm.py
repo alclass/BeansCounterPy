@@ -36,7 +36,7 @@ class Default:
   mountpath = ''
   sqlitefilename = 'personal_finance_accounting_beans_counter.sqlite'
   # sqlitefilename = '.beans_counter.sqlite'
-  tablename = 'fundos'
+  tablename = 'banks'
   limit = 50
   offset = 50
 

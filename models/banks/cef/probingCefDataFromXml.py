@@ -12,7 +12,7 @@ import fs.os.discover_levels_for_datafolders as disc
 # import fs.datesetc.datefs as dtfs
 # import lxml
 # from lxml import ElementInclude
-import models.fundos.fundoAplic as fAplic
+import models.banks.fundoAplic as fAplic
 
 
 class XMLDataExtractor:

@@ -6,9 +6,6 @@ import os.path
 # datadir = '/home/grayacer/OurDocs/Banks OD/
 # Banco do Brasil BB OD/Investimentos (Fundos etc) BB OD/Fundos de Investimentos BB OD/
 # FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB'
-DEFAULT_DATADIR = ('/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/'
-                   'FI Extratos Mensais Ano a Ano BB OD/2023 FI Extratos Mensais BB')
-DEFAULT_FILENAME = '2023-04 FI extrato BB.txt'
 
 
 class BBFundoExtractScraper:
@@ -70,7 +67,7 @@ class BBFundoExtractScraper:
       print(txttrunk)
 
   def __str__(self):
-    outstr = 'Number of fundos = ' + str(len(self.txttrunks))
+    outstr = 'Number of banks = ' + str(len(self.txttrunks))
     return outstr
 
 
