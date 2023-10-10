@@ -119,7 +119,7 @@ class BANK:
   @classmethod
   def get_pathentries_finderobj_by_bank3letter(cls, bank3letter):
     folderpath = cls.get_bank_folderpath_by_its3letter(bank3letter)
-    return lookup.PrefixDateFinder(folderpath)
+    return lookup.DatePrefixedOSEntriesFinder(folderpath)
 
   @classmethod
   def mount_text_list_available_banks(cls):
@@ -155,7 +155,7 @@ def adhoctest():
   s = BANK.mount_text_list_available_banks()
   print(s)
   folderpath = BANK.get_bank_folderpath_by_number(bank3letter)
-  finder = lookup.PrefixDateFinder(folderpath)
+  finder = lookup.DatePrefixedOSEntriesFinder(folderpath)
   refmonthdate_ini, refmonthdate_fim = finder.find_n_set_both_lesser_n_greater_year_firstlevel_paths_from_basepath()
   print('refmonthdate_ini, refmonthdate_fim', refmonthdate_ini, refmonthdate_fim)
 

@@ -40,8 +40,6 @@ class TripleRendLister:
     year = refmonth.year
     yearfolderpath = self.bankpathdiscoverer.get_folderpath_by_year(year)
     methodcall_hanldler = extrdistr.find_methodcall_on_bank3letter(self.bank3letter)
-    fundolist =
-
     extractor.process()
     for fundo in extractor.fundos:
       print('-'*40)

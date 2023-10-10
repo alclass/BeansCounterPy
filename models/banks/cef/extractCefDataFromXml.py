@@ -68,18 +68,18 @@ class XMLDataExtractor:
     },
   }
 
-  def __init__(self, yearmonthfolderpath=None):
-    if yearmonthfolderpath is None or not os.path.isdir(yearmonthfolderpath):
-      error_msg = 'Error: folderpath %s does not exist.'
+  def __init__(self, yearprefixed_folderpath=None):
+    if yearprefixed_folderpath is None or not os.path.isdir(yearprefixed_folderpath):
+      error_msg = 'Error: folderpath %s does not exist.' % yearprefixed_folderpath
       raise OSError(error_msg)
-    self.yearmonthfolderpath = yearmonthfolderpath
+    self.yearprefixed_folderpath = yearprefixed_folderpath
     self.xmlfilenames = []
     self.fundos = []
     self.init_xmlfilenames()
     self.process()
 
   def init_xmlfilenames(self):
-    filenames = os.listdir(self.yearmonthfolderpath)
+    filenames = os.listdir(self.yearprefixed_folderpath)
     self.xmlfilenames = sorted(filter(lambda f: f.endswith('.xml'), filenames))
 
   @property
@@ -87,7 +87,7 @@ class XMLDataExtractor:
     return len(self.xmlfilenames)
 
   def form_filepath_from_filename(self, filename):
-    return os.path.join(self.yearmonthfolderpath, filename)
+    return os.path.join(self.yearprefixed_folderpath, filename)
 
   def extract_data(self):
     """
@@ -105,7 +105,8 @@ class XMLDataExtractor:
       xmlroot = xmltree.getroot()
       seq1 = 0
       fundo = fAplic.FundoAplic()  # instantiate an empty FunooAplic obj
-      fundo.refmonthdate = dtfs.make_refmonthdate_from_conventioned_filename(xmlfilename)  # may get None from here
+      # may get None from here
+      fundo.refmonthdate = dtfs.make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(xmlfilename)
       for item in xmlroot.findall('./LTPage/LTTextBoxHorizontal/LTTextLineHorizontal'):
         _ = item  # item will used in the eval() below; this line is for the IDE!
         seq1 += 1
@@ -126,7 +127,7 @@ class XMLDataExtractor:
 
   def outdict(self):
     _outdict = {
-      'datadir_abspath': self.yearmonthfolderpath,
+      'datadir_abspath': self.yearprefixed_folderpath,
       'total_xmlfiles': self.total_files,
       'total_fundos': len(self.fundos),
     }

@@ -3,14 +3,24 @@
 oshilofunctions.py
   extra functions in the 'os' area
   The 'hilo' (high & low) is just a sort of fancy name chosen for these extra functions
-    (also, it has nothing to do with the greek prefix in hilomorphism, an Aristotelian concept...)
+    also, it has nothing to do with the greek prefix in hilomorphism, an Aristotelian concept...
+    also, it is not the 'hilo' word from Spanish which means thread et al.
 """
+import datetime
 import os
 import re
 str_yearplusblank_re = r'^\d{4}\ '
 yearplusblank_re = re.compile(str_yearplusblank_re)
 str_yeardashmonthplusblank_re = r'^\d{4}\-\d{2}\ '
 yeardashmonthplusblank_re = re.compile(str_yeardashmonthplusblank_re)
+
+
+def find_entries_that_start_with_a_yeardashmonth_via_re(entries):
+  newentries = []
+  for e in entries:
+    if yeardashmonthplusblank_re.match(e):
+      newentries.append(e)
+  return newentries
 
 
 def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
@@ -26,14 +36,6 @@ def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
       newentries.append(e)
     except (IndexError, ValueError):
       pass
-  return newentries
-
-
-def find_entries_that_start_with_a_yeardashmonth_via_re(entries):
-  newentries = []
-  for e in entries:
-    if yeardashmonthplusblank_re.match(e):
-      newentries.append(e)
   return newentries
 
 
@@ -73,8 +75,81 @@ def find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(basepat
     return yearmonth_prefixed_filenames[-1]
 
 
+def extract_date_from_yearmonthprefix_str(yearmonthprefix_str):
+  """
+  Eg: suppose a filename => "2022-10 FI extrato.txt"
+    From this, function should return datetime.date(2022, 10, 1)
+  """
+  if yearmonthprefix_str is None:
+    return None
+  try:
+    pp = yearmonthprefix_str.split(' ')
+    ppp = pp[0].split('-')
+    year = int(ppp[0])
+    month = int(ppp[1])
+    pdate = datetime.date(year=year, month=month, day=1)
+    return pdate
+  except (IndexError, ValueError):
+    pass
+    return None
+
+
+def extract_year_from_yearprefix_str(yearprefix_str):
+  """
+  Eg: suppose a filename => "2022-10 FI extrato.txt"
+    From this, function should return datetime.date(2022, 10, 1)
+  """
+  if yearprefix_str is None:
+    return None
+  try:
+    pp = yearprefix_str.split(' ')
+    ppp = pp[0].split('-')
+    year = int(ppp[0])
+    return year
+  except (IndexError, ValueError):
+    pass
+    return None
+
+
+def find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist):
+  """
+  Eg:
+    1) suppose parameters strlist =>
+    1-1 year = 2021
+    1-2 yearprefix_strlist = \
+       ["2018 FI Extratos Mensais", "2021 FI Extratos Mensais", "2023 FI Extratos Mensais"]
+    From this, function should return "2021 FI Extratos Mensais" (because its prefix coincides with 'year')
+
+  Notice also that it will find the first one, others alphabetically higher will not be found.
+  """
+  if yearprefix_strlist is None or len(yearprefix_strlist) == 0:
+    return None
+  for yearprefix_str in yearprefix_strlist:
+    extr_year = extract_year_from_yearprefix_str(yearprefix_str)
+    if extr_year is None:
+      return None
+    try:
+      if int(year) == int(extr_year):
+        return yearprefix_str
+    except ValueError:
+      pass
+  return None
+
+
 def adhoctest():
-  pass
+  yearprefix_strlist = ["2018 FI Extratos Mensais", "2021 FI Extratos Mensais", "2023 FI Extratos Mensais"]
+  year = 2021
+  expected_str = find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist)
+  print('for', year, '=>', expected_str)
+  year = 2022
+  expected_str = find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist)
+  print('for', year, '=>', expected_str)
+  year = 'bla'
+  expected_str = find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist)
+  print('for', year, '=>', expected_str)
+  yearmonthprefix_str = "2022-10 FI extrato.txt"
+  pdate = extract_date_from_yearmonthprefix_str(yearmonthprefix_str)
+  print('for', yearmonthprefix_str, '=>', pdate)
 
 
 def process():

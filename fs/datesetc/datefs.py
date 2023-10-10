@@ -277,24 +277,48 @@ def test_some():
   print(strdate, ' =>', pdate)
 
 
+def transform_strdate_or_yyyymm_to_date_day1(pdate):
+  if pdate is None:
+    return None
+  try:
+    pdate = str(pdate)
+    pp = pdate.split('-')
+    year = int(pp[0])
+    month = int(pp[1])
+    pdate = datetime.date(year=year, month=month, day=1)
+    return pdate
+  except ValueError:
+    pass
+  return None
+
+
+def make_date_with_day1_or_monthsfirstday(pdate=None):
+  rdate = make_date_with_day1(pdate)
+  if rdate is None:
+    today = datetime.date.today()
+    if today.day == 1:
+      return today
+    rdate = datetime.date(year=today.year, month=today.month, day=1)
+  return rdate
+
+
 def make_date_with_day1(pdate=None):
   if pdate is None:
-    pdate = datetime.date.today()
+    return None
   if type(pdate) != datetime.date:
     try:
       pdate = str(pdate)
-      pdate = transform_strdate_to_date(pdate)
-      if pdate is None:
-        pdate = datetime.date.today()
+      pdate = transform_strdate_or_yyyymm_to_date_day1(pdate)
+      if pdate is not None:
+        return pdate
     except ValueError:
-      pdate = datetime.date.today()
+      pass
   if pdate.day == 1:
     return pdate
-  odate = datetime.date(year=pdate.year, month=pdate.month, day=1)
-  return odate
+  return datetime.date(year=pdate.year, month=pdate.month, day=1)
 
 
-def make_refmonthdate_from_conventioned_filename(conventioned_filename):
+def make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(conventioned_filename):
   try:
     pp = conventioned_filename.split(' ')
     yearmonth = pp[0]

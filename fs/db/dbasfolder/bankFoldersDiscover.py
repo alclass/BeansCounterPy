@@ -26,7 +26,7 @@ class BankFoldersDiscover:
   @property
   def finder(self):
     if self._basefolderpath is None:
-      self._finder = lookup.PrefixDateFinder(self.basefolderpath)
+      self._finder = lookup.DatePrefixedOSEntriesFinder(self.basefolderpath)
     return self._finder
 
 

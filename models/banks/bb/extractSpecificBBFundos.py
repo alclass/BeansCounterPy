@@ -31,7 +31,20 @@ DEFAULT_FILENAME = 'fundo_report_example.txt'
 example_filepath = os.path.join(DEFAULT_DATADIR, DEFAULT_FILENAME)
 
 
-class SpecificCEFExtractScraper(fAplic.FundoAplic):
+class SpecificBBExtract:
+  def __init__(self, fundofilepath):
+    self.fundofilepath = fundofilepath
+    self._scraper_obj = None
+
+  @property
+  def scrape_obj(self):
+    if self._scraper_obj is None:
+      self._scraper_obj = SpecificBBExtractScraper(self.fundofilepath)
+      return self._scraper_obj
+    return self._scraper_obj
+
+
+class SpecificBBExtractScraper(fAplic.FundoAplic):
 
   def __init__(self, scrapetext=None, refmonthdate=None):
     self.refmonthdate = refmonthdate
