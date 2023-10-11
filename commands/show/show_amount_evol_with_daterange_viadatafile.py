@@ -6,7 +6,7 @@ show_amount_evol_with_daterange_viadb.py
 """
 import sys
 import fs.datesetc.datefs as dtfs
-import commands.scrape.scrape_monthly_rendextracts as scr_bb_extrs
+import commands.db.scrape_monthly_rendextracts as scr_bb_extrs
 
 
 def transpose_dict(fundo_results_dictlist):

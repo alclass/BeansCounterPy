@@ -12,29 +12,32 @@ import fs.datesetc.datefs as dtfs
 class FundoAplic:
 
   def __init__(self):
-    self.bank3letter = 'no name'
+    """
+    UNIQUE(bank3letter, name, refmonthdate)
+    """
+    self.bank3letter = None
+    self.name = None
     self.refmonthdate = None
-    self.name = 'no name'
-    self.cnpj = 'no name'
+    self.cnpj = None
     self.data_saldo_ant = None
-    self.saldo_anterior = -1
-    self.qtd_cotas_ant = -1
-    self.valor_cota_ant = -1
+    self.saldo_anterior = None
+    self.qtd_cotas_ant = None
+    self.valor_cota_ant = None
     self.data_saldo_atu = None
-    self.saldo_atual = -1
-    self.qtd_cotas_atu = -1
-    self.valor_cota_atu = -1
-    self.prct_rend_mes = -1
-    self.prct_rend_desdeano = -1
-    self.prct_rend_12meses = -1
-    self.ir = -1
-    self.iof = -1
-    self.aplicacoes = -0.001
-    self.resgates = -0.001
-    self.resg_bru_em_trans = -1  # on CEF
-    self.rendimento_bruto = -0.001  # on CEF
-    self.rendimento_liq = -0.001
-    self.rendimento_base = -0.001  # on CEF
+    self.saldo_atual = None
+    self.qtd_cotas_atu = None
+    self.valor_cota_atu = None
+    self.prct_rend_mes = None
+    self.prct_rend_desdeano = None
+    self.prct_rend_12meses = None
+    self.ir = None
+    self.iof = None
+    self.aplicacoes = None
+    self.resgates = None
+    self.resg_bru_em_trans = None  # on CEF
+    self.rendimento_bruto = None  # on CEF
+    self.rendimento_liq = None
+    self.rendimento_base = None  # on CEF
     self._outdict = None
 
   def sync_refmonthdate_if_needed(self):
@@ -56,6 +59,25 @@ class FundoAplic:
     _attrs = list(filter(lambda attr: not attr.startswith('_'), _attrs))
     return _attrs
 
+  def load_from_dict(self, pdict):
+    for fieldname in self.attrs():
+      try:
+        _ = pdict  # just for the IDE because pdict is used inside the exec() below
+        pyline = 'self.' + fieldname + ' = pdict["' + fieldname + '"]'
+        exec(pyline)
+      except IndexError:
+        pass
+
+  def transpose_from(self, other):
+    for fieldname in self.attrs():
+      _ = other  # for the IDE to consider use of parameter, which is 'dynamically' used inside the exec() below
+      exec('self.' + fieldname + ' = other.' + fieldname)
+
+  def transpose_to(self, other):
+    for fieldname in self.attrs():
+      _ = other  # for the IDE to consider use of parameter, which is 'dynamically' used inside the exec() below
+      exec('other.' + fieldname + ' = self.' + fieldname)
+
   def outdict(self):
     if self._outdict is None:
       self._outdict = {}
@@ -64,67 +86,11 @@ class FundoAplic:
         self._outdict[fieldname] = value
     return self._outdict
 
-  @property
-  def datadict(self):
-    """
-    Usage:
-      one possible "outside" use of this method is to get data for a db-saving function
-    """
-    fields = self.attrs()
-    outdict = {}
-    for fieldname in fields:
-      value = eval('self.' + fieldname)
-      outdict[fieldname] = value
-    return outdict
-
-  @property
-  def sql_fieldnames(self):
-    """
-    Usage:
-      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
-      (same as tuplevalues below)
-    """
-    fields = self.attrs()
-    _sql_fieldnames = '('
-    for fieldname in fields:
-      _sql_fieldnames += '"' + fieldname + '",'
-    _sql_fieldnames = _sql_fieldnames[:-1] + ')'
-    return _sql_fieldnames
-
-  @property
-  def tuplevalues(self):
-    """
-    Usage:
-      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
-      (same as fieldnames above)
-    """
-    fields = self.attrs()
-    outlist = []
-    for fieldname in fields:
-      value = eval('self.' + fieldname)
-      outlist.append(value)
-    return tuple(outlist)
-
   def __str__(self):
-    outstr = """<fundo_result refmonth="{refmonthdate}">
-  name              = {name}             
-  cnpj              = {cnpj}            
-  data_saldo_ant    = {data_saldo_ant}    
-  saldo_anterior    = {saldo_anterior}
-  qtd_cotas_ant     = {qtd_cotas_ant}    
-  valor_cota_ant     = {valor_cota_ant}    
-  data_saldo_atu    = {data_saldo_atu}   
-  saldo_atual       = {saldo_atual}
-  qtd_cotas_atu     = {qtd_cotas_atu}    
-  valor_cota_atu     = {valor_cota_atu}    
-  prct_rend_mes     = {prct_rend_mes}      
-  prct_rend_desdeano = {prct_rend_desdeano}     
-  prct_rend_12meses = {prct_rend_12meses}
-  resg_bru_em_trans = {resg_bru_em_trans}
-  rendimento_bruto  = {rendimento_bruto} 
-  rendimento_base   = {rendimento_base}  
-  ir                = {ir}
-    """.format(**self.outdict())
+    outstr = '<fundo_result refmonth="{refmonthdate}">\n'.format(refmonthdate=self.refmonthdate)
+    for fieldname in self.attrs():
+      value = eval('self.' + fieldname)
+      outstr += f"\t{fieldname} = {value}\n".format(fieldname=fieldname, value=value)
     return outstr
 
 

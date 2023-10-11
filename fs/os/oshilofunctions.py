@@ -28,6 +28,8 @@ def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
   recuperates year plus a blank
   """
   newentries = []
+  if entries is None:
+    return []
   for e in entries:
     try:
       _ = int(e[0:4])
@@ -134,6 +136,33 @@ def find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist):
     except ValueError:
       pass
   return None
+
+
+def derive_refmonthdate_from_a_yearmonthprefixedstr(yearmonthprefixedstr):
+  if yearmonthprefixedstr is None:
+    return yearmonthprefixedstr
+  try:
+    yearmonthprefixedstr = str(yearmonthprefixedstr)
+    pp = yearmonthprefixedstr.split(' ')
+    ppp = pp[0].split('-')
+    year = int(ppp[0])
+    month = int(ppp[1])
+    refmonthdate = datetime.date(year=year, month=month, day=1)
+    return refmonthdate
+  except (IndexError, ValueError):
+    pass
+  return None
+
+
+def derive_refmonthdate_from_a_yearmonthprefixedstr_or_mostrecent(yearmonthprefixedstr=None):
+  refmonthdate = derive_refmonthdate_from_a_yearmonthprefixedstr(yearmonthprefixedstr)
+  if refmonthdate is not None:
+    return refmonthdate
+  today = datetime.date.today()
+  if today.day == 1:
+    return today
+  refmonthdate = datetime.date(year=today.year, month=today.month, day=1)
+  return refmonthdate
 
 
 def adhoctest():

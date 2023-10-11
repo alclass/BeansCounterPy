@@ -11,6 +11,7 @@ import xml.etree.ElementTree as eT
 import fs.os.discover_levels_for_datafolders as disc
 import fs.datesetc.datefs as dtfs
 import models.banks.fundoAplic as fAplic
+import models.banks.banksgeneral as bkge
 
 
 class XMLDataExtractor:
@@ -69,6 +70,7 @@ class XMLDataExtractor:
   }
 
   def __init__(self, yearprefixed_folderpath=None):
+    self.bank3letter = bkge.BANK.BANK3LETTER_CEF
     if yearprefixed_folderpath is None or not os.path.isdir(yearprefixed_folderpath):
       error_msg = 'Error: folderpath %s does not exist.' % yearprefixed_folderpath
       raise OSError(error_msg)
@@ -105,6 +107,7 @@ class XMLDataExtractor:
       xmlroot = xmltree.getroot()
       seq1 = 0
       fundo = fAplic.FundoAplic()  # instantiate an empty FunooAplic obj
+      fundo.bank3letter = self.bank3letter
       # may get None from here
       fundo.refmonthdate = dtfs.make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(xmlfilename)
       for item in xmlroot.findall('./LTPage/LTTextBoxHorizontal/LTTextLineHorizontal'):
@@ -155,7 +158,7 @@ def process():
   yearmonthfolderpath = discoverer.get_folderpath_by_year(2023)
   extractor = XMLDataExtractor(yearmonthfolderpath)
   extractor.process()
-  # print(extractor)
+  print(extractor)
 
 
 if __name__ == '__main__':

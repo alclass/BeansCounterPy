@@ -4,7 +4,6 @@ bankFoldersDiscover.py
   envolopes module lookup_monthrange_in_datafolder.py giving it BBFI's basefolder
 """
 import models.banks.banksgeneral
-import settings as sett
 import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lookup
 DEFAULT_BANK3LETTER = 'bdb'
 

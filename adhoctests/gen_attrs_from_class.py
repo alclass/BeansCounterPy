@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """"
 scrape_monthly_rendextracts.py
-  Organizes the month range and then calls extractSpecificBBFundos.py month to month
+  Organizes the month range and then calls bbScraperWithFileText.py month to month
 """
-import models.banks.bb.extractSpecificBBFundos as fundoReport
+import models.banks.bb.bbScraperWithFileText as fundoReport
 
 
 def get_attrs_as_dict():

@@ -379,6 +379,36 @@ def transform_year_into_refmonthrange_or_recent_year(year=None):
   return transform_year_into_refmonthrange_private(today.year)
 
 
+def return_date_or_recup_it_from_str(refmonthdate):
+  if refmonthdate is None:
+    return None
+  if type(refmonthdate) == datetime.date:
+    return refmonthdate
+  try:
+    refmonthdate = str(refmonthdate)
+    pp = refmonthdate.split('-')
+    year = int(pp[0])
+    month = int(pp[1])
+    pdate = datetime.date(year=year, month=1, day=1)  # in it's just yyyy-mm
+    try:
+      day = int(pp[2])
+      pdate = datetime.date(year=year, month=1, day=day)
+      return pdate
+    except (IndexError, ValueError):
+      return pdate
+  except (IndexError, ValueError):
+    pass
+  return None
+
+
+def return_date_or_recup_it_from_str_or_today(refmonthdate):
+  pdate = return_date_or_recup_it_from_str(refmonthdate)
+  if pdate is None:
+    pdate = datetime.date.today()
+    return pdate
+  return pdate
+
+
 def adhoctest_some_yyyydashmm_dates():
   """
   print('test_some_yyyydashmm_dates')

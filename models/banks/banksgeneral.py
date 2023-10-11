@@ -7,6 +7,7 @@ import settings as sett
 
 class BANK:
 
+  SQL_TABLENAME = 'bankmonthlyfundos'
   BANK3LETTER_BDB = 'bdb'
   BANK3LETTER_CEF = 'cef'
   BANKDICT = {
@@ -90,12 +91,7 @@ class BANK:
     return foldername
 
   @classmethod
-  def get_bank_foldername_by_its3letter(cls, bank3letter):
-    banknumber = cls.get_banknumber_by_its3letter(bank3letter)
-    return cls.get_bank_foldername_by_number(banknumber)
-
-  @classmethod
-  def get_bank_folderpath_by_number(cls, banknumber_str_or_int=None):
+  def get_bank_rootdirpath_by_number(cls, banknumber_str_or_int=None):
     foldername = cls.get_bank_foldername_by_number(banknumber_str_or_int)
     if foldername is None:
       return None
@@ -104,13 +100,26 @@ class BANK:
     return bank_rootfolderpath
 
   @classmethod
-  def get_bank_folderpath_by_its3letter(cls, bank3letter):
+  def get_bank_rootdirname_by_number(cls, banknumber):
+    """
+    This is the same asget_bank_foldername_by_number(cls, banknumber_str_or_int=None)
+      with a minor difference in the parameter signature
+    """
+    return cls.get_bank_foldername_by_number(banknumber)
+
+  @classmethod
+  def get_bank_rootdirpath_by_its3letter(cls, bank3letter):
     banknumber = BANK.get_banknumber_by_its3letter(bank3letter)
-    return cls.get_bank_folderpath_by_number(banknumber)
+    return cls.get_bank_rootdirpath_by_number(banknumber)
+
+  @classmethod
+  def get_bank_foldername_by_its3letter(cls, bank3letter):
+    banknumber = cls.get_banknumber_by_its3letter(bank3letter)
+    return cls.get_bank_foldername_by_number(banknumber)
 
   @classmethod
   def get_bank_fi_folderpath_by_its3letter(cls, bank3letter):
-    folderpath = cls.get_bank_folderpath_by_its3letter(bank3letter)
+    folderpath = cls.get_bank_rootdirpath_by_its3letter(bank3letter)
     entries = osfs.find_foldernames_from_path(folderpath)
     filtered = filter(lambda e: e.lower().startswith('fi '), entries)  # it's a convention!
     fi_foldername = list(filtered)[0]
@@ -118,7 +127,7 @@ class BANK:
 
   @classmethod
   def get_pathentries_finderobj_by_bank3letter(cls, bank3letter):
-    folderpath = cls.get_bank_folderpath_by_its3letter(bank3letter)
+    folderpath = cls.get_bank_rootdirpath_by_its3letter(bank3letter)
     return lookup.DatePrefixedOSEntriesFinder(folderpath)
 
   @classmethod
@@ -150,14 +159,13 @@ def adhoctest():
   """
   bank3letter = 'bdb'
   banknumber = BANK.get_banknumber_by_its3letter(bank3letter)
-  bank_folderpath = BANK.get_bank_folderpath_by_number(banknumber)
+  bank_folderpath = BANK.get_bank_rootdirpath_by_number(banknumber)
   print('bank3letter [', bank3letter, '] bank_folderpath =', bank_folderpath)
   s = BANK.mount_text_list_available_banks()
   print(s)
-  folderpath = BANK.get_bank_folderpath_by_number(bank3letter)
+  folderpath = BANK.get_bank_fi_folderpath_by_its3letter(bank3letter)
   finder = lookup.DatePrefixedOSEntriesFinder(folderpath)
-  refmonthdate_ini, refmonthdate_fim = finder.find_n_set_both_lesser_n_greater_year_firstlevel_paths_from_basepath()
-  print('refmonthdate_ini, refmonthdate_fim', refmonthdate_ini, refmonthdate_fim)
+  print('refmonthdate_ini, refmonthdate_fim', finder.refmonthdate_ini, finder.refmonthdate_fim)
 
 
 if __name__ == '__main__':

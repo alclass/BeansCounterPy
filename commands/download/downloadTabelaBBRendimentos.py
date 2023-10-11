@@ -3,7 +3,8 @@ import datetime
 import os
 import sys
 import time
-URL_BB_RENTAB_DIA = 'http://www21.bb.com.br/portalbb/rentabilidade/index.jsp?tipo=01'
+# URL_BB_RENTAB_DIA = 'http://www21.bb.com.br/portalbb/rentabilidade/index.jsp?tipo=01'
+URL_BB_RENTAB_DIA = 'https://www37.bb.com.br/portalbb/tabelaRentabilidade/rentabilidade/gfi7,802,9085,9089,1.bbx'
 month3letterlist = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec'.split('|')
 
 

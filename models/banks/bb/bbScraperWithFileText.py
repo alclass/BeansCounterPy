@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """"
-extractSpecificBBFundos.py
+bbScraperWithFileText.py
 
 saldo anterior & cotas
   regexp => dd/dd/yyyy SALDO ANTERIOR
@@ -13,11 +13,14 @@ import copy
 import datetime
 import os.path
 import re
+import fs.datesetc.datefs as dtfs
 from fs.numbers.transform_numbers import transform_european_stringnumber_to_pythonfloat
 from fs.texts.texts_scrapehelper import get_name_n_cnpj_from_fundotext
 import fs.texts.exampleFundofileNTContent as exMod
-import fs.datesetc.datefs as dtfs
+# import fs.os.discover_levels_for_datafolders as discoverer
+import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lkup
 import models.banks.fundoAplic as fAplic
+import models.banks.banksgeneral as bkge
 SALDOANT_RESTR = r"(\d{2}/\d{2}/\d{4}).(SALDO.ANTERIOR)(.+)"
 SALDOATU_RESTR = r"(\d{2}/\d{2}/\d{4}).(SALDO.ATUAL)(.+)"
 # SALDOANT_RESTR = "(\d{2}/\d{2}/\d{4}).SALDO.ANTERIOR.+(\d+(?:[\.\,]\d{2})?)"  # ([\d]) \.\,]+)"  # \b+(\d+|\.|\,)"
@@ -31,26 +34,14 @@ DEFAULT_FILENAME = 'fundo_report_example.txt'
 example_filepath = os.path.join(DEFAULT_DATADIR, DEFAULT_FILENAME)
 
 
-class SpecificBBExtract:
-  def __init__(self, fundofilepath):
-    self.fundofilepath = fundofilepath
-    self._scraper_obj = None
-
-  @property
-  def scrape_obj(self):
-    if self._scraper_obj is None:
-      self._scraper_obj = SpecificBBExtractScraper(self.fundofilepath)
-      return self._scraper_obj
-    return self._scraper_obj
-
-
-class SpecificBBExtractScraper(fAplic.FundoAplic):
+class BBExtractScraperWithFileText(fAplic.FundoAplic):
 
   def __init__(self, scrapetext=None, refmonthdate=None):
     self.refmonthdate = refmonthdate
     self._scrapetext = scrapetext
     super().__init__()  # notice that FunooAplic's constructor instanced an "empty" object
     self.adjust_scrapetext()
+    self.process()
 
   @property
   def scrapetext(self):
@@ -144,6 +135,8 @@ class SpecificBBExtractScraper(fAplic.FundoAplic):
     repstr = r"ltimos 12 meses\:.+"
     recomp = re.compile(repstr)
     findall = recomp.findall(self.scrapetext)
+    if findall is None or len(findall) == 0:
+      return
     line = findall[0]
     nexfindall = afterline_for_saldo_n_cota_recomp.findall(line)
     if nexfindall:
@@ -262,6 +255,11 @@ class SpecificBBExtractScraper(fAplic.FundoAplic):
     except AttributeError:
       pass
 
+  def do_triple_rends_exist(self):
+    if self.prct_rend_mes > 0 and self.prct_rend_mes > 0 and self.prct_rend_12meses > 0:
+      return True
+    return False
+
   def treat_the_3_dates(self):
     self.data_saldo_ant = dtfs.transform_strdate_to_date(self.data_saldo_ant)
     self.data_saldo_atu = dtfs.transform_strdate_to_date(self.data_saldo_atu)
@@ -281,11 +279,27 @@ class SpecificBBExtractScraper(fAplic.FundoAplic):
     return outstr
 
 
+def adhoctest():
+  bank3letter = 'bdb'
+  fibasefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(bank3letter)
+  finder = lkup.DatePrefixedOSEntriesFinder(fibasefolderpath)
+  scrapetext = open(finder.greater_yearmonth_filepath, encoding='latin1').read()
+  scraper = BBExtractScraperWithFileText(scrapetext, finder.refmonthdate_fim)
+  print('-'*20, 'Fundo')
+  print(scraper)
+
+
 def process():
+  """
   withinfundo_scraper = SpecificCEFExtractScraper()
   withinfundo_scraper.process()
   print(withinfundo_scraper)
+  """
+  pass
 
 
 if __name__ == '__main__':
+  """
   process()
+  """
+  adhoctest()

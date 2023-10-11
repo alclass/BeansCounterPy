@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """"
 scrape_monthly_rendextracts.py
-  Organizes the month range and then calls extractSpecificBBFundos.py month to month
+  Organizes the month range and then calls bbScraperWithFileText.py month to month
 """
 import datetime
 from dateutil.relativedelta import relativedelta
 import fs.os.discover_levels_for_datafolders as disc
 import models.banks.banksgeneral
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
-import models.banks.bb.extractSpecificBBFundos as extScr
+import models.banks.bb.bbScraperWithFileText as extScr
 import fs.texts.texts_scrapehelper as scrapehelper
-import settings
+# import settings
 
 YEARMONTH_INI = datetime.date(year=2022, month=8, day=1)
 YEARMONTH_FIM = datetime.date(year=2023, month=8, day=1)

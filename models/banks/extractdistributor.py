@@ -17,7 +17,7 @@ Initial sketch: it's in commands.show.list_triple_rends.py
 """
 import models.banks.banksgeneral as bkgen  # contains BANK which is mostly a static/classmethod class
 import models.banks.cef.extractCefDataFromXml as extrCef
-import models.banks.bb.extractSpecificBBFundos as extrBB
+import models.banks.bb.bbScraperWithFileText as extrBB
 # extractor = extrCef.XMLDataExtractor(yearfolderpath)
 
 

@@ -193,7 +193,7 @@ class DatePrefixedOSEntriesFinder:
     """
       property not stored in object, recomputed each time
     """
-    if self.secondlevel_yearmonth_filenames is None and len(self.secondlevel_yearmonth_filenames) == 0:
+    if self.secondlevel_yearmonth_filenames is None or len(self.secondlevel_yearmonth_filenames) == 0:
       return None
     return self.secondlevel_yearmonth_filenames[0]
 
@@ -212,7 +212,7 @@ class DatePrefixedOSEntriesFinder:
     """
       property not stored in object, recomputed each time
     """
-    if self.secondlevel_yearmonth_filenames is None and len(self.secondlevel_yearmonth_filenames) == 0:
+    if self.secondlevel_yearmonth_filenames is None or len(self.secondlevel_yearmonth_filenames) == 0:
       return None
     return self.secondlevel_yearmonth_filenames[-1]
 
@@ -274,7 +274,20 @@ class DatePrefixedOSEntriesFinder:
     filenames = sorted(map(lambda e: os.path.split(e)[-1], filepaths))
     return filenames
 
+  def find_yearmonthfilepath_by_yearmonth(self, refmonthdate):
+    filename = self.find_yearmonthfilename_by_yearmonth(refmonthdate)
+    if filename is None:
+      return None
+    folderpath = self.find_yearprefix_folderpath_by_year(refmonthdate.year)
+    if folderpath is None:
+      return None
+    filepath = os.path.join(folderpath, filename)
+    return filepath
+
   def find_yearmonthfilename_by_yearmonth(self, refmonthdate):
+    refmonthdate = dtfs.return_date_or_recup_it_from_str(refmonthdate)
+    if refmonthdate is None:
+      return None
     filenames = self.find_all_yearmonthfilenames_by_year(refmonthdate.year)
     if filenames is None or len(filenames) == 0:
       return None
@@ -313,11 +326,16 @@ class DatePrefixedOSEntriesFinder:
 
   def gen_filenames_within_daterange_or_wholeinterval(self, p_refmonthini=None, p_refmonthfim=None):
     for refmonthdate in self.gen_refmonths_within_daterange_or_wholeinterval(p_refmonthini, p_refmonthfim):
-      yield self.find_yearmonthfilename_by_yearmonth(refmonthdate)
+      filename = self.find_yearmonthfilename_by_yearmonth(refmonthdate)
+      if filename is None:
+        continue
+      yield filename
     return
 
   def gen_folderpaths_within_yearrange_or_wholeinterval(self, p_year_ini=None, p_year_fim=None):
     for foldername in self.gen_foldernames_within_yearrange_or_wholeinterval(p_year_ini, p_year_fim):
+      if foldername is None:
+        continue
       folderpath = os.path.join(self.rootdirpath, foldername)
       yield folderpath
     return
@@ -339,10 +357,11 @@ class DatePrefixedOSEntriesFinder:
       year_fim = self.refmonthdate_fim.year
     if year_ini == year_fim:
       foldername = self.find_yearprefix_foldername_by_year(year_ini)
-      yield foldername
+      if foldername is not None:
+        yield foldername
       return  # ends generator
     i_year = year_ini  # iterator for the while-loop below
-    while i_year <= year_fim:
+    while i_year < year_fim:
       foldername = self.find_yearprefix_foldername_by_year(i_year)
       yield foldername
       i_year += 1
@@ -427,9 +446,9 @@ def adhoctest():
   print(o)
   year = 2022
   result = o.find_all_yearmonthfilepaths_by_year(year)
-  print('o.find_all_yearmonth_filepaths_by_year()', year, '=>', result)
+  print('o.find_all_yearmonth_filepaths_by_year()', year, '=>', result
   filenames = o.find_all_yearmonthfilenames_by_year(year)
-  print('o.find_all_yearmonthfilenames_by_year(year)', year, '=>', filenames)
+  print('o.find_all_yearmonthfilenames_by_year(year)', year, '=>', filenames
   print(len(o.secondlevel_yearmonth_filenames))
   filepaths = o.gen_filenames_within_daterange_or_wholeinterval('2022-07', '2023-04')
   for i, fp in enumerate(filepaths):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """"
 scrape_monthly_rendextracts.py
-  Organizes the month range and then calls extractSpecificBBFundos.py month to month
+  Organizes the month range and then calls bbScraperWithFileText.py month to month
 """
 import os
 import sys
