@@ -30,29 +30,42 @@ class DataLFromFilesToDBLoader:
     self.finder = lkup.DatePrefixedOSEntriesFinder(self.bbfibasefolderpath)
     create_fundos_sqlitedbtable_if_not_exists()
 
-  def get_fundo_files_data_by_filepath(self, filepath, refmonthdate=None):
+  def get_fundo_files_data_by_filepath(self, filepath):
     scrapetext = open(filepath, encoding='latin1').read()
     self.total_read_files += 1
+    filename = os.path.split(filepath)[-1]
+    refmonthdate = hilo.derive_refmonthdate_from_a_yearmonthprefixedstr(filename)
     fundo = bbScrp.BBExtractScraperWithFileText(scrapetext, refmonthdate)
     fundo.bank3letter = self.bank3letter  # notice the 'coupling' of bank is outside scraping
     return fundo
 
-  def extract_individual_fundo_with_filepath_n_insert_it(self, filepath, refmonthdate):
-    fundo = self.get_fundo_files_data_by_filepath(filepath, refmonthdate)
-    if fundo.refmonthdate:
-      self.total_fundos += 1
-      fundosql = fApSql.FundoAplicSql()
-      fundosql.transpose_from(fundo)
-      boolval = fundosql.insert()
-      if boolval:
-        self.total_inserted += 1
+  def extract_individual_fundo_with_filepath_n_insert_it(self, filepath):
+    """
+    Upon fundo returning from the scraping function, before it's db-inserted,
+      a "light" check will verify a couple of conditions.
+    1 The first check is fundo.name, for name is one of the 3 primary keys
+      (the other two PKs are bank3letter and refmonth which are given above, so no need for checking them)
+    2 If name is indeed in fundo, a second check is to verify prct_rend_mes existence,
+      because if fundoreport is monthly, as it is, prct_rend_mes must exist.
+      It could be extended to prct_rend_desdeano,
+        though prct_rend_12meses may indeed be missing
+        (case in which fundo is new and a year-cycle has not yet completed).
+    """
+    fundo = self.get_fundo_files_data_by_filepath(filepath)
+    if fundo.name:
+      if fundo.prct_rend_mes:
+        self.total_fundos += 1
+        fundosql = fApSql.FundoAplicSql()
+        fundosql.transpose_from(fundo)
+        boolval = fundosql.insert()
+        if boolval:
+          self.total_inserted += 1
 
   def loop_thru_available_files(self):
     for i, filepath in enumerate(self.finder.gen_filepaths_within_daterange_or_wholeinterval()):
       filename = os.path.split(filepath)[-1]
       print(i+1, 'processing [', filename, ']')
-      refmonthdate = hilo.derive_refmonthdate_from_a_yearmonthprefixedstr(filename)
-      self.extract_individual_fundo_with_filepath_n_insert_it(filepath, refmonthdate)
+      self.extract_individual_fundo_with_filepath_n_insert_it(filepath)
 
   def read_datafiles_n_dbinsert(self):
     self.loop_thru_available_files()

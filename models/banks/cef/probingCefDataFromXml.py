@@ -39,27 +39,7 @@ observed: 2023-08 Especial RF LP 94528,97 Extrato Mensal CEF.xml
 39 seq2 text 0,00 # IRRF
   """
 
-  LINENUMBERDICT_S1 = {  # LTTextLineHorizontal
-    10: 'prct_rend_mes',
-    12: 'prct_rend_desdeano',
-    14: 'prct_rend_12meses',
-    16: 'data_saldo_ant',
-    21: 'data_saldo_atu',
-    24: 'cnpj',
-    39: 'aplicacoes',
-    40: 'resgates',
-    41: 'ir',
-    42: 'iof',
-    # 43: 'tx_de_saida',  # not in db
-  }
-  LINENUMBERDICT_S2 = {  # LTTextBoxHorizontal
-    72: 'data_saldo_atu',
-    89: 'saldo_anterior',
-    90: 'rendimento_bruto',
-    93: 'qtd_cotas_ant',
-    94: 'saldo_bruto',
-
-  }
+  CEF_BANK3LETTER = 'cef'
 
   def __init__(self, folderpath=None):
     if folderpath is None or not os.path.isdir(folderpath):
@@ -94,12 +74,16 @@ observed: 2023-08 Especial RF LP 94528,97 Extrato Mensal CEF.xml
       xmlroot = xmltree.getroot()
       seq1 = 0
       fundo = fAplic.FundoAplic()  # instantiate an empty FunooAplic obj
+      fundo.bank3letter = self.CEF_BANK3LETTER  # instantiate an empty FunooAplic obj
       for item in xmlroot.findall('./LTPage/LTTextBoxHorizontal/LTTextLineHorizontal'):
+        # check level 0_LTTextBoxHorizontal
+
         seq1 += 1
         print(seq1, item)
         print(item.text)
       seq2 = 0
       for item in xmlroot.findall('./LTPage/LTTextLineHorizontal/LTTextBoxHorizontal'):
+        # check level 0_LTTextBoxHorizontal
         seq2 += 1
         print(seq2, item)
         print(item.text)
@@ -128,6 +112,7 @@ observed: 2023-08 Especial RF LP 94528,97 Extrato Mensal CEF.xml
     for p in pdict:
       outstr += '{item} = {value}\n'.format(item=p, value=pdict[p])
     return outstr
+
 
 def adhoctest():
   pass

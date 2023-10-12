@@ -16,7 +16,7 @@ Because data finding from textfiles is different by bank, a method with the same
 Initial sketch: it's in commands.show.list_triple_rends.py
 """
 import models.banks.banksgeneral as bkgen  # contains BANK which is mostly a static/classmethod class
-import models.banks.cef.extractCefDataFromXml as extrCef
+import models.banks.cef.extractCefFiDataFromXml as extrCef
 import models.banks.bb.bbScraperWithFileText as extrBB
 # extractor = extrCef.XMLDataExtractor(yearfolderpath)
 
@@ -32,7 +32,7 @@ def find_methodcall_on_bank3letter(bank3letter):
   if bank3letter == bkgen.BANK.BANK3LETTER_BDB:
     extract_method_handler = extrBB.SpecificBBExtract  # to instantiate with filepath that contains the scrapetext
   elif bank3letter == bkgen.BANK.BANK3LETTER_CEF:
-    extract_method_handler = extrCef.XMLDataExtractor  # yearprefixed_folderpath
+    extract_method_handler = extrCef.CefFiXMLDataExtractor  # yearprefixed_folderpath
   return extract_method_handler
 
 
