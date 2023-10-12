@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-lookup_monthrange_in_datafolder.py
+lookup_monthrange_convention_from_basedatafolder_on.py
   searches the datafolder for ini and fim refmonths
 """
 import os
@@ -162,6 +162,20 @@ class DatePrefixedOSEntriesFinder:
       _secondlevel_yearmonth_filenames.append(filename)
       _secondlevel_yearmonth_filenames.sort()
     return _secondlevel_yearmonth_filenames
+
+  @property
+  def total_files(self, p_dot_ext_or_dotless=None):
+    """
+    attr filepaths is chosen because this is stored on the object whereas filenames are recomputed at each call
+    """
+    if self.secondlevel_yearmonth_filepaths is None:
+      return 0
+    if p_dot_ext_or_dotless is None:
+      return len(self.secondlevel_yearmonth_filepaths)
+    dot_ext = p_dot_ext_or_dotless
+    if not dot_ext.startswith('.'):
+      dot_ext = '.' + dot_ext
+    return len(list(filter(lambda e: e.endswith(dot_ext), self.secondlevel_yearmonth_filepaths)))
 
   def mount_secondlevel_yearmonthprefix_filepath_from_filename(self, yearmonthprefix_filename):
     """

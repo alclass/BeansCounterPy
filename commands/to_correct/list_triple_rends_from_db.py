@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-list_triple_rends.py
+list_triple_rends_from_db.py
   lists the triples rends, ie no mês, no ano, nos últimos 12 meses, on bank and refmonth range.
   Data may be fetched from db (sqlite for the time being) or files depending on their availability.
     Data sources (sqlite or datafiles) may change as this system grows a bit.
 """
 import datetime
 import sys
-import fs.os.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.discover_levels_for_datafolders as disc
 import fs.datesetc.datefs as dtfs
 import models.banks.banksgeneral
 import models.banks.extractdistributor as extrdistr
-import settings as sett
+
 DEFAULT_BANK3LETTER = 'bdb'
 DEFAULT_YEAR = 2023
 

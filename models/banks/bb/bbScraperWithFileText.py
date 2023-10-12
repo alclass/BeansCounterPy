@@ -18,7 +18,7 @@ from fs.numbers.transform_numbers import transform_european_stringnumber_to_pyth
 from fs.texts.texts_scrapehelper import get_name_n_cnpj_from_fundotext
 import fs.texts.exampleFundofileNTContent as exMod
 # import fs.os.discover_levels_for_datafolders as discoverer
-import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lkup
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lkup
 import models.banks.fundoAplic as fAplic
 import models.banks.banksgeneral as bkge
 SALDOANT_RESTR = r"(\d{2}/\d{2}/\d{4}).(SALDO.ANTERIOR)(.+)"

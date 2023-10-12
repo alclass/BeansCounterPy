@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 bankFoldersDiscover.py
-  envolopes module lookup_monthrange_in_datafolder.py giving it BBFI's basefolder
+  envolopes module lookup_monthrange_convention_from_basedatafolder_on.py giving it BBFI's basefolder
 """
 import os
 import pdfquery
-import fs.os.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.discover_levels_for_datafolders as disc
 
 
 class PDFScraper:

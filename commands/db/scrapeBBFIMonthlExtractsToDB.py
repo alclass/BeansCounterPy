@@ -9,7 +9,7 @@ import models.banks.bb.bbScraperWithFileText as bbScrp
 import fs.os.oshilofunctions as hilo
 import models.banks.banksgeneral as bkge
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
-import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lkup
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lkup
 
 YEARMONTH_INI = datetime.date(year=2022, month=8, day=1)
 YEARMONTH_FIM = datetime.date(year=2023, month=8, day=1)

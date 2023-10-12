@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
 bankFoldersDiscover.py
-  envolopes module lookup_monthrange_in_datafolder.py giving it BBFI's basefolder
+  envolopes module lookup_monthrange_convention_from_basedatafolder_on.py giving it BBFI's basefolder
 """
 import models.banks.banksgeneral
-import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lookup
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lookup
 DEFAULT_BANK3LETTER = 'bdb'
 
 

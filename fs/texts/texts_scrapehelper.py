@@ -10,7 +10,7 @@ Obs:
 
 This simple module helped show that "mÃªs" is the way mês[latin1-in-file] is printed as a UTF-8 Python string
 """
-import fs.os.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.discover_levels_for_datafolders as disc
 import fs.texts.exampleFundofileNTContent as exMod
 
 

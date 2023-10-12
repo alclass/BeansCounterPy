@@ -3,7 +3,7 @@
 
 """
 import os
-import fs.os.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.discover_levels_for_datafolders as disc
 
 
 class ExampleFundoFile:

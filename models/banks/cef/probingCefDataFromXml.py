@@ -8,7 +8,7 @@ The context to be solved here is to extract data from xml that has been converte
 # import copy
 import os
 import xml.etree.ElementTree as eT
-import fs.os.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.discover_levels_for_datafolders as disc
 # import fs.datesetc.datefs as dtfs
 # import lxml
 # from lxml import ElementInclude

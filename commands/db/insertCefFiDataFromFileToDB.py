@@ -9,7 +9,7 @@ Notice this scripts deals with "CEF" data files. For "BB" data files, there is a
 """
 import os
 import fs.db.createtable_fundos as creatdb
-import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lkup  # for finding "conventioned" paths
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lkup  # for finding "conventioned" paths
 import fs.os.oshilofunctions as hilo  # for recuperating refmonth from str
 import models.banks.banksgeneral as bkge  # for bootsrapping bank's fi's base folderpath (needed for lkup)
 import models.banks.bb.bbScraperWithFileText as bbScrp  # for the BBFI text scraper

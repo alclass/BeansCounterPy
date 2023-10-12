@@ -11,7 +11,7 @@ import models.banks.banksgeneral as bkge
 import models.banks.bb.bbScraperWithFileText as bbScrp
 
 # import fs.os.oshilofunctions as hilo
-# finder (DatePrefixedOSEntriesFinder) comes from fs/db/dbasfolder/lookup_monthrange_in_datafolder.py
+# finder (DatePrefixedOSEntriesFinder) comes from fs/db/dbasfolder/lookup_monthrange_convention_from_basedatafolder_on.py
 
 
 def get_fundo_by_filepath_n_refmonthdate(filepath, refmonthdate):

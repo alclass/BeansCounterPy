@@ -1,7 +1,7 @@
 import os
 
 from fs.os import osfunctions as osfs
-import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lookup
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lookup
 import settings as sett
 
 
