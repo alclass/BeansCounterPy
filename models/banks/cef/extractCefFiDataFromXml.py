@@ -8,7 +8,7 @@ The current stratety (a change may happen in the future) is to find the field po
   https://www.geeksforgeeks.org/xml-parsing-python/
 """
 # import copy
-# import fs.os.discover_levels_for_datafolders as disc
+# import fs.os.discover_levels_for_datafolders as fndr
 # import fs.datesetc.datefs as dtfs
 import os
 import xml.etree.ElementTree as eT
