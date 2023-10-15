@@ -3,6 +3,7 @@
 lookup_monthrange_convention_from_basedatafolder_on.py
   searches the datafolder for ini and fim refmonths
 """
+import datetime
 import os
 import fs.os.osfunctions as osfs
 import fs.os.oshilofunctions as hilo
@@ -78,9 +79,12 @@ class DatePrefixedOSEntriesFinder:
   def firstlevel_year_folderpaths(self):
     if self._firstlevel_year_folderpaths is None:
       self._firstlevel_year_folderpaths = []
-      foldernames = osfs.find_foldernames_from_path(self.rootdirpath)
-      foldernames = hilo.find_strinlist_that_starts_with_a_5charyearblank_via_if(foldernames)
-      self._firstlevel_year_folderpaths = sorted(map(lambda e: os.path.join(self.rootdirpath, e), foldernames))
+      # foldernames = osfs.find_foldernames_from_path(self.rootdirpath)
+      # self._firstlevel_year_folderpaths = sorted(map(lambda e: os.path.join(self.rootdirpath, e), foldernames))
+      self._firstlevel_year_folderpaths = hilo.\
+          find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(
+            self.rootdirpath
+          )
     return self._firstlevel_year_folderpaths
 
   @property
@@ -143,7 +147,7 @@ class DatePrefixedOSEntriesFinder:
       self._secondlevel_yearmonth_filepaths = []
       for firstlevel_year_folderpath in self.firstlevel_year_folderpaths:
         filenames = osfs.find_filenames_from_path(firstlevel_year_folderpath)
-        yeardashmonthfilenames = hilo.find_entries_that_start_with_a_yeardashmonth_via_if(filenames)
+        yeardashmonthfilenames = hilo.find_names_that_start_with_a_yeardashmonth_via_if(filenames)
         for yeardashmonthfilename in yeardashmonthfilenames:
           ppath = os.path.join(firstlevel_year_folderpath, yeardashmonthfilename)
           self._secondlevel_yearmonth_filepaths.append(ppath)
@@ -176,6 +180,31 @@ class DatePrefixedOSEntriesFinder:
     if not dot_ext.startswith('.'):
       dot_ext = '.' + dot_ext
     return len(list(filter(lambda e: e.endswith(dot_ext), self.secondlevel_yearmonth_filepaths)))
+
+  def retrive_yearmonthfilepaths_in_yearfolder_by_refmonthdate_n_ext(self, refmonthdate, dot_ext=None):
+    if refmonthdate is None:
+      return []
+    yearbasefolderpath = self.find_yearprefix_folderpath_by_year(refmonthdate)
+    if yearbasefolderpath is None:
+      return []
+    filepaths = hilo.find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(
+      refmonthdate, yearbasefolderpath, dot_ext
+    )
+    return filepaths
+
+  def retrive_yearmonthfilenames_in_yearfolder_by_refmonthdate_n_ext(self, refmonthdate, dot_ext=None):
+    if refmonthdate is None:
+      return []
+    if type(refmonthdate) != datetime.date:
+      refmonthdate = dtfs.make_date_with_day1(refmonthdate)
+    year = refmonthdate.year
+    yearbasefolderpath = self.find_yearprefix_folderpath_by_year(year)
+    if yearbasefolderpath is None:
+      return []
+    filenames = hilo.find_filenames_that_start_with_spec_yearmonth_in_folderpath(
+      refmonthdate, yearbasefolderpath, dot_ext
+    )
+    return filenames
 
   def mount_secondlevel_yearmonthprefix_filepath_from_filename(self, yearmonthprefix_filename):
     """
@@ -332,15 +361,18 @@ class DatePrefixedOSEntriesFinder:
       refmonthdate_fim = self.refmonthdate_fim
     return dtfs.generate_monthrange(refmonthdate_ini, refmonthdate_fim)
 
-  def gen_filepaths_within_daterange_or_wholeinterval(self, p_refmonthini=None, p_refmonthfim=None):
-    for filename in self.gen_filenames_within_daterange_or_wholeinterval(p_refmonthini, p_refmonthfim):
-      filepath = self.mount_secondlevel_yearmonthprefix_filepath_from_filename(filename)
-      yield filepath
+  def gen_filepaths_within_daterange_or_wholeinterval(self, p_refmonthini=None, p_refmonthfim=None, dot_ext=None):
+    for filenames in self.gen_filenames_within_daterange_or_wholeinterval(p_refmonthini, p_refmonthfim, dot_ext):
+      # this is because there may be various extensions (eg pdf, xml etc) and various 'fundos'
+      for filename in filenames:
+        filepath = self.mount_secondlevel_yearmonthprefix_filepath_from_filename(filename)
+        yield filepath
     return
 
-  def gen_filenames_within_daterange_or_wholeinterval(self, p_refmonthini=None, p_refmonthfim=None):
+  def gen_filenames_within_daterange_or_wholeinterval(self, p_refmonthini=None, p_refmonthfim=None, dot_ext=None):
     for refmonthdate in self.gen_refmonths_within_daterange_or_wholeinterval(p_refmonthini, p_refmonthfim):
-      filename = self.find_yearmonthfilename_by_yearmonth(refmonthdate)
+      # previously self.find_yearmonthfilename_by_yearmonth(refmonthdate)
+      filename = self.retrive_yearmonthfilenames_in_yearfolder_by_refmonthdate_n_ext(refmonthdate, dot_ext)
       if filename is None:
         continue
       yield filename
@@ -375,7 +407,7 @@ class DatePrefixedOSEntriesFinder:
         yield foldername
       return  # ends generator
     i_year = year_ini  # iterator for the while-loop below
-    while i_year < year_fim:
+    while i_year <= year_fim:
       foldername = self.find_yearprefix_foldername_by_year(i_year)
       yield foldername
       i_year += 1

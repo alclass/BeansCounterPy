@@ -153,7 +153,7 @@ class BANK:
 
 def adhoctest():
   """
-  entries = finder.find_entries_that_start_with_a_yeardashmonth_via_if()
+  entries = finder.find_names_that_start_with_a_yeardashmonth_via_if()
   print(entries)
 
   """

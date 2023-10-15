@@ -22,11 +22,29 @@ def find_foldernames_from_path(basepath):
 
 
 def find_filenames_from_path(basepath):
+  if basepath is None or not os.path.isdir(basepath):
+    return []
   entries = os.listdir(basepath)
   abspath_entries = [os.path.join(basepath, e) for e in entries]
   abspath_fileentries = filter(lambda e: os.path.isfile(e), abspath_entries)
   filenames = [os.path.split(e)[-1] for e in abspath_fileentries]
+  sorted(filenames)
   return filenames
+
+
+def find_filenames_from_path_with_ext(basepath, dotext):
+  filenames = find_filenames_from_path(basepath)
+  if dotext is None:
+    return filenames
+  try:
+    dotext = str(dotext)
+    # extfilenames = sorted(filter(lambda f: f.endswith(dotext), filenames))
+    # filenames come already sorted from find_filenames_from_path(basepath)
+    extfilenames = sorted(filter(lambda f: f.endswith(dotext), filenames))
+    return extfilenames
+  except ValueError:
+    pass
+  return []
 
 
 def find_foldernames_with_regexp_on_path(str_regexp, basepath):

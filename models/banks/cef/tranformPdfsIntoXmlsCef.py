@@ -6,6 +6,7 @@ bankFoldersDiscover.py
 import os
 import pdfquery
 import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as fndr
+import fs.os.osfunctions as osfs
 import models.banks.banksgeneral as bkge
 CEF_BANK3LETTER = 'cef'
 
@@ -70,11 +71,11 @@ class PdfToXmlTransformer:
       print(scrmsg)
       self.was_tranformed = False
       return
-    print('Instantiating pdf for', self.pdf_filename)
     pdf = pdfquery.PDFQuery(self.pdf_filepath)
     pdf.load()
     # convert the pdf to XML
-    print('Writing xml', self.xml_filepath)
+    print('Writing xml', self.xml_filename)
+    print('\t' + self.xml_filepath)
     pdf.tree.write(self.xml_filepath, pretty_print=True)
     self.was_tranformed = True
     return
@@ -94,8 +95,8 @@ class YearBatchPdfToXmlTransformer:
       error_msg = 'Error: folderpath %s does not exist.'
       raise OSError(error_msg)
     self.folderpath = folderpath
-    filenames = os.listdir(self.folderpath)
-    self.pdffilenames = list(filter(lambda f: f.endswith('.pdf'), filenames))
+    pdfdotext = '.pdf'
+    self.pdffilenames = osfs.find_filenames_from_path_with_ext(self.folderpath, pdfdotext)
 
   @property
   def total_pdffiles(self):
@@ -133,16 +134,30 @@ class YearBatchPdfToXmlTransformer:
     return outstr
 
 
-def process():
+def xmltransform_all_data_years():
   basefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
   finder = fndr.DatePrefixedOSEntriesFinder(basefolderpath)
+  # roll all available data years
   for yearfolderpath in finder.gen_folderpaths_within_yearrange_or_wholeinterval():
     yearbatch_converter = YearBatchPdfToXmlTransformer(yearfolderpath)
     yearbatch_converter.process()
     print(yearbatch_converter)
 
 
+def adhoctest():
+  basefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
+  finder = fndr.DatePrefixedOSEntriesFinder(basefolderpath)
+  # roll all available data years
+  for yearfolderpath in finder.gen_folderpaths_within_yearrange_or_wholeinterval():
+    print('yearfolderpath', yearfolderpath)
+
+
+def process():
+  xmltransform_all_data_years()
+
+
 if __name__ == '__main__':
   """
+  adhoctest()
   """
   process()

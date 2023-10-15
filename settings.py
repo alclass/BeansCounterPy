@@ -20,6 +20,7 @@ SUBFOLDER_BANKDATA = 'bankdata'
 # this one is parameterized, a different one may be set in local_settings.py
 APP_SQLITE_FILENAME = 'beanscounterapp.sqlite'
 APP_ROOTFOLDER = os.path.dirname(__file__)
+CDUT_IMMEUBCODE_IN_FF = locset.CDUT_IMMEUBCODE_IN_FF
 
 
 def get_datadir_foldername_or_default():
@@ -32,6 +33,12 @@ def get_datadir_foldername_or_default():
 
 
 def get_apps_data_rootdir_abspath():
+  try:
+    datadirpath_non_default = locset.NON_DEFAULT_DATADIR_PATH
+    if os.path.isdir(datadirpath_non_default):
+      return datadirpath_non_default
+  except (AttributeError, NameError, TypeError):
+    pass
   datadir_foldername = get_datadir_foldername_or_default()
   datapath = os.path.join(APP_ROOTFOLDER, datadir_foldername)
   return datapath

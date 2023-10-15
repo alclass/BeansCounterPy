@@ -36,7 +36,7 @@ class CefFiXMLDataExtractor:
 
     For the time being, the parsing strategy is to use xmltree.findall(nodepath)
       and observe nodes and their positions as they occur. This observation is done with the help of:
-        => models/banks/cef/probingCefDataFromXml.py
+        => models/banks/cef/parseXmlCefFi.py
     Once these node positionings are taken, they are "hardcoded" in:
         => models/banks/cef/xmliterposDataDictForCefFundos.py
 

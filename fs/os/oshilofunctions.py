@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 """
 oshilofunctions.py
-  extra functions in the 'os' area
+  extra functions in the 'os' area that deals with the year & month (or others) prefixes to OSEntries.
+
+Function example:
+  1) in osfunctions.py: there is a function for finding filenames from a folder
+     => osfunctions.find_filenames_from_path(param_folderpath)
+  2) in here (oshilofunctions.py): there is a function for finding filepaths from a folder starting with yyyy-mm
+     => oshilofunctions.find_filepaths_whose_filename_starts_with_a_yeardashmonth_via_if(basefolderpath)
+
+'hilo' imports 'osfs' (the inverse cannot happen due to circular dependency),
+  so another way of thinking about 'hilo', loosely speaking, is that it is on top of 'osfs'.
+
+Notice on the word 'hilo':
   The 'hilo' (high & low) is just a sort of fancy name chosen for these extra functions
     also, it has nothing to do with the greek prefix in hilomorphism, an Aristotelian concept...
     also, it is not the 'hilo' word from Spanish which means thread et al.
@@ -9,18 +20,93 @@ oshilofunctions.py
 import datetime
 import os
 import re
+import fs.datesetc.datefs as dtfs
+import fs.os.osfunctions as osfs
 str_yearplusblank_re = r'^\d{4}\ '
 yearplusblank_re = re.compile(str_yearplusblank_re)
 str_yeardashmonthplusblank_re = r'^\d{4}\-\d{2}\ '
 yeardashmonthplusblank_re = re.compile(str_yeardashmonthplusblank_re)
 
 
-def find_entries_that_start_with_a_yeardashmonth_via_re(entries):
-  newentries = []
+def does_name_start_with_a_yearplusblank_via_re(name):
+  if yearplusblank_re.match(name):
+    return True
+  return False
+
+
+def find_names_that_start_with_a_yeardashmonth_via_if(names):
+  outnames = []
+  for e in names:
+    try:
+      _ = int(e[0:4])  # suppose a year number
+      if e[4:5] != '-':
+        continue
+      mm = int(e[5:7])  # suppose a month number (including testing range 1..12 after in sequence)
+      if mm < 1 or mm > 12:
+        continue
+      outnames.append(e)
+    except (IndexError, ValueError):
+      continue
+  return outnames
+
+
+def find_names_that_start_with_a_yeardashmonth_via_re(entries):
+  outnames = []
   for e in entries:
     if yeardashmonthplusblank_re.match(e):
-      newentries.append(e)
-  return newentries
+      outnames.append(e)
+  return outnames
+
+
+def find_filenames_that_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, dot_ext=None):
+  if basefolderpath is None or not os.path.isdir(basefolderpath):
+    return []
+  if refmonthdate is None:
+    return find_filepaths_whose_filenames_start_with_a_yeardashmonth_via_if(basefolderpath, dot_ext)
+  if type(refmonthdate) != datetime.date:
+    refmonthdate = dtfs.make_date_with_day1(refmonthdate)
+    if refmonthdate is None:
+      return []
+  year = refmonthdate.year
+  month = refmonthdate.month
+  prefixstr = '{year}-{month:02} '.format(year=year, month=month)
+  filenames = osfs.find_filenames_from_path(basefolderpath)
+  yearmonthfilenames = sorted(filter(lambda e: e.startswith(prefixstr), filenames))
+  if dot_ext is None:
+    return yearmonthfilenames
+  dot_ext = str(dot_ext)
+  if not dot_ext.startswith('.'):
+    dot_ext = '.' + dot_ext
+  yearmonthfilenames = sorted(filter(lambda e: e.endswith(dot_ext), yearmonthfilenames))
+  return yearmonthfilenames
+
+
+def find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, dot_ext=None):
+  yearmonthfilenames = find_filenames_that_start_with_spec_yearmonth_in_folderpath(
+    refmonthdate, basefolderpath, dot_ext
+  )
+  if len(yearmonthfilenames) == 0:
+    return []
+  yearmonthfilepaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearmonthfilenames))
+  return yearmonthfilepaths
+
+
+def find_filepaths_whose_filenames_start_with_a_yeardashmonth_via_if(basefolderpath, dot_ext=None):
+  filenames = osfs.find_filenames_from_path(basefolderpath)
+  filenames = find_names_that_start_with_a_yeardashmonth_via_if(filenames)
+  if dot_ext is not None:
+    if not dot_ext.startswith('.'):
+      dot_ext = '.' + dot_ext
+    filenames = filter(lambda e: e.endswith(dot_ext), filenames)
+  filepaths = sorted(map(lambda e: os.path.join(basefolderpath, e), filenames))
+  return filepaths
+
+
+def find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath):
+  foldernames = osfs.find_foldernames_from_path(basefolderpath)
+  yearfoldernames = filter(lambda e: yearplusblank_re.match(e), foldernames)
+  yearfolderpaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearfoldernames))
+  return yearfolderpaths
 
 
 def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
@@ -41,22 +127,6 @@ def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
   return newentries
 
 
-def find_entries_that_start_with_a_yeardashmonth_via_if(entries):
-  newentries = []
-  for e in entries:
-    try:
-      _ = int(e[0:4])  # suppose a year number
-      if e[4:5] != '-':
-        continue
-      mm = int(e[5:7])  # suppose a month number (including testing range 1..12 after in sequence)
-      if mm < 1 or mm > 12:
-        continue
-      newentries.append(e)
-    except (IndexError, ValueError):
-      continue
-  return newentries
-
-
 def find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(basepath, is_lesser=True):
   if basepath is None or not os.path.isdir(basepath):
     return None
@@ -65,7 +135,7 @@ def find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(basepat
   fullpathentries = list(map(lambda e: os.path.join(basepath, e), allentries))
   filepaths = list(filter(lambda e: os.path.isfile, fullpathentries))
   filenames = [os.path.split(fp)[-1] for fp in filepaths]
-  yearmonth_prefixed_filenames = find_entries_that_start_with_a_yeardashmonth_via_if(filenames)
+  yearmonth_prefixed_filenames = find_names_that_start_with_a_yeardashmonth_via_if(filenames)
   # somehow the line bellow is not filtering correctly, the solution was to use line above
   # yearmonth_prefixed_filenames = list(filter(lambda e: yeardashmonthplusblank_re.findall, filenames))
   if len(yearmonth_prefixed_filenames) == 0:
@@ -166,6 +236,7 @@ def derive_refmonthdate_from_a_yearmonthprefixedstr_or_mostrecent(yearmonthprefi
 
 
 def adhoctest():
+  """
   yearprefix_strlist = ["2018 FI Extratos Mensais", "2021 FI Extratos Mensais", "2023 FI Extratos Mensais"]
   year = 2021
   expected_str = find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist)
@@ -179,6 +250,17 @@ def adhoctest():
   yearmonthprefix_str = "2022-10 FI extrato.txt"
   pdate = extract_date_from_yearmonthprefix_str(yearmonthprefix_str)
   print('for', yearmonthprefix_str, '=>', pdate)
+  """
+  print('Adhoc test for find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath()')
+  refmonthdate = '2022-12'
+  basefolderpath = '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/'
+  basefolderpath += '104 CEF bankdata/FI Extratos Mensais Ano a Ano CEF OD/2022 FI extratos mensais CEF'
+  ext = 'xml'
+  print('parameters refmonth', refmonthdate, 'ext or dot_ext', ext)
+  print('folder', basefolderpath)
+  fps = find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, ext)
+  for fp in fps:
+    print(fp)
 
 
 def process():

@@ -39,6 +39,9 @@ import datetime
 from dateutil.relativedelta import relativedelta  # for adding & subtracting months in dates
 import os
 import sys
+import fs.datesetc.datefs as dtfs
+import settings as sett
+CDUT_IMMEUBCODE_IN_FF = sett.CDUT_IMMEUBCODE_IN_FF
 
 
 def extract_ref_from_cli(clistr):
@@ -82,29 +85,18 @@ class Downloader:
     self.treat_immeubcode()
 
   def treat_refdates(self):
-    self.refmonth_fim = transform_str_to_date_or_none(self.refmonth_fim)
-    if self.refmonth_fim is None or type(self.refmonth_fim) != datetime.date:
-      pdate = datetime.date.today()
-    else:
-      pdate = self.refmonth_fim
-    if pdate.day != 1:
-      pdate = datetime.date(year=pdate.year, month=pdate.month, day=1)
-    self.refmonth_fim = pdate
-    self.refmonth_ini = transform_str_to_date_or_none(self.refmonth_ini)
-    if self.refmonth_ini is None or type(self.refmonth_ini) != datetime.date:
-      self.refmonth_ini = self.refmonth_fim - relativedelta(months=1)
-    if self.refmonth_ini >= self.refmonth_fim:
-      self.refmonth_ini = self.refmonth_fim - relativedelta(months=1)
+    self.refmonth_fim = dtfs.make_date_w_day1_or_w_current_months_firstday(self.refmonth_fim)
+    self.refmonth_ini = dtfs.make_date_w_day1_or_w_current_months_firstday(self.refmonth_ini)
 
   def treat_immeubcode(self):
     error_msg_to_interpol = (
         'Error: the real estate code is missing or malformed (%s), program can not continue.'
         ' Please, enter it into the configuration file available (preferable) or'
-        ' into the script itself hardcoded (constant DEFAULT_IMMEUBCODE).'
+        ' into the script itself hardcoded (constant CDUT_IMMEUBCODE_IN_FF).'
     )
     if self.immeubcode is None:
       try:
-        self.immeubcode = DEFAULT_IMMEUBCODE
+        self.immeubcode = CDUT_IMMEUBCODE_IN_FF
         return
       except NameError:
         error_msg = error_msg_to_interpol % "not defined"
@@ -178,6 +170,8 @@ def get_args():
 
 def process():
   refmonth_ini, refmonth_fim = get_args()
+  if refmonth_ini is None:
+    refmonth_ini = dtfs.make_date_w_day1_or_w_current_months_firstday()
   d = Downloader(refmonth_ini, refmonth_fim)
   d.process()
 

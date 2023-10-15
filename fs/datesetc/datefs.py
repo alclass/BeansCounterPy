@@ -292,7 +292,19 @@ def transform_strdate_or_yyyymm_to_date_day1(pdate):
   return None
 
 
-def make_date_with_day1_or_monthsfirstday(pdate=None):
+def make_date_w_day1_or_w_current_months_firstday(pdate=None):
+  """
+  This function, if receiving a valid date, guarantes an output date with day is 1.
+    (The output object is not changed if day is 1, otherwise, it's new one,
+     that's to avoid side effect on the input parameter.)
+    If date is invalid, it makes a date corresponding to current month's first day
+  Examples:
+    input comes as 2023-10-12; output goes as 2023-10-01;
+    input comes as None or a non-date; output goes as yyyy-mm-01
+      where yyyy & mm are current date's year and current date's month respectfully;
+    Notice that current date is the same as datetime.date.today() and depends on
+      the correctness of the computer's system clock.
+  """
   rdate = make_date_with_day1(pdate)
   if rdate is None:
     today = datetime.date.today()
@@ -389,7 +401,7 @@ def return_date_or_recup_it_from_str(refmonthdate):
     pp = refmonthdate.split('-')
     year = int(pp[0])
     month = int(pp[1])
-    pdate = datetime.date(year=year, month=1, day=1)  # in it's just yyyy-mm
+    pdate = datetime.date(year=year, month=month, day=1)  # in case str is just yyyy-mm, ie it misses -dd
     try:
       day = int(pp[2])
       pdate = datetime.date(year=year, month=1, day=day)
