@@ -4,6 +4,13 @@ The context to be solved here is to extract data from xml that has been converte
 
   A refpage for XML parsing in Python
   https://www.geeksforgeeks.org/xml-parsing-python/
+
+What is the difference between PyMuPDF and PDFtoText?
+  1 PyMuPDF — Extracts text from PDF files, removes unnecessary spaces from the text,
+    maintains the original structure of the document.
+  2 PDFminer — Preserves the structure of PDF file text but not the table structure.
+  3 PDFtoText — Comparatively most preferred as it preserves table and original structure.
+PyMuPDF, PDFminer, PDFtoText
 """
 # import copy
 import os
