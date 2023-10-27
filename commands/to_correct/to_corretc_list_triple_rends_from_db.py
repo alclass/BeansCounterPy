@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-list_triple_rends_from_db.py
+to_corretc_list_triple_rends_from_db.py
   lists the triples rends, ie no mês, no ano, nos últimos 12 meses, on bank and refmonth range.
   Data may be fetched from db (sqlite for the time being) or files depending on their availability.
     Data sources (sqlite or datafiles) may change as this system grows a bit.
 """
 import datetime
 import sys
-import fs.db.dbasfolder.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
 import fs.datesetc.datefs as dtfs
 import models.banks.banksgeneral
 import models.banks.extractdistributor as extrdistr
@@ -22,7 +22,7 @@ class TripleRendLister:
     self.bank3letter = bank3letter
     self.refmonthdate_ini = refmonthdate_ini
     self.refmonthdate_fim = refmonthdate_fim
-    self.bankpathdiscoverer = disc.FolderYearMonthLevelDiscovererForBankAndKind(self.bank3letter)
+    self.bankpathdiscoverer = find.FolderYearMonthLevelDiscovererForBankAndKind(self.bank3letter)
 
   def treat_ini_params(self):
     nonelist = []
@@ -40,7 +40,8 @@ class TripleRendLister:
     year = refmonth.year
     yearfolderpath = self.bankpathdiscoverer.get_folderpath_by_year(year)
     methodcall_hanldler = extrdistr.find_methodcall_on_bank3letter(self.bank3letter)
-    extractor.process()
+    # to correct (or finish implementing methodcall_hanldler!
+    methodcall_hanldler()
     for fundo in extractor.fundos:
       print('-'*40)
       print('name', fundo.name)

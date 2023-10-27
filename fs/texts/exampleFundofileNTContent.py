@@ -3,7 +3,8 @@
 
 """
 import os
-import fs.db.dbasfolder.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
+import models.banks.banksgeneral as bkgen
 
 
 class ExampleFundoFile:
@@ -27,8 +28,9 @@ class ExampleFundoFile:
   @property
   def folderpath(self):
     if self._folderpath is None:
-      discoverer = disc.FolderYearMonthLevelDiscovererForBankAndKind(bank3letter=self.BANK3LETTER)
-      self._folderpath = discoverer.get_folderpath_by_year(self.YEAR)
+      fibasefolderpath = bkgen.BANK.get_bank_fi_folderpath_by_its3letter(self.BANK3LETTER)
+      discoverer = find.DatePrefixedOSEntriesFinder(rootdirpath=fibasefolderpath)
+      self._folderpath = discoverer.find_yearprefix_folderpath_by_year(self.YEAR)
     return self._folderpath
 
   @property

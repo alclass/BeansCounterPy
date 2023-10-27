@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
 """
-latin1_workaround.py
-  Trying to find out a workaround to the "mês" word inside a latin1 text file,
-    considering a string in Python is always a UTF-8 one.
+fs/texts/texts_scrapehelper.py
 
-Obs:
-  # this script depends on the dados folder which is not added to the code's git repo
-
-
-This simple module helped show that "mÃªs" is the way mês[latin1-in-file] is printed as a UTF-8 Python string
 """
-import fs.db.dbasfolder.discover_levels_for_datafolders as disc
+import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
 import fs.texts.exampleFundofileNTContent as exMod
 
 
@@ -125,7 +118,7 @@ def test_get_name_n_cnpj():
 
 def test_slice_fundos_scrapetexts():
   abank = 'bdb'
-  discoverer = disc.FolderYearMonthLevelDiscovererForBankAndKind(abank)
+  discoverer = find.FolderYearMonthLevelDiscovererForBankAndKind(abank)
   filepath = discoverer.get_filepath_by_yearmonth(2023, 4)
   scrapetexts = slice_fundofile_into_fundoscrapetexts(filepath)
   for scrapetext in scrapetexts:
