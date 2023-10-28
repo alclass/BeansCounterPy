@@ -9,6 +9,7 @@ import models.banks.banksgeneral as bkge
 URL_BB_RENTAB_DIA = 'https://www37.bb.com.br/portalbb/tabelaRentabilidade/rentabilidade/gfi7,802,9085,9089,1.bbx'
 BB_BANK3LETTER = 'bdb'
 BB_RENTAB_DIA_MIDDLE_FOLDERNAME = 'BB FI Rendimentos Diários htmls'  # TO-DO move this const to the BANK module or else
+htmlfilename_after_date = ' BB rendimentos no dia comma-sep.html'
 
 
 def mount_daybased_targetfilepath(pdate=None):
@@ -19,8 +20,8 @@ def mount_daybased_targetfilepath(pdate=None):
     raise OSError(error_msg)
   if pdate is None:
     pdate = datetime.date.today()
-  filename = str(pdate) + ' BB rendimentos diários.html'
-  filepath = os.path.join(rentabdia_folderpath, filename)
+  filename = str(pdate) + ' BB rendimentos no dia comma-sep.html'
+  filepath = os.path.join(rentabdia_folderpath, htmlfilename_after_date)
   return filepath
 
 

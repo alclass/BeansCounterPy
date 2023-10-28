@@ -391,14 +391,14 @@ def transform_year_into_refmonthrange_or_recent_year(year=None):
   return transform_year_into_refmonthrange_private(today.year)
 
 
-def return_date_or_recup_it_from_str(refmonthdate):
-  if refmonthdate is None:
+def return_date_or_recup_it_from_str(pdate):
+  if pdate is None:
     return None
-  if type(refmonthdate) == datetime.date:
-    return refmonthdate
+  if type(pdate) == datetime.date:
+    return pdate
   try:
-    refmonthdate = str(refmonthdate)
-    pp = refmonthdate.split('-')
+    pdate = str(pdate)
+    pp = pdate.split('-')
     year = int(pp[0])
     month = int(pp[1])
     pdate = datetime.date(year=year, month=month, day=1)  # in case str is just yyyy-mm, ie it misses -dd
