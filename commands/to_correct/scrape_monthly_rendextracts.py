@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as finder
 import models.banks.banksgeneral as bkge
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
-import models.banks.bb.bbScraperWithFileText as extScr
+import models.banks.bb.fi.bbScraperWithFileText as extScr
 import fs.texts.texts_scrapehelper as scrapehelper
 # import settings
 

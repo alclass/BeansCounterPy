@@ -8,7 +8,7 @@ fundoAplicBB.py
 """
 import models.banks.fundoAplic as fAplic
 import models.banks.banksgeneral as bkge
-import models.banks.bb.bbScraperWithFileText as bbScrp
+import models.banks.bb.fi.bbScraperWithFileText as bbScrp
 
 # import fs.os.oshilofunctions as hilo
 # finder (DatePrefixedOSEntriesFinder) comes from fs/db/dbasfolder/lookup_monthrange_convention_from_basedatafolder_on.py

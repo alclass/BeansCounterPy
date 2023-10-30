@@ -7,8 +7,57 @@ osfunctions.py
 As an example of a client user,
   module discover_levels_for_datafolders.py, also in the same package, calls functions in-here
 """
+import glob
 import os
 import re
+WHILE_LIMIT_FOR_MAKE_NON_EXISTENT_FILENAME = 1000
+
+
+def make_a_non_existent_sufixnumbered_filename_from(filepath):
+  folderpath, filename = os.path.split(filepath)
+  name, dotext = os.path.splitext(filename)
+  sufix_number = 0
+  while 1:
+    sufix_number += 1
+    lastfilename = name + '-' + str(sufix_number).zfill(3) + dotext
+    lastpath = os.path.join(folderpath, lastfilename)
+    if not os.path.isfile(lastpath):
+      return lastfilename
+    if sufix_number > WHILE_LIMIT_FOR_MAKE_NON_EXISTENT_FILENAME:
+      break
+  error_msg = f"""Error: system could not find a sufixnumberer filename.
+    Directory: {folderpath}
+    Source Filename: {filename}
+    Last filename tried: {lastfilename}
+    """.format(folderpath=folderpath, filename=filename, lastfilename=lastfilename)
+  raise OSError(error_msg)
+
+
+def save_file_with_text(filepath, text):
+  filename = os.path.split(filepath)[-1]
+  if os.path.isfile(filepath):
+    print('Cannot disk-write', filename, 'for it already exists')
+    return False
+  print('Saving file', filename)
+  fd = open(filepath, 'w', encoding='utf-8')
+  fd.write(text)
+  fd.close()
+  return True
+
+
+def retrieve_filepaths_in_folder_or_empty(pfolderpath=None, dotext=None):
+  """
+  This function selects files with glob.glob(criterium). An alternative way is:
+    filepaths = [os.path.join(folderpath, fn) for fn in os.listdir(folderpath) if fn.endswith(".html")]
+
+  """
+  if pfolderpath is None or not os.path.isdir(pfolderpath):
+    error_msg = 'Directory does not exist => [%s]' % str(pfolderpath)
+    raise OSError(error_msg)
+  if dotext is None:
+    dotext = '.html'  # default for the moment
+  asterisk_dotext = '*' + dotext
+  return glob.glob(os.path.join(pfolderpath, asterisk_dotext))
 
 
 def find_foldernames_from_path(basepath):

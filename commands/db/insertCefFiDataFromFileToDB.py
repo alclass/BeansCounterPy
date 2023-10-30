@@ -12,7 +12,7 @@ import fs.db.createtable_fundos as creatdb
 import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lkup  # for finding "conventioned" paths
 import fs.os.oshilofunctions as hilo  # for recuperating refmonth from str
 import models.banks.banksgeneral as bkge  # for bootsrapping bank's fi's base folderpath (needed for lkup)
-import models.banks.bb.bbScraperWithFileText as bbScrp  # for the BBFI text scraper
+import models.banks.bb.fi.bbScraperWithFileText as bbScrp  # for the BBFI text scraper
 import models.banks.fundoAplicSql as fApSql  # for the "fundo" class composing class here for db-inserting
 
 

@@ -3,7 +3,7 @@
 scrape_monthly_rendextracts.py
   Organizes the month range and then calls bbScraperWithFileText.py month to month
 """
-import models.banks.bb.bbScraperWithFileText as fundoReport
+import models.banks.bb.fi.bbScraperWithFileText as fundoReport
 
 
 def get_attrs_as_dict():

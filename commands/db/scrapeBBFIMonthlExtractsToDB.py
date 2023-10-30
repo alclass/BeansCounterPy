@@ -5,7 +5,7 @@ scrape_monthly_rendextracts.py
 """
 import datetime
 import os.path
-import models.banks.bb.bbScraperWithFileText as bbScrp
+import models.banks.bb.fi.bbScraperWithFileText as bbScrp
 import fs.os.oshilofunctions as hilo
 import models.banks.banksgeneral as bkge
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper

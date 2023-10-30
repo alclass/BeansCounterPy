@@ -5,7 +5,7 @@
 """
 import fs.texts.texts_scrapehelper as scrapehelper
 import settings as sett
-import models.banks.bb.bbScraperWithFileText as extScr
+import models.banks.bb.fi.bbScraperWithFileText as extScr
 
 
 def get_scrapetest(year, month, fundoname):
