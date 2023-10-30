@@ -17,11 +17,10 @@ class ReportProps:
   RFLP = 'RFLP'
   RESTYPES = [ACOES, RFDI, RFLP]
   CSV_INTERPOLATE = '{date} {typ} BB rendimentos no dia.csv'
-  htmlfilename_to_interpol = '{date} BB rendimentos no dia {commapointsep}.html'
+  commapoint_htmlfilename_to_interpol = '{date} BB rendimentos no dia {commapointsep}.html'
 
 
 class BBFIFileStaticFinder:
-
 
   @classmethod
   def get_basefolder_for_daily_results(cls):
@@ -46,32 +45,40 @@ class BBFIFileStaticFinder:
     raise OSError(error_msg)
 
   @classmethod
-  def get_conventioned_filenames(cls, pdate):
+  def get_conventioned_commapoint_html_filenames(cls, pdate):
     """
     commapointsep is, for input, 'comma-sep'
     commapointsep is, for output, 'point-sep'
     """
     inputcommapointsep = 'comma-sep'
     outputcommapointsep = 'point-sep'
-    conventioned_input = ReportProps.htmlfilename_to_interpol.format(date=pdate, commapointsep=inputcommapointsep)
-    conventioned_output = ReportProps.htmlfilename_to_interpol.format(date=pdate, commapointsep=outputcommapointsep)
+    conventioned_input = ReportProps.commapoint_htmlfilename_to_interpol.format(
+      date=pdate, commapointsep=inputcommapointsep
+    )
+    conventioned_output = ReportProps.commapoint_htmlfilename_to_interpol.format(
+      date=pdate, commapointsep=outputcommapointsep
+    )
     return conventioned_input, conventioned_output
 
   @classmethod
-  def get_conventioned_input_filename(cls, pdate):
-    return cls.get_conventioned_filenames(pdate)[0]
+  def get_conventioned_input_comma_html_filename(cls, pdate):
+    return cls.get_conventioned_commapoint_html_filenames(pdate)[0]
 
   @classmethod
-  def get_conventioned_output_filename(cls, pdate):
-    return cls.get_conventioned_filenames(pdate)[-1]
+  def get_conventioned_output_point_html_filename(cls, pdate):
+    return cls.get_conventioned_commapoint_html_filenames(pdate)[-1]
 
 
 class BBFIFileFinder:
 
   Props = ReportProps
-  def __init__(self, pdate, typ):
+
+  def __init__(self, pdate, typ=None):
     self.date = pdate
     self.rtype = typ
+    if self.rtype is None:
+      # default to the first one
+      self.rtype = self.Props.ACOES
     self.finder = BBFIFileStaticFinder()
 
   @property
@@ -85,19 +92,19 @@ class BBFIFileFinder:
   def get_csv_filepath_for_date_n_type_or_raise(self):
     return self.finder.get_csv_filepath_for_date_n_type_or_raise(self.date, self.rtype)
 
-  def get_conventioned_filenames(self):
+  def get_conventioned_commapoint_html_filenames(self):
     """
     commapointsep is, for input, 'comma-sep'
     commapointsep is, for output, 'point-sep'
     """
-    conventioned_input, conventioned_output = BBFIFileStaticFinder.get_conventioned_filenames(self.date)
+    conventioned_input, conventioned_output = BBFIFileStaticFinder.get_conventioned_commapoint_html_filenames(self.date)
     return conventioned_input, conventioned_output
 
-  def get_conventioned_input_filename(self, pdate, commapointsep):
-    return self.get_conventioned_filenames()[0]
+  def get_conventioned_input_commasep_html_filename(self):
+    return self.get_conventioned_commapoint_html_filenames()[0]
 
-  def get_conventioned_output_filename(self, pdate, commapointsep):
-    return self.get_conventioned_filenames()[-1]
+  def get_conventioned_output_pointsep_html_filename(self):
+    return self.get_conventioned_commapoint_html_filenames()[-1]
 
 
 def adhoctests():
@@ -111,7 +118,7 @@ def adhoctests():
   finder = BBFIFileFinder(pdate, rtype)
   p = finder.get_csv_filepath_for_date_n_type_or_raise()
   print('with finder', p)
-  i, o = finder.get_conventioned_filenames()
+  i, o = finder.get_conventioned_commapoint_html_filenames()
   print('input', i, 'output', o)
 
 

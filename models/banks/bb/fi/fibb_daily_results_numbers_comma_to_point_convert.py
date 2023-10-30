@@ -60,7 +60,7 @@ class SingleFileConverter:
     conventioned_output = name_to_interpol.format(date=self.date, commapointsep='point-sep')
     return conventioned_input, conventioned_output
     """
-    return self.finder.get_conventioned_filenames()
+    return self.finder.get_conventioned_commapoint_html_filenames()
 
   def treat_filepaths(self):
     """
