@@ -72,6 +72,7 @@ class BBFIFileStaticFinder:
 class BBFIFileFinder:
 
   Props = ReportProps
+  UpperFinder = BBFIFileStaticFinder
 
   def __init__(self, pdate, typ=None):
     self.date = pdate
@@ -88,6 +89,9 @@ class BBFIFileFinder:
   @property
   def csv_filepath(self):
     return self.get_csv_filepath_for_date_n_type_or_raise()
+
+  def get_basefolder_for_daily_results(self):
+    return self.UpperFinder.get_basefolder_for_daily_results()
 
   def get_csv_filepath_for_date_n_type_or_raise(self):
     return self.finder.get_csv_filepath_for_date_n_type_or_raise(self.date, self.rtype)

@@ -3,7 +3,9 @@ import datetime
 import os
 import sys
 import requests
+import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint  # .SingleFileConverter
 import models.banks.bb.fi.bbfi_file_find as ffnd  # for ffnd.BBFIFileFinder.Props.commapoint_htmlfilename_to_interpol
+
 import models.banks.banksgeneral as bkge
 # for class transf.WithPandasHtmlToCsvConverter
 import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as transf
@@ -12,9 +14,6 @@ URL_BB_RENTAB_DIA = 'https://www37.bb.com.br/portalbb/tabelaRentabilidade/rentab
 BB_BANK3LETTER = 'bdb'
 BB_RENTAB_DIA_MIDDLE_FOLDERNAME = 'BB FI Rendimentos Diários htmls'  # TO-DO move this const to the BANK module or else
 htmlfilename_after_date = ' BB rendimentos no dia comma-sep.html'
-
-
-
 
 
 class BBRendDiaDownloader:
@@ -43,8 +42,6 @@ class BBRendDiaDownloader:
     if not os.path.isdir(rentabdia_folderpath):
       error_msg = 'Directory [%s] does not exist.' % rentabdia_folderpath
       raise OSError(error_msg)
-    if self.today is None:
-      pdate = datetime.date.today()
     # use the interpolate constant at
     filepath = os.path.join(rentabdia_folderpath, self.default_target_filename)
     return filepath
@@ -155,12 +152,15 @@ def download_n_gen_csv():
   """
 
   """
-  # 1 download
+  print("Step 1 download HTML rendimentos no dia (original has comma decimal-place numbers)")
   downloader = BBRendDiaDownloader()
   downloader.download()
-  print(downloader)
-  # 1 convert 1 html to 3 csv's (for there are 3 data tables in it)
   today = datetime.date.today()
+  print(downloader)
+  print("Step 2 transform the comma decimal-place HTML above to a point separated one")
+  dec_to_point_er = commapoint.SingleFileConverter()
+  dec_to_point_er.process()
+  print("Step 3 convert the HTML with point decimal-place numbers to 3 csv's (for there are 3 data tables in it)")
   print('transf.WithPandasHtmlToCsvConverter.dispatch', today)
   converter = transf.WithPandasHtmlToCsvConverter(today)
   converter.process()

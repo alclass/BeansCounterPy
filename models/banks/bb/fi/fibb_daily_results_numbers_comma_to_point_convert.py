@@ -3,6 +3,7 @@
 commands/download/fibb_daily_results_numbers_comma_to_point_convert.py
 
 """
+import datetime
 import os
 import fs.datesetc.datehilofs as hilodt
 import fs.os.osfunctions as osfs
@@ -17,7 +18,7 @@ DEFAULT_FOLDERPATH = (
 
 
 class SingleFileConverter:
-  def __init__(self, input_filepath, output_filepath=None):
+  def __init__(self, input_filepath=None, output_filepath=None):
     self._date = None  # date is extracted from input_filename
     self._finder = None
     self.input_filepath = input_filepath
@@ -65,7 +66,7 @@ class SingleFileConverter:
   def treat_filepaths(self):
     """
     The treatment is the following:
-      1 input filepath must exist or else an exception is raised
+      1 if input filepath does not exist, the default one (prefixed with today's date) is gotten
       2 input filename is conventioned, so it should be checked
       3 output_filepath is not checked for existence here (see next item below)
       4 in case output file is in a different directory, create/make it if it does not exist
@@ -73,11 +74,15 @@ class SingleFileConverter:
       6 if the user wants to recreate it, she/he must delete it first
       7 if output_folderpath does not exist, it is created/made
     """
-    # 1 input filepath must exist or else an exception is raised
+    # 1 if input filepath does not exist, the default one (prefixed with today's date) is gotten
     if self.input_filepath is None or not os.path.isfile(self.input_filepath):
-      error_msg = 'Error: input filepath [%s] in SingleFileConverter is not valid.' % str(self.input_filepath)
-      raise OSError(error_msg)
-    # date can be extracted after the check above
+      # at this point, finder may not yet have been initialized, get one with today's date (needed for the default)
+      today = datetime.date.today()
+      localfinder = ffnd.BBFIFileFinder(today, ffnd.BBFIFileFinder.Props.ACOES)
+      basefolderpath = localfinder.get_basefolder_for_daily_results()
+      input_filename = localfinder.get_conventioned_input_commasep_html_filename()
+      self.input_filepath = os.path.join(basefolderpath, input_filename)
+    # date can be extracted after the check above, for it will look up the prefix in the input filename
     _ = self.date
     # 2 input filename is conventioned, so it should be checked
     conventioned_input, conventioned_output = self.get_conventioned_filenames()

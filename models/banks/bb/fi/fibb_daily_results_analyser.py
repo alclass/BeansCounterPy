@@ -24,13 +24,14 @@ class ResultAnalyser:
   def read_df(self):
     print('pd.DataFrame(self.csv_filepath)', self.csv_filepath)
     df = pd.read_csv(self.csv_filepath)
-    print(df.head())
-    print(df.columns)
+    print('head =>', df.head())
+    print('columns =>', df.columns)
+    print(df.index[1])
     # df.plot()
 
 
 def adhoctests():
-  typ = ffnd.BBFIFileFinder.Props.ACOES
+  typ = ffnd.BBFIFileFinder.Props.RFLP
   pdate = '2023-10-27'
   analyser = ResultAnalyser(pdate, typ)
   analyser.read_df()
