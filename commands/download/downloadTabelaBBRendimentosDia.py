@@ -5,6 +5,7 @@ import sys
 import requests
 import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint  # .SingleFileConverter
 import models.banks.bb.fi.bbfi_file_find as ffnd  # for ffnd.BBFIFileFinder.Props.commapoint_htmlfilename_to_interpol
+import models.banks.bankpathfinder as bkfnd  # .BankOSFolderFileFinder
 
 import models.banks.banksgeneral as bkge
 # for class transf.WithPandasHtmlToCsvConverter
@@ -37,11 +38,13 @@ class BBRendDiaDownloader:
     return self.bbfinder.get_conventioned_input_commasep_html_filename()
 
   def mount_daybased_targetfilepath(self):
-    basefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(BB_BANK3LETTER)
-    rentabdia_folderpath = os.path.join(basefolderpath, BB_RENTAB_DIA_MIDDLE_FOLDERNAME)
+    bank3letter = 'bdb'
+    bfinder = bkfnd.BankOSFolderFileFinder(bank3letter, bkfnd.BankCat.REND_RESULTS_KEY)
+    rentabdia_folderpath = bfinder.get_folderpath_by_yearmonth(self.today.year, self.today.month)
+    # [old] basefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(BB_BANK3LETTER)
+    # [old] rentabdia_folderpath = os.path.join(basefolderpath, BB_RENTAB_DIA_MIDDLE_FOLDERNAME)
     if not os.path.isdir(rentabdia_folderpath):
-      error_msg = 'Directory [%s] does not exist.' % rentabdia_folderpath
-      raise OSError(error_msg)
+      os.makedirs(rentabdia_folderpath)
     # use the interpolate constant at
     filepath = os.path.join(rentabdia_folderpath, self.default_target_filename)
     return filepath
@@ -150,13 +153,6 @@ class BBRendDiaDownloader:
 
 def download_n_gen_csv():
   """
-
-  """
-  print("Step 1 download HTML rendimentos no dia (original has comma decimal-place numbers)")
-  downloader = BBRendDiaDownloader()
-  downloader.download()
-  today = datetime.date.today()
-  print(downloader)
   print("Step 2 transform the comma decimal-place HTML above to a point separated one")
   dec_to_point_er = commapoint.SingleFileConverter()
   dec_to_point_er.process()
@@ -164,6 +160,13 @@ def download_n_gen_csv():
   print('transf.WithPandasHtmlToCsvConverter.dispatch', today)
   converter = transf.WithPandasHtmlToCsvConverter(today)
   converter.process()
+
+  """
+  print("Step 1 download HTML rendimentos no dia (original has comma decimal-place numbers)")
+  downloader = BBRendDiaDownloader()
+  downloader.download()
+  # today = datetime.date.today()
+  print(downloader)
 
 
 def adhoctest():

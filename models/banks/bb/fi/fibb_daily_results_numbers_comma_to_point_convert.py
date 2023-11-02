@@ -119,9 +119,13 @@ class SingleFileConverter:
     self.output_filepath = os.path.join(input_folderpath, outputfilename)
 
   def convert_numbers_comma_to_point_n_savefile(self):
-    print('SingleFileConverter Converting', self.input_filename, self.output_filename)
+    scrmsg = """SingleFileConverter: Converting comma to point from file to file: 
+    input:  [{inputfilename}]
+    output: [{outputfilename}]
+    """.format(inputfilename=self.input_filename, outputfilename=self.output_filename)
+    print(scrmsg)
     input_text = open(self.input_filepath).read()
-    output_text = decpla.convert_comma_to_point_in_numbers_via_regexp_for(input_text)
+    output_text = decpla.convert_decimalplace_comma_to_point_via_re_for(input_text)
     _ = osfs.save_file_with_text(self.output_filepath, output_text)
 
   def outputfile_already_exists(self):
@@ -162,7 +166,7 @@ class BatchConverter:
     """
     print(self.seq, 'Converting', filename)
     input_text = open(inputfilepath).read()
-    output_text = decpla.convert_comma_to_point_in_numbers_via_regexp_for(input_text)
+    output_text = decpla.convert_decimalplace_comma_to_point_via_re_for(input_text)
     _ = osfs.save_file_with_text(output_filepath, output_text)
     return output_text
 

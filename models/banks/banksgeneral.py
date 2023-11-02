@@ -1,22 +1,16 @@
+#!/usr/bin/env python3
+"""
+"""
 import os
-
 from fs.os import osfunctions as osfs
 import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lookup
 import settings as sett
+import models.banks.bank_data_settings as bksett
 
 
 class BANK:
 
-  SQL_TABLENAME = 'bankmonthlyfundos'
-  BANK3LETTER_BDB = 'bdb'
-  BANK3LETTER_CEF = 'cef'
-  BANKDICT = {
-    1: ('bdb', 'Banco do Brasil S.A.'),
-    33: ('std', 'Banco Santander (Brasil) S.A.'),
-    104: ('cef', 'Caixa Econômica Federal'),
-    237: ('bra', 'Banco Bradesco S.A.'),
-    341: ('ita', 'Banco Itaú S.A.'),
-  }
+  Props = bksett.BankProps
   BANKDICT_BY_3LETTER = None  # it will "lazily" be init'd
 
   @classmethod
@@ -24,9 +18,9 @@ class BANK:
     if cls.BANKDICT_BY_3LETTER is not None:
       return
     cls.BANKDICT_BY_3LETTER = {}
-    for banknumber in cls.BANKDICT:
+    for banknumber in cls.Props.BANKDICT:
       # banknumber is int
-      code3letter, descr = cls.BANKDICT[banknumber]
+      code3letter, descr = cls.Props.BANKDICT[banknumber]
       cls.BANKDICT_BY_3LETTER[code3letter] = (banknumber, descr)
 
   @classmethod
@@ -34,7 +28,7 @@ class BANK:
     if bank3letter is None:
       return False
     banknumber = cls.get_banknumber_by_its3letter(bank3letter)
-    if banknumber not in cls.BANKDICT.keys():
+    if banknumber not in cls.Props.BANKDICT.keys():
       return False
     return True
 
@@ -50,7 +44,7 @@ class BANK:
     if banknumber is None:
       return None
     try:
-      code3letter, _ = cls.BANKDICT[banknumber]
+      code3letter, _ = cls.Props.BANKDICT[banknumber]
       return code3letter
     except IndexError:
       return None
@@ -137,11 +131,11 @@ class BANK:
     this method is almost a __str__(), name not chosen due to the class-methods in-here
     """
     outstr = "*** mount_text_list_available_banks ***\n"
-    for banknumber in cls.BANKDICT:
+    for banknumber in cls.Props.BANKDICT:
       pdict = {
         'banknumber': banknumber,
-        'bank3letter': cls.BANKDICT[banknumber][0],
-        'bankdescr': cls.BANKDICT[banknumber][1],
+        'bank3letter': cls.Props.BANKDICT[banknumber][0],
+        'bankdescr': cls.Props.BANKDICT[banknumber][1],
       }
 
       line = '{banknumber} - {bank3letter} - {bankdescr}\n'.format(

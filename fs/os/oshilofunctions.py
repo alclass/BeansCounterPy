@@ -62,14 +62,14 @@ def find_filenames_that_start_with_spec_yearmonth_in_folderpath(refmonthdate, ba
   if basefolderpath is None or not os.path.isdir(basefolderpath):
     return []
   if refmonthdate is None:
-    return find_filepaths_whose_filenames_start_with_a_yeardashmonth_via_if(basefolderpath, dot_ext)
-  if type(refmonthdate) != datetime.date:
+    return []
+  if not isinstance(refmonthdate, datetime.date):
     refmonthdate = dtfs.make_date_with_day1(refmonthdate)
     if refmonthdate is None:
       return []
   year = refmonthdate.year
   month = refmonthdate.month
-  prefixstr = '{year}-{month:02} '.format(year=year, month=month)
+  prefixstr = '{year}-{month:02}'.format(year=year, month=month)  # notice that 'yyyy-mm ' or 'yyy-mm-dd' are expected
   filenames = osfs.find_filenames_from_path(basefolderpath)
   yearmonthfilenames = sorted(filter(lambda e: e.startswith(prefixstr), filenames))
   if dot_ext is None:
@@ -82,6 +82,10 @@ def find_filenames_that_start_with_spec_yearmonth_in_folderpath(refmonthdate, ba
 
 
 def find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, dot_ext=None):
+  if refmonthdate is None or basefolderpath is None:
+    return None
+  if not isinstance(refmonthdate, datetime.date) or not os.path.isdir(basefolderpath):
+    return None
   yearmonthfilenames = find_filenames_that_start_with_spec_yearmonth_in_folderpath(
     refmonthdate, basefolderpath, dot_ext
   )
@@ -102,11 +106,57 @@ def find_filepaths_whose_filenames_start_with_a_yeardashmonth_via_if(basefolderp
   return filepaths
 
 
+def find_yearmonthfolderpath_from(yearfolderpath, refmonthdate):
+  direntries = os.listdir(yearfolderpath)
+  paths = map(lambda e: os.path.join(yearfolderpath, e), direntries)
+  folderpaths = filter(lambda e: os.path.isdir(e), paths)
+  foldernames = map(lambda e: os.path.split(e)[-1], folderpaths)
+  prefix_yearmonth = "{year}-{month:02} ".format(year=refmonthdate.year, month=refmonthdate.month)
+  yearmonthfoldernames = filter(lambda e: e.startswith(prefix_yearmonth), foldernames)
+  yearmonthfolderpaths = sorted(map(lambda e: os.path.join(yearfolderpath, e), yearmonthfoldernames))
+  if len(yearmonthfolderpaths) == 0:
+    return []
+  if len(yearmonthfolderpaths) > 1:
+    error_msg = f"""Error with data:
+     there are more than one folder with year/month {refmonthdate}
+     prefixed in path {yearfolderpath}
+    """.format(refmonthdate=refmonthdate, yearfolderpath=yearfolderpath)
+    raise OSError(error_msg)
+  return yearmonthfolderpaths[0]
+
+
 def find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath):
   foldernames = osfs.find_foldernames_from_path(basefolderpath)
   yearfoldernames = filter(lambda e: yearplusblank_re.match(e), foldernames)
   yearfolderpaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearfoldernames))
   return yearfolderpaths
+
+
+def find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath):
+  foldernames = osfs.find_foldernames_from_path(basefolderpath)
+  yearfoldernames = sorted(filter(lambda e: yearplusblank_re.match(e), foldernames))
+  return yearfoldernames
+
+
+def find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year):
+  yearfoldernames = find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath)
+  stryearplusblank = str(year) + ' '
+  yearfoldernames = sorted(filter(lambda e: e.startswith(stryearplusblank), yearfoldernames))
+  if len(yearfoldernames) == 0:
+    return None
+  if len(yearfoldernames) > 1:
+    error_msg = 'Error: Inconsistent Year Prefixed Dir Tree: there are more than one folder for year [%s]' % str(year)
+    raise ValueError(error_msg)
+  return yearfoldernames[0]
+
+
+def find_folderpath_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year):
+  yearfoldername = find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year)
+  try:
+    yearfoldername =  os.path.join(basefolderpath, yearfoldername)
+  except TypeError:
+    return None
+  return yearfoldername
 
 
 def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
@@ -259,8 +309,9 @@ def adhoctest():
   print('parameters refmonth', refmonthdate, 'ext or dot_ext', ext)
   print('folder', basefolderpath)
   fps = find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, ext)
-  for fp in fps:
-    print(fp)
+  if fps is not None:
+    for fp in fps:
+      print(fp)
 
 
 def process():

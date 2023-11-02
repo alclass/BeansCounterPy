@@ -63,7 +63,10 @@ def retrieve_filepaths_in_folder_or_empty(pfolderpath=None, dotext=None):
 def find_foldernames_from_path(basepath):
   if basepath is None:
     return None
-  entries = os.listdir(basepath)
+  try:
+    entries = os.listdir(basepath)
+  except (OSError, TypeError):
+    return []
   abspath_entries = [os.path.join(basepath, e) for e in entries]
   abspath_direntries = filter(lambda e: os.path.isdir(e), abspath_entries)
   foldernames = [os.path.split(e)[-1] for e in abspath_direntries]
@@ -112,8 +115,10 @@ def find_filenames_with_regexp_on_path(str_regexp, basepath):
 
 def adhoctest():
   str_regexp = '^\d{4}\ '  # \-\d{2}
-  basepath = ('/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/'
-              'CEF bankdata OD/FI Extratos Mensais Ano a Ano CEF OD')
+  basepath = (
+      '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/'
+      'dados/bankdata/104 CEF bankdata/FI Extratos Mensais Ano a Ano CEF OD'
+  )
   qualentries = find_foldernames_with_regexp_on_path(str_regexp, basepath)
   qualentries.sort()
   print('-' * 40)
