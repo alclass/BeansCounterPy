@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-""""
-scrape_monthly_rendextracts.py
-  Organizes the month range and then calls bbScraperWithFileText.py month to month
+"""
+settings.py
+  has parameters for the app and also uses parametes from local_settings.py which is not in the underlying GitHub.
 """
 import os
 import sys

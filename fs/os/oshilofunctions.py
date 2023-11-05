@@ -18,6 +18,7 @@ Notice on the word 'hilo':
     also, it is not the 'hilo' word from Spanish which means thread et al.
 """
 import datetime
+import glob
 import os
 import re
 import fs.datesetc.datefs as dtfs
@@ -58,19 +59,91 @@ def find_names_that_start_with_a_yeardashmonth_via_re(entries):
   return outnames
 
 
-def find_filenames_that_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, dot_ext=None):
+def find_specyear_typ_folderpaths_from_folderpath(basefolderpath, year, typ=None):
+  foldernames = find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath, typ)
+  specyearfoldernames = filter(lambda e: e.startswith(str(year)), foldernames)
+  specyearfolderpaths = [os.path.join(basefolderpath, e) for e in specyearfoldernames]
+  return specyearfolderpaths
+
+
+def find_foldernames_in_folderpath(basefolderpath, typ=None):
   if basefolderpath is None or not os.path.isdir(basefolderpath):
     return []
-  if refmonthdate is None:
+  osentries = os.listdir(basefolderpath)
+  foldernames = [e for e in osentries if os.path.isdir(os.path.join(basefolderpath, e))]
+  if typ:
+    foldernames = filter(lambda e: e.find(typ) > - 1, foldernames)
+  return sorted(foldernames)
+
+
+def find_spec_year_typ_folderpaths_any_months_from_folderpath(basefolderpath, year, typ=None):
+  foldernames = find_foldernames_in_folderpath(basefolderpath, typ)
+  try:
+    prefix = '{year} '.format(year=year)
+    foldernames = filter(lambda e: e.startswith(str(prefix)), foldernames)
+  except (TypeError, ValueError):
+    pass
+  folderpaths = [os.path.join(basefolderpath, e) for e in foldernames]
+  return sorted(folderpaths)
+
+
+def find_spec_year_month_typ_folderpaths_from_folderpath(basefolderpath, year, month, typ=None):
+  foldernames = find_foldernames_in_folderpath(basefolderpath, typ)
+  try:
+    prefix = '{year}-{month:02} '.format(year=year, month=month)
+    foldernames = filter(lambda e: e.startswith(str(prefix)), foldernames)
+  except (TypeError, ValueError):
+    pass
+  folderpaths = [os.path.join(basefolderpath, e) for e in foldernames]
+  return folderpaths
+
+
+def extract_filepaths_from_folderpaths(folderpaths, pdot_ext):
+  dot_ext = '*'
+  if pdot_ext is not None:
+    if not pdot_ext.startswith('.'):
+      dot_ext = '.' + pdot_ext
+    else:
+      dot_ext = pdot_ext
+  filepaths = []
+  for folderpath in folderpaths:
+    fpaths = glob.glob(folderpath + '/' + dot_ext)
+    filepaths.append(fpaths)
+  return filepaths
+
+
+def find_yyyymm_filepaths_whose_from_1stlevel_yyyytypfolder_from_folderpath(
+    basefolderpath, year, typ=None, dot_ext=None
+):
+  folderpaths = find_specyear_typ_folderpaths_from_folderpath(basefolderpath, year, typ)
+  filepaths = extract_filepaths_from_folderpaths(folderpaths, dot_ext)
+  return filepaths
+
+
+def find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext=None, day=None):
+  """
+  When using the last parameter "day", this method should only be called by the next function ie
+    find_filenames_w_year_month_day_ext_in_folderpath(basefolderpath, year, month, day, dot_ext)
+    (a kind of private function under the hypothesis "day is not None")
+  """
+  if basefolderpath is None or not os.path.isdir(basefolderpath):
     return []
-  if not isinstance(refmonthdate, datetime.date):
-    refmonthdate = dtfs.make_date_with_day1(refmonthdate)
-    if refmonthdate is None:
-      return []
-  year = refmonthdate.year
-  month = refmonthdate.month
-  prefixstr = '{year}-{month:02}'.format(year=year, month=month)  # notice that 'yyyy-mm ' or 'yyy-mm-dd' are expected
+  try:
+    year = int(year)
+    month = int(month)
+    if day is not None:
+      day = int(day)
+  except ValueError:
+    return []
+  if 0 > month > 12:
+    return []
+  if day is None:
+    prefixstr = '{year}-{month:02}'.format(year=year, month=month)  # notice that 'yyyy-mm ' or 'yyy-mm-dd' are expected
+  else:
+    prefixstr = '{year}-{month:02}-{day:02}'.format(year=year, month=month, day=day)
   filenames = osfs.find_filenames_from_path(basefolderpath)
+  if filenames is None or len(filenames) == 0:
+    return []
   yearmonthfilenames = sorted(filter(lambda e: e.startswith(prefixstr), filenames))
   if dot_ext is None:
     return yearmonthfilenames
@@ -81,18 +154,77 @@ def find_filenames_that_start_with_spec_yearmonth_in_folderpath(refmonthdate, ba
   return yearmonthfilenames
 
 
-def find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, dot_ext=None):
-  if refmonthdate is None or basefolderpath is None:
-    return None
-  if not isinstance(refmonthdate, datetime.date) or not os.path.isdir(basefolderpath):
-    return None
-  yearmonthfilenames = find_filenames_that_start_with_spec_yearmonth_in_folderpath(
-    refmonthdate, basefolderpath, dot_ext
-  )
-  if len(yearmonthfilenames) == 0:
+def find_filenames_w_year_month_day_ext_in_folderpath(basefolderpath, year, month, day, dot_ext=None):
+  """
+  This function just reorders the parameters sequence, so that, in here, day is placed after month
+  """
+  return find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext, day)
+
+
+def find_filenames_w_year_month_as_refmonth_n_ext_in_folderpath(basefolderpath, refmonthdate, dot_ext=None):
+  try:
+    year = refmonthdate.year
+    month = refmonthdate.month
+    filenames = find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext)
+    if filenames is None or len(filenames) == 0:
+      return []
+    filenames = sorted(filenames)
+    filepaths = [os.path.join(basefolderpath, e) for e in filenames]
+    return filepaths
+  except (AttributeError, TypeError):
+    pass
+  return []
+
+
+def find_filenames_w_year_ext_in_folderpath(basefolderpath, year, pdot_ext=None):
+  """
+
+  """
+  if year is None:
+    return []
+  if basefolderpath is None or not os.path.isdir(basefolderpath):
+    return []
+  dot_ext = '*'
+  if pdot_ext is not None:
+    if not pdot_ext.startswith('.'):
+      dot_ext = '.' + pdot_ext
+    else:
+      dot_ext = pdot_ext
+  filepaths = glob.glob(basefolderpath + '/' + dot_ext)
+  filepaths = filter(lambda e: os.path.isfile(e), filepaths)
+  try:
+    stryear = str(year)
+  except ValueError:
+    return sorted(filepaths)
+  filenames = [os.path.split(e)[-1] for e in filepaths]
+  filenames = sorted(filter(lambda e: e.startswith(stryear), filenames))
+  return filenames
+
+
+def find_filepaths_w_year_n_ext_in_folderpath(basefolderpath, year, pdot_ext=None):
+  filenames = find_filenames_w_year_ext_in_folderpath(basefolderpath, year, pdot_ext)
+  if filenames is None or len(filenames) == 0:
+    return []
+  filepaths = [os.path.join(basefolderpath, e) for e in filenames]
+  return filepaths
+
+
+def find_filepaths_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext=None):
+  yearmonthfilenames = find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext)
+  if yearmonthfilenames is None or len(yearmonthfilenames) == 0:
     return []
   yearmonthfilepaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearmonthfilenames))
   return yearmonthfilepaths
+
+
+def find_filepaths_w_year_month_as_refmonth_n_ext_in_folderpath(basefolderpath, refmonthdate, dot_ext=None):
+  try:
+    year = refmonthdate.year
+    month = refmonthdate.month
+    return find_filepaths_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext)
+  except (AttributeError, TypeError):
+    pass
+  return []
 
 
 def find_filepaths_whose_filenames_start_with_a_yeardashmonth_via_if(basefolderpath, dot_ext=None):
@@ -125,38 +257,60 @@ def find_yearmonthfolderpath_from(yearfolderpath, refmonthdate):
   return yearmonthfolderpaths[0]
 
 
-def find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath):
+def find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath, typ=None):
   foldernames = osfs.find_foldernames_from_path(basefolderpath)
   yearfoldernames = filter(lambda e: yearplusblank_re.match(e), foldernames)
-  yearfolderpaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearfoldernames))
-  return yearfolderpaths
+  if typ is not None:
+    yearfoldernames = filter(lambda e: e.find(typ) > -1, yearfoldernames)
+  yeartypfolderpaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearfoldernames))
+  return yeartypfolderpaths
 
 
-def find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath):
+def find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath, typ=None):
   foldernames = osfs.find_foldernames_from_path(basefolderpath)
-  yearfoldernames = sorted(filter(lambda e: yearplusblank_re.match(e), foldernames))
+  yearfoldernames = filter(lambda e: yearplusblank_re.match(e), foldernames)
+  if typ is not None:
+    yearfoldernames = filter(lambda e: e.find(typ) > -1, yearfoldernames)
+  yearfoldernames = sorted(yearfoldernames)
   return yearfoldernames
 
 
-def find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year):
+def find_folderpaths_whose_foldernames_starts_with_a_yeardashmonthplusblank_via_re_in_basefolder(basefolderpath):
+  """
+  The compiled-re yeardashmonthplusblank_re tests mm for an intnumber not an intnumber within [1..12]
+  """
+  foldernames = osfs.find_foldernames_from_path(basefolderpath)
+  yearfoldernames = sorted(filter(lambda e: yeardashmonthplusblank_re.match(e), foldernames))
+  return yearfoldernames
+
+
+def find_foldernames_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
   yearfoldernames = find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath)
   stryearplusblank = str(year) + ' '
   yearfoldernames = sorted(filter(lambda e: e.startswith(stryearplusblank), yearfoldernames))
-  if len(yearfoldernames) == 0:
-    return None
-  if len(yearfoldernames) > 1:
-    error_msg = 'Error: Inconsistent Year Prefixed Dir Tree: there are more than one folder for year [%s]' % str(year)
-    raise ValueError(error_msg)
-  return yearfoldernames[0]
+  return yearfoldernames
 
 
-def find_folderpath_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year):
-  yearfoldername = find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year)
+def find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
+  foldernames = find_foldernames_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year)
+  if len(foldernames) > 0:
+    return foldernames[0]
+  return None
+
+
+def find_folderpaths_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
+  yearfoldernames = find_foldernames_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ)
+  yearfolderpaths = [os.path.join(basefolderpath, e) for e in yearfoldernames]
+  return yearfolderpaths
+
+
+def find_folderpath_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
+  yearfoldername = find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ)
   try:
-    yearfoldername =  os.path.join(basefolderpath, yearfoldername)
+    yearfolderpath = os.path.join(basefolderpath, yearfoldername)
   except TypeError:
     return None
-  return yearfoldername
+  return yearfolderpath
 
 
 def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
@@ -290,25 +444,25 @@ def adhoctest():
   yearprefix_strlist = ["2018 FI Extratos Mensais", "2021 FI Extratos Mensais", "2023 FI Extratos Mensais"]
   year = 2021
   expected_str = find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist)
-  print('for', year, '=>', expected_str)
+  print 'for', year, '=>', expected_str
   year = 2022
   expected_str = find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist)
-  print('for', year, '=>', expected_str)
+  print 'for', year, '=>', expected_str
   year = 'bla'
   expected_str = find_a_yearprefixedstr_from_strlist_by_year(year, yearprefix_strlist)
-  print('for', year, '=>', expected_str)
+  print 'for', year, '=>', expected_str
   yearmonthprefix_str = "2022-10 FI extrato.txt"
   pdate = extract_date_from_yearmonthprefix_str(yearmonthprefix_str)
-  print('for', yearmonthprefix_str, '=>', pdate)
+  print 'for', yearmonthprefix_str, '=>', pdate
   """
-  print('Adhoc test for find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath()')
+  print('Adhoc test for find_filepaths_w_year_month_ext_in_folderpath()')
   refmonthdate = '2022-12'
   basefolderpath = '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/'
   basefolderpath += '104 CEF bankdata/FI Extratos Mensais Ano a Ano CEF OD/2022 FI extratos mensais CEF'
   ext = 'xml'
   print('parameters refmonth', refmonthdate, 'ext or dot_ext', ext)
   print('folder', basefolderpath)
-  fps = find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(refmonthdate, basefolderpath, ext)
+  fps = find_filepaths_w_year_month_ext_in_folderpath(refmonthdate, basefolderpath, ext)
   if fps is not None:
     for fp in fps:
       print(fp)

@@ -79,7 +79,8 @@ class SingleFileConverter:
       # at this point, finder may not yet have been initialized, get one with today's date (needed for the default)
       today = datetime.date.today()
       localfinder = ffnd.BBFIFileFinder(today, ffnd.BBFIFileFinder.Props.ACOES)
-      basefolderpath = localfinder.get_basefolder_for_daily_results()
+      # basefolderpath = localfinder.get_basefolder_for_daily_results()
+
       input_filename = localfinder.get_conventioned_input_commasep_html_filename()
       self.input_filepath = os.path.join(basefolderpath, input_filename)
     # date can be extracted after the check above, for it will look up the prefix in the input filename

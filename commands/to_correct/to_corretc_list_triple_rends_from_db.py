@@ -38,7 +38,7 @@ class TripleRendLister:
 
   def fetch_month_triplerend(self, refmonth):
     year = refmonth.year
-    yearfolderpath = self.bankpathdiscoverer.get_folderpath_by_year(year)
+    yearfolderpath = self.bankpathdiscoverer.find_l1yyyy_folderpath_by_year(year)
     methodcall_hanldler = extrdistr.find_methodcall_on_bank3letter(self.bank3letter)
     # to correct (or finish implementing methodcall_hanldler!
     methodcall_hanldler()

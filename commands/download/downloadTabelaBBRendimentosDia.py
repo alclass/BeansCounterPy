@@ -3,13 +3,13 @@ import datetime
 import os
 import sys
 import requests
-import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint  # .SingleFileConverter
 import models.banks.bb.fi.bbfi_file_find as ffnd  # for ffnd.BBFIFileFinder.Props.commapoint_htmlfilename_to_interpol
 import models.banks.bankpathfinder as bkfnd  # .BankOSFolderFileFinder
-
-import models.banks.banksgeneral as bkge
+# import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint  # .SingleFileConverter
+# import fs.os.dateprefixed_dirtree_finder as fnd  # fnd.DatePrefixedOSFinder
+# import models.banks.banksgeneral as bkge
 # for class transf.WithPandasHtmlToCsvConverter
-import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as transf
+# import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as transf
 # URL_BB_RENTAB_DIA = 'http://www21.bb.com.br/portalbb/rentabilidade/index.jsp?tipo=01'
 URL_BB_RENTAB_DIA = 'https://www37.bb.com.br/portalbb/tabelaRentabilidade/rentabilidade/gfi7,802,9085,9089,1.bbx'
 BB_BANK3LETTER = 'bdb'
@@ -38,15 +38,26 @@ class BBRendDiaDownloader:
     return self.bbfinder.get_conventioned_input_commasep_html_filename()
 
   def mount_daybased_targetfilepath(self):
+    """
+    fs.os.dateprefixed_dirtree_finder.DatePrefixedOSFinder
+
+    """
     bank3letter = 'bdb'
-    bfinder = bkfnd.BankOSFolderFileFinder(bank3letter, bkfnd.BankCat.REND_RESULTS_KEY)
-    rentabdia_folderpath = bfinder.get_folderpath_by_yearmonth(self.today.year, self.today.month)
-    # [old] basefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(BB_BANK3LETTER)
-    # [old] rentabdia_folderpath = os.path.join(basefolderpath, BB_RENTAB_DIA_MIDDLE_FOLDERNAME)
-    if not os.path.isdir(rentabdia_folderpath):
-      os.makedirs(rentabdia_folderpath)
+    dtprfxd_finder = bkfnd.BankOSFolderFileFinder(bank3letter, bkfnd.BankCat.REND_RESULTS_KEY)
+    rentabdia_basefolderpath = dtprfxd_finder.find_l2yyyymm_folderpath_by_year_month_typ(
+      self.today.year, self.today.month
+    )
+    today = datetime.date.today()
+    l2folderpath = dtprfxd_finder.find_l2yyyymm_folderpath_by_year_month_typ(today.year, today.month)
+    if l2folderpath is None:
+      error_msg = (
+          'Data or OS Error: from folder [{basefolderpath}] l2 subfolder returned None with'
+          ' year {year} and month {month}'.
+          format(basefolderpath=rentabdia_basefolderpath, year=today.year, month=today.month)
+      )
+      raise ValueError(error_msg)
     # use the interpolate constant at
-    filepath = os.path.join(rentabdia_folderpath, self.default_target_filename)
+    filepath = os.path.join(l2folderpath, self.default_target_filename)
     return filepath
 
   @property

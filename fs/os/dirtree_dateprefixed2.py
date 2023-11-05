@@ -35,7 +35,10 @@ class FolderNodeForDatePrefixTree:
     self._year_fim = year_fim
 
   def find_foldernames_that_starts_with_a_yearplusblank(self):
-    return hilo.find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(self.rootpath)
+    foldernames = hilo.find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(self.rootpath)
+    if foldernames is None or len(foldernames) == 0:
+      return []
+    return foldernames
 
   def find_1stlevel_yearprefix_folderpaths(self):
     return hilo.find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(self.rootpath)
@@ -60,7 +63,7 @@ class FolderNodeForDatePrefixTree:
     refmonthdate = datetime.date(year=year, month=month, day=1)
     yearfolderpath = self.find_1stlevel_yearfolderpath_for(year)
     # attention here with the order of parameters: first is refmonthdate then yearfolderpath
-    return hilo.find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(refmonthdate, yearfolderpath)
+    return hilo.find_filepaths_w_year_month_ext_in_folderpath(refmonthdate, yearfolderpath)
 
 
 def adhoctest():

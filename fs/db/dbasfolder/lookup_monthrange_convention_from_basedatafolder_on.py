@@ -187,7 +187,7 @@ class DatePrefixedOSEntriesFinder:
     yearbasefolderpath = self.find_yearprefix_folderpath_by_year(refmonthdate)
     if yearbasefolderpath is None:
       return []
-    filepaths = hilo.find_filepaths_whose_filenames_start_with_spec_yearmonth_in_folderpath(
+    filepaths = hilo.find_filepaths_w_year_month_ext_in_folderpath(
       refmonthdate, yearbasefolderpath, dot_ext
     )
     return filepaths
@@ -201,7 +201,7 @@ class DatePrefixedOSEntriesFinder:
     yearbasefolderpath = self.find_yearprefix_folderpath_by_year(year)
     if yearbasefolderpath is None:
       return []
-    filenames = hilo.find_filenames_that_start_with_spec_yearmonth_in_folderpath(
+    filenames = hilo.find_filenames_w_year_month_ext_in_folderpath(
       refmonthdate, yearbasefolderpath, dot_ext
     )
     return filenames
