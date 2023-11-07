@@ -8,17 +8,22 @@ import os
 import fs.datesetc.datehilofs as hilodt
 import fs.os.osfunctions as osfs
 import fs.re.refunctions as decpla
-import models.banks.bb.fi.bbfi_file_find as ffnd  # ffnd.BBFIFileFinder
+import models.banks.bb.fi.bbfi_file_find as ffnd  # for ffnd.BBFIFileFinder.Props.commapoint_htmlfilename_to_interpol
+import models.banks.bankpathfinder as pthfnd  # .BankOSFolderFileFinder
+import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as trnsf  # WithPandasHtmlToCsvConverter
+from argparse import ArgumentParser
 # TO-DO this hardcoded constant below will be changed in the future to a config class that informs the paths
 DEFAULT_FOLDERPATH = (
   '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/'
   '001 BDB bankdata/FI Extratos Mensais Ano a Ano BB OD/'
   'BB FI Rendimentos Diários htmls/'
 )
+BDB_BANK3LETTER = 'bdb'
 
 
 class SingleFileConverter:
   def __init__(self, input_filepath=None, output_filepath=None):
+    self.bank3letter = BDB_BANK3LETTER
     self._date = None  # date is extracted from input_filename
     self._finder = None
     self.input_filepath = input_filepath
@@ -49,9 +54,16 @@ class SingleFileConverter:
   @property
   def date(self):
     if self._date is None:
-      pp = self.input_filename.split(' ')
-      pdate = pp[0]
-      self._date = hilodt.try_make_date_with(pdate)
+      try:
+        pp = self.input_filename.split(' ')
+        pdate = pp[0]
+        self._date = hilodt.try_make_date_with(pdate)
+        if not isinstance(self._date, datetime.date):
+          # default is today's date
+          self._date = datetime.date.today()
+      except TypeError:
+        # when None is input in init's parameter input_filepath, date defaults to today's date
+        self._date = datetime.date.today()
     return self._date
 
   def get_conventioned_filenames(self):
@@ -78,11 +90,12 @@ class SingleFileConverter:
     if self.input_filepath is None or not os.path.isfile(self.input_filepath):
       # at this point, finder may not yet have been initialized, get one with today's date (needed for the default)
       today = datetime.date.today()
-      localfinder = ffnd.BBFIFileFinder(today, ffnd.BBFIFileFinder.Props.ACOES)
-      # basefolderpath = localfinder.get_basefolder_for_daily_results()
-
-      input_filename = localfinder.get_conventioned_input_commasep_html_filename()
-      self.input_filepath = os.path.join(basefolderpath, input_filename)
+      bfinder = ffnd.BBFIFileFinder(today, ffnd.BBFIFileFinder.Props.ACOES)
+      input_filename = bfinder.get_conventioned_input_commasep_html_filename()
+      findertypecat = pthfnd.BankOSFolderFileFinder.REND_RESULTS_KEY
+      pthfinder = pthfnd.BankOSFolderFileFinder(self.bank3letter, findertypecat)
+      folderpath = pthfinder.find_l2yyyymm_folderpath_by_year_month_typ(year=self.date.year, month=self.date.month)
+      self.input_filepath = os.path.join(folderpath, input_filename)
     # date can be extracted after the check above, for it will look up the prefix in the input filename
     _ = self.date
     # 2 input filename is conventioned, so it should be checked
@@ -193,13 +206,44 @@ class BatchConverter:
       self.convert_comma_to_point_for_numbers_in_file(inputfilepath)
 
 
+def get_input_output_filepaths(pdate):
+    pdate = hilodt.try_make_date_with(pdate)
+    converter = trnsf.WithPandasHtmlToCsvConverter(pdate)
+    input_filepath = converter.deccomma_html_filepath
+    output_filepath = converter.decpoint_html_filepath
+    return input_filepath, output_filepath
+
+
+def get_args():
+  """
+  Suppose parameters given are: -d '2023-11-03'
+  args = Namespace(date=['2023-11-03'])
+  pdate = args.date[0]
+  """
+  parser = ArgumentParser()
+  parser.add_argument(
+    '-d', '--date', metavar='yearmonthday', type=str, nargs=1,
+    help="the date for finding its daily exchange rate quotes",
+  )
+  args = parser.parse_args()
+  return args
+
+
 def adhoctests():
-  pass
+  converter = BatchConverter()
+  converter.process()
 
 
 def process():
-  converter = BatchConverter()
-  converter.process()
+  args = get_args()
+  if args.date is not None:
+    pdate = args.date[0]
+  else:
+    pdate = datetime.date.today()
+  print(pdate, args)
+  input_filepath, output_filepath = get_input_output_filepaths(pdate)
+  sfc = SingleFileConverter(input_filepath, output_filepath)
+  sfc.process()
 
 
 if __name__ == '__main__':

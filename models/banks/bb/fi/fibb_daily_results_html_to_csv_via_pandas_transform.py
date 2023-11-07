@@ -7,23 +7,22 @@ import os
 import shutil
 import pandas as pd
 import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint
+import models.banks.bankpathfinder as pthfnd  # .BankOSFolderFileFinder
 import fs.datesetc.datefs as dtfs
+import fs.datesetc.datehilofs as hilodt
 
 
 class WithPandasHtmlToCsvConverter:
 
-  folderpath = (
-    '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/'
-    '001 BDB bankdata/FI Extratos Mensais Ano a Ano BB OD/'
-    'BB FI Rendimentos Diários htmls/'
-  )
   deccomma_html_filename_to_interpol = '{date} BB rendimentos no dia comma-sep.html'
   decpoint_html_filename_to_interpol = '{date} BB rendimentos no dia point-sep.html'
   csvfilename_to_interpol = '{date} {typ} BB rendimentos no dia.csv'
-  ACOES = 'Ações'
-  RFDI = 'RFDI'
-  RFLP = 'RFLP'
+  ACOES = pthfnd.BankOSFolderFileFinder.ACOES
+  RFDI = pthfnd.BankOSFolderFileFinder.RFDI
+  RFLP = pthfnd.BankOSFolderFileFinder.RFLP
   csv_types = [ACOES, RFDI, RFLP]
+  TYPRE = pthfnd.BankOSFolderFileFinder.REND_RESULTS_KEY
+  BDB_BANK3LETTER = 'bdb'
 
   def __init__(self, pdate=None):
     self.date = pdate or datetime.date.today()
@@ -32,14 +31,36 @@ class WithPandasHtmlToCsvConverter:
 
   def treat_date(self):
     if not isinstance(self.date, datetime.date):
-      self.date = dtfs.return_date_or_recup_it_from_str(self.date)
+      self.date = hilodt.try_make_date_with(self.date)
       if not isinstance(self.date, datetime.date):
         error_msg = 'Error: program could not transform input date [%d] to object date' % self.date
         raise ValueError(error_msg)
+    print('treat date', self.date)
+
+  @property
+  def folderpath(self):
+    """
+      folderpath = (
+        '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/'
+        '001 BDB bankdata/FI Extratos Mensais Ano a Ano BB OD/'
+        'BB FI Rendimentos Diários htmls/'
+      )
+    """
+    pthfnder = pthfnd.BankOSFolderFileFinder(self.BDB_BANK3LETTER, self.TYPRE)
+    _folderpath = pthfnder.find_l2yyyymm_folderpath_by_year_month_typ(self.date.year, self.date.month)
+    return _folderpath
+
+  @property
+  def deccomma_html_filepath(self):
+    return os.path.join(self.folderpath, self.deccomma_html_filename)
 
   @property
   def deccomma_html_filename(self):
     return self.deccomma_html_filename_to_interpol.format(date=str(self.date))
+
+  @property
+  def decpoint_html_filepath(self):
+    return os.path.join(self.folderpath, self.decpoint_html_filename)
 
   @property
   def decpoint_html_filename(self):
@@ -52,12 +73,12 @@ class WithPandasHtmlToCsvConverter:
     filename = self.csvfilename_to_interpol.format(date=str(self.date), typ=typ)
     return filename
 
-  def get_filepath(self, filename):
+  def csv_output_filepath(self, filename):
     return os.path.join(self.folderpath, filename)
 
   def write_csvfile(self, df_table, typ):
     csvfilename = self.get_csvfilename(typ)
-    filepath = self.get_filepath(csvfilename)
+    filepath = self.csv_output_filepath(csvfilename)
     if not os.path.isfile(filepath):
       print('Writing csv_output', csvfilename)
       df_table.to_csv(filepath)
@@ -77,7 +98,7 @@ class WithPandasHtmlToCsvConverter:
 
   def to_pandas(self):
     print('Reading input_html to pandas:', self.decpoint_html_filename)
-    filepath = self.get_filepath(self.decpoint_html_filename)
+    filepath = self.csv_output_filepath(self.decpoint_html_filename)
     self.df_list = pd.read_html(filepath)
 
   def backup_html_if_not_already(self):
@@ -86,7 +107,7 @@ class WithPandasHtmlToCsvConverter:
     In the beginning, its function was to copy the "comma separated html" to the "bak" directory
     After that, the "comma separated htmls" were left on the processing folder with all the other files.
     """
-    input_htmlfilepath = self.get_filepath(self.deccomma_html_filename)
+    input_htmlfilepath = self.csv_output_filepath(self.deccomma_html_filename)
     bakfolderpath = os.path.join(self.folderpath, 'bak')
     bakfilepath = os.path.join(bakfolderpath, self.deccomma_html_filename)
     if not os.path.isdir(bakfolderpath):
@@ -98,12 +119,12 @@ class WithPandasHtmlToCsvConverter:
       print('Already backed up', self.deccomma_html_filename)
 
   def convert_numbers_comma_to_point(self):
-    input_filepath = self.get_filepath(self.deccomma_html_filename)
-    output_filepath = self.get_filepath(self.decpoint_html_filename)
+    input_filepath = self.csv_output_filepath(self.deccomma_html_filename)
+    output_filepath = self.csv_output_filepath(self.decpoint_html_filename)
     commapoint.SingleFileConverter(input_filepath, output_filepath)
 
   def check_input_file_exists(self):
-    filepath = self.get_filepath(self.deccomma_html_filename)
+    filepath = self.csv_output_filepath(self.deccomma_html_filename)
     if not os.path.isfile(filepath):
       scrmsg = (
         'Input file [%s] is missing.\n'
@@ -130,16 +151,23 @@ class WithPandasHtmlToCsvConverter:
 
 
 def process():
-  pass
+  """
+
+  """
+  pdate = '2023-11-03'
+  converter = WithPandasHtmlToCsvConverter(pdate)
+  converter.process()
 
 
 def adhoctests():
-  converter = WithPandasHtmlToCsvConverter()
-  converter.process()
+  """
+
+  """
+  pass
 
 
 if __name__ == '__main__':
   """
-  process()
-  """
   adhoctests()
+  """
+  process()
