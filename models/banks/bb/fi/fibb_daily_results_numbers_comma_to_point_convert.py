@@ -28,52 +28,8 @@ class SingleFileConverter:
     self._finder = None
     self.input_filepath = input_filepath
     self.output_filepath = output_filepath
-    self.treat_filepaths()
+    self.treat_filepaths()  # in case of None, it will stablish the defaults for input and/or output paths
     # self.process()  # should be called 'externally' by the object
-
-  @property
-  def input_filename(self):
-    return os.path.split(self.input_filepath)[-1]
-
-  @property
-  def output_filename(self):
-    if self.output_filepath:
-      return os.path.split(self.output_filepath)[-1]
-    # it's expected this is transient until treat_filepaths() is completed
-    # anyway, the conventioned filenames are the ones required!
-    return self.get_conventioned_filenames()[-1]
-
-  @property
-  def finder(self):
-    if self._finder is None:
-      _ = self.date
-      # finder here does not use the 'typ' (Report Type) parameter, but one is given for instantiation
-      self._finder = ffnd.BBFIFileFinder(self.date, ffnd.BBFIFileFinder.Props.ACOES)
-    return self._finder
-
-  @property
-  def date(self):
-    if self._date is None:
-      try:
-        pp = self.input_filename.split(' ')
-        pdate = pp[0]
-        self._date = hilodt.try_make_date_with(pdate)
-        if not isinstance(self._date, datetime.date):
-          # default is today's date
-          self._date = datetime.date.today()
-      except TypeError:
-        # when None is input in init's parameter input_filepath, date defaults to today's date
-        self._date = datetime.date.today()
-    return self._date
-
-  def get_conventioned_filenames(self):
-    """
-    name_to_interpol = '{date} BB rendimentos no dia {commapointsep}.html'
-    conventioned_input = name_to_interpol.format(date=self.date, commapointsep='comma-sep')
-    conventioned_output = name_to_interpol.format(date=self.date, commapointsep='point-sep')
-    return conventioned_input, conventioned_output
-    """
-    return self.finder.get_conventioned_commapoint_html_filenames()
 
   def treat_filepaths(self):
     """
@@ -120,6 +76,50 @@ class SingleFileConverter:
       error_msg = 'Error: output filename [%s] is different than conventioned  [%s]' % \
                   (output_filename, conventioned_output)
       raise OSError(error_msg)
+
+  @property
+  def input_filename(self):
+    return os.path.split(self.input_filepath)[-1]
+
+  @property
+  def output_filename(self):
+    if self.output_filepath:
+      return os.path.split(self.output_filepath)[-1]
+    # it's expected this is transient until treat_filepaths() is completed
+    # anyway, the conventioned filenames are the ones required!
+    return self.get_conventioned_filenames()[-1]
+
+  @property
+  def finder(self):
+    if self._finder is None:
+      _ = self.date
+      # finder here does not use the 'typ' (Report Type) parameter, but one is given for instantiation
+      self._finder = ffnd.BBFIFileFinder(self.date, ffnd.BBFIFileFinder.Props.ACOES)
+    return self._finder
+
+  @property
+  def date(self):
+    if self._date is None:
+      try:
+        pp = self.input_filename.split(' ')
+        pdate = pp[0]
+        self._date = hilodt.try_make_date_with(pdate)
+        if not isinstance(self._date, datetime.date):
+          # default is today's date
+          self._date = datetime.date.today()
+      except TypeError:
+        # when None is input in init's parameter input_filepath, date defaults to today's date
+        self._date = datetime.date.today()
+    return self._date
+
+  def get_conventioned_filenames(self):
+    """
+    name_to_interpol = '{date} BB rendimentos no dia {commapointsep}.html'
+    conventioned_input = name_to_interpol.format(date=self.date, commapointsep='comma-sep')
+    conventioned_output = name_to_interpol.format(date=self.date, commapointsep='point-sep')
+    return conventioned_input, conventioned_output
+    """
+    return self.finder.get_conventioned_commapoint_html_filenames()
 
   def set_conventioned_output_filepath(self):
     """

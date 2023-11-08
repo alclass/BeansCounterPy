@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
+"""
+commands/download/downloadTabelaBBRendimentosDia.py
+  downloads BB's app-fundos daily report
+  After downloading, it:
+    a) converts comma-sep html into a point-sep one;
+    b) converts the 3 point-sep html tables to its csv equivalent.
+"""
 import datetime
 import os
 import sys
 import requests
 import models.banks.bb.fi.bbfi_file_find as ffnd  # for ffnd.BBFIFileFinder.Props.commapoint_htmlfilename_to_interpol
 import models.banks.bankpathfinder as bkfnd  # .BankOSFolderFileFinder
-# import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint  # .SingleFileConverter
-# import fs.os.dateprefixed_dirtree_finder as fnd  # fnd.DatePrefixedOSFinder
-# import models.banks.banksgeneral as bkge
-# for class transf.WithPandasHtmlToCsvConverter
-# import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as transf
-# URL_BB_RENTAB_DIA = 'http://www21.bb.com.br/portalbb/rentabilidade/index.jsp?tipo=01'
+import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint  # .SingleFileConverter
+import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as transf  # .WithPandasHtmlToCsvConverter
+# (old) URL_BB_RENTAB_DIA = 'http://www21.bb.com.br/portalbb/rentabilidade/index.jsp?tipo=01'
 URL_BB_RENTAB_DIA = 'https://www37.bb.com.br/portalbb/tabelaRentabilidade/rentabilidade/gfi7,802,9085,9089,1.bbx'
 BB_BANK3LETTER = 'bdb'
 BB_RENTAB_DIA_MIDDLE_FOLDERNAME = 'BB FI Rendimentos Diários htmls'  # TO-DO move this const to the BANK module or else
@@ -164,6 +168,13 @@ class BBRendDiaDownloader:
 
 def download_n_gen_csv():
   """
+
+  """
+  today = datetime.date.today()
+  print("Step 1 download HTML rendimentos no dia (original has comma decimal-place numbers)")
+  downloader = BBRendDiaDownloader()
+  downloader.download()
+  print(downloader)
   print("Step 2 transform the comma decimal-place HTML above to a point separated one")
   dec_to_point_er = commapoint.SingleFileConverter()
   dec_to_point_er.process()
@@ -171,13 +182,6 @@ def download_n_gen_csv():
   print('transf.WithPandasHtmlToCsvConverter.dispatch', today)
   converter = transf.WithPandasHtmlToCsvConverter(today)
   converter.process()
-
-  """
-  print("Step 1 download HTML rendimentos no dia (original has comma decimal-place numbers)")
-  downloader = BBRendDiaDownloader()
-  downloader.download()
-  # today = datetime.date.today()
-  print(downloader)
 
 
 def adhoctest():

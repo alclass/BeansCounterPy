@@ -60,7 +60,6 @@ def adhoctests():
   pass
 
   """
-  parser = argparse.ArgumentParser()
   parser = argparse.ArgumentParser(
     prog="ls",
     description="List the content of a directory",
@@ -70,8 +69,9 @@ def adhoctests():
   general.add_argument("path")
   detailed = parser.add_argument_group("detailed output")
   detailed.add_argument("-l", "--long", action="store_true")
-  args = parser.parse_args()
   parser.add_argument("-c", "--connect", action="store_true")
+  args = parser.parse_args()
+  print(args)
 
 
 def process():
