@@ -17,3 +17,5 @@ et-xmlfile~=21.1.0
 openpyxl~=23.1.2
 pdfquery~=0.4.3
 requests~=2.25.1
+argparse~=1.4.0
+numpy~=1.26.0
