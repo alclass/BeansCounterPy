@@ -4,6 +4,7 @@
     "hilo" here just means extension date function using strings. Eg, month with a 3-letter string.
 """
 import copy
+import time
 import datetime
 from dateutil.relativedelta import relativedelta
 import fs.datesetc.datefs as dtfs
@@ -68,6 +69,24 @@ def make_todaypydate_with_month3letter():
   return render_pydate_as_ddmmmyyyy_with_month3letter(today)
 
 
+def make_refmonth_or_current(refmonth):
+  if isinstance(refmonth, datetime.date):
+    if refmonth.day == 1:
+       return refmonth
+    else:
+      return datetime.date(year=refmonth.year, month=refmonth.month, day=1)
+  try:
+    refmonth = refmonth.strip(' \t\r\n')
+    pp = refmonth.split('-')
+    year = int(pp[0])
+    month = int(pp[1])
+    return datetime.date(year=year, month=month, day=1)
+  except (AttributeError, IndexError, TypeError, ValueError):
+    pass
+  today = datetime.date.today()
+  return datetime.date(year=today.year, month=today.month, day=1)
+
+
 def try_make_date_with(pdate):
   if isinstance(pdate, datetime.date):
     return pdate
@@ -93,23 +112,6 @@ def return_datelist_or_empty(datelist):
       if odate:
         outlist.append(odate)
   except TypeError:  # catches if datelist is not subscriptable
-    pass
-  return outlist
-
-
-
-def return_datelist_or_empty(datelist):
-  if datelist is None or len(datelist) == 0:
-    return []
-  outlist = []
-  try:
-    for pdate in datelist:
-      odate = try_make_date_with(pdate)
-      if odate is None:
-        continue
-      outlist.append(odate)
-    return outlist
-  except TypeError:  # includes object not subscriptable
     pass
   return outlist
 

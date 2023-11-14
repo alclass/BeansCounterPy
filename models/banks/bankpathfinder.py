@@ -4,6 +4,7 @@ models/banks/bankpathfinder.py
 """
 import inspect
 import os.path
+import fs.datesetc.datehilofs as hilodt
 
 import models.banks.bank_data_settings as bdsett  # bdsett.BankProps.BANKBASEFOLDERPATHS
 import models.banks.banksgeneral as bkgen  # bkgen.BANK
@@ -168,6 +169,20 @@ class BankOSFolderFileFinder:
     except (AttributeError, TypeError):
       pass
     return []
+
+  def find_l3yyyymm_filepath_w_typ_by_refmonth_ext(self, refmonth, dot_ext=None):
+    if dot_ext is None:
+      dot_ext = '.csv'
+    if not dot_ext.startswith('.'):
+      dot_ext = '.' + dot_ext
+    if refmonth is None:
+      refmonth = hilodt.make_refmonth_or_current(refmonth)
+    ppaths = self.find_l3yyyymm_filepaths_by_refmonth_ext(refmonth, dot_ext)
+    for ppath in ppaths:
+      _, fn = os.path.split(ppath)
+      if fn.find(self.typecat) > -1:
+        return ppath
+    return None
 
   def year_range_for(self, datacat=None):
     pass
