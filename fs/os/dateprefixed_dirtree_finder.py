@@ -176,12 +176,13 @@ class DatePrefixedOSFinder:
     filepaths = []
     for folderpath in l2folderpaths:
       if day is None:
-        fpaths = hilo.find_filenames_w_year_month_ext_in_folderpath(folderpath, year, month, dot_ext)
+        filenames = hilo.find_filenames_w_year_month_ext_in_folderpath(folderpath, year, month, dot_ext)
       else:
-        fpaths = hilo.find_filenames_w_year_month_day_ext_in_folderpath(folderpath, year, month, day, dot_ext)
-      if fpaths is None or len(fpaths) == 0:
+        filenames = hilo.find_filenames_w_year_month_day_ext_in_folderpath(folderpath, year, month, day, dot_ext)
+      if filenames is None or len(filenames) == 0:
         continue
-      filepaths += fpaths
+      localfilepaths = map(lambda e: os.path.join(folderpath, e), filenames)
+      filepaths += localfilepaths
     return filepaths
 
   def find_l3yyyymmdd_filepaths_by_year_month_day_typ_ext(self, year, month, day, typ, dotext=None):
