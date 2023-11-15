@@ -5,6 +5,7 @@ models/banks/bankpathfinder.py
 import inspect
 import os.path
 import fs.datesetc.datehilofs as hilodt
+import models.banks.bankpropsmod as bkmd  # .BankProps
 
 import models.banks.bank_data_settings as bdsett  # bdsett.BankProps.BANKBASEFOLDERPATHS
 import models.banks.banksgeneral as bkgen  # bkgen.BANK
@@ -15,32 +16,30 @@ import fs.os.dateprefixed_dirtree_finder as prfx
 
 class BankOSFolderFileFinder:
 
-  ACCOUNT_KEY = 'ac'
-  FI_FUNDOS_KEY = 'fi'
-  REND_RESULTS_KEY = 're'
-  TYPECATS = [ACCOUNT_KEY, FI_FUNDOS_KEY, REND_RESULTS_KEY]
-  FILESUFFIXDICT = {
-    REND_RESULTS_KEY: 'BB rendimentos no dia',
-    FI_FUNDOS_KEY: 'FI extrato BB',
-    ACCOUNT_KEY: 'CC extrato BB',
-  }
-  FOLDERSUFFIXDICT = {
-    REND_RESULTS_KEY: 'BB FI Ren Diá htmls',
-    FI_FUNDOS_KEY: 'FI Extratos Mensais BB',
-    ACCOUNT_KEY: 'CC Extratos Mensais BB',
-  }
-  ACOES = 'Ações'
-  RFDI = 'RFDI'
-  RFLP = 'RFLP'
-  SUBTYPERES = [ACOES, RFDI, RFLP]
+  ACCOUNT_KEY = bkmd.BankProps.FI_FUNDOS_KEY
+  FI_FUNDOS_KEY = bkmd.BankProps.FI_FUNDOS_KEY
+  REND_RESULTS_KEY = bkmd.BankProps.REND_RESULTS_KEY
+  TYPECATS = bkmd.BankProps.TYPECATS
+  FILESUFFIXDICT = bkmd.BankProps.FILESUFFIXDICT
+  FOLDERSUFFIXDICT = bkmd.BankProps.FOLDERSUFFIXDICT
+  ACOES = bkmd.BankProps.ACOES
+  RFDI = bkmd.BankProps.RFDI
+  RFLP = bkmd.BankProps.RFLP
+  SUBTYPERES = bkmd.BankProps.SUBTYPERES
 
-  def __init__(self, bank3letter, typecat=None):
+  def __init__(self, bank3letter, typecat=None, typ=None):
     self.bank3letter = bank3letter
     self.banknumber = bkgen.BANK.get_banknumber_by_its3letter(self.bank3letter)
     self._basefolderpath = None
     self._typecat = typecat
     _ = self.typecat
-    self.prxfinder = prfx.DatePrefixedOSFinder(self.basefolderpath)
+    self.typ = typ
+    self.treat_typ()
+    self.prxfinder = prfx.DatePrefixedOSFinder(self.basefolderpath, self.typ)
+
+  def treat_typ(self):
+    if self.typ is not self.SUBTYPERES:
+      self.typ = self.RFLP
 
   @property
   def basefolderpath(self):

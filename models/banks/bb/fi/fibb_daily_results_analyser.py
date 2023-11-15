@@ -21,7 +21,7 @@ class ResultAnalyser:
     self.typ = typ
     self.treat_typ()
     self.finder = ffnd.BBFIFileFinder(self.date, self.typ)
-    self.dtprfxd_finder = bkfnd.BankOSFolderFileFinder(BDB_BANK3LETTER, bkfnd.BankCat.REND_RESULTS_KEY)
+    self.dtprfxd_finder = bkfnd.BankOSFolderFileFinder(BDB_BANK3LETTER, bkfnd.BankCat.REND_RESULTS_KEY, self.typ)
     self._csv_filepath = None
 
   def treat_typ(self):
@@ -48,7 +48,7 @@ class ResultAnalyser:
   def read_df(self):
     """
     print('head =>', df.head())
-    print('columns =>', df.columns)
+    print('columns =>', df .columns)
     """
     print('pd.DataFrame(self.csv_filepath)', self.csv_filepath)
     df = pd.read_csv(self.csv_filepath)
@@ -56,10 +56,22 @@ class ResultAnalyser:
     col_int_idx_list = list(range(col_dim))
     df.columns = col_int_idx_list
     col_n_to_del_from = 9
-    df.drop([[col_n_to_del_from,col_dim]], axis=1, inplace=True)
+    dropindexlist = [0] + list(range(col_n_to_del_from, col_dim))
+    df = df.drop(dropindexlist, axis=1)  # , inplace=True
+    print('dropindexlist', dropindexlist)
+    print('df.index', df.index)
+    print('df.columns', df.columns)
+    df.rename(columns={
+      1: 'name', 2: 'onday', 3: 'accmonth',4: 'lastmonth', 5: 'inyear', 6: 'in12m', 7: 'in24m', 8: 'in36m'
+    }, inplace=True)
     print('='*40)
     print(df.to_string())
-    # df.plot()
+    print('='*40)
+    df = df.sort_values("onday", ascending=True)
+    print('sorting', '='*40)
+    print(df.to_string())
+    # se1 = df[['name', 'onday']]
+    # print(se1)
 
 
 def adhoctests():

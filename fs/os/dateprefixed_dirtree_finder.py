@@ -6,6 +6,7 @@ fs/os/dateprefixed_dirtree_finder.py
 import datetime
 import os.path
 import fs.os.oshilofunctions as hilo
+import models.banks.bankpropsmod as bkmd  # bkmd.BankProps
 
 
 def extract_year_from_prefix_in_name(name):
@@ -57,8 +58,17 @@ def extract_prefix_year_month_as_refmonth_from_path(ppath):
 
 class DatePrefixedOSFinder:
 
-  def __init__(self, basefolderpath):
+  def __init__(self, basefolderpath, typ=None):
     self.basefolderpath = basefolderpath
+    self.typ = typ
+    self.treat_typ()
+
+  def treat_typ(self):
+    if self.typ is None:
+      return
+    if self.typ not in bkmd.BankProps.SUBTYPERES:
+      error_msg = 'Parameter Error: typ [%s] entered to DatePrefixedOSFinder is not valid.' % str(self.typ)
+      raise ValueError(error_msg)
 
   def find_l1yyyy_folderpaths_by_typ(self, typ=None):
     """
@@ -161,16 +171,24 @@ class DatePrefixedOSFinder:
     l1yyyyfolderpath = self.find_l1yyyyfolderpath_by_year_typ(year, typ)
     if l1yyyyfolderpath is None or not os.path.isdir(l1yyyyfolderpath):
       return []
-    return hilo.find_filepaths_w_year_month_ext_in_folderpath(l1yyyyfolderpath, year, month, dot_ext)
+    filepaths = hilo.find_filepaths_w_year_month_ext_in_folderpath(l1yyyyfolderpath, year, month, dot_ext)
+    if filepaths is None or len(filepaths) == 0:
+      return []
+    if self.typ:
+      outfilepaths = []
+      for fp in filepaths:
+        filename = os.path.split(fp)[-1]
+        if filename.find(self.typ) > -1:
+          outfilepaths.append(fp)
 
-  def find_l3yyyymm_filepaths_by_year_month_typ_ext(self, year, month, typ=None, dot_ext=None, day=None):
+  def find_l3yyyymm_filepaths_by_year_month_typ_ext(self, year, month, dot_ext=None, day=None):
     """
     Obs: typ is used for foldernames; dot_ext is used for filenames
     When the caller intents to use parameter day, it should call the next method below ie
       self.find_l3yyyymmdd_filepaths_by_year_month_day_typ_ext(self, year, month, day, dotext)
         though it is just reorders the parameter sequence signature
     """
-    l2folderpaths = self.find_l2yyyymm_folderpaths_by_year_month_typ(year, month, typ)
+    l2folderpaths = self.find_l2yyyymm_folderpaths_by_year_month_typ(year, month)
     if l2folderpaths is None or len(l2folderpaths) == 0:
       return []
     filepaths = []
@@ -181,6 +199,12 @@ class DatePrefixedOSFinder:
         filenames = hilo.find_filenames_w_year_month_day_ext_in_folderpath(folderpath, year, month, day, dot_ext)
       if filenames is None or len(filenames) == 0:
         continue
+      if self.typ is not None:
+        outfilenames = []
+        for filename in filenames:
+          if filename.find(self.typ) > -1:
+            outfilenames.append(filenames)
+        filenames = outfilenames
       localfilepaths = map(lambda e: os.path.join(folderpath, e), filenames)
       filepaths += localfilepaths
     return filepaths
@@ -190,7 +214,7 @@ class DatePrefixedOSFinder:
     The method is a helper-function that just reorders the parameter sequence signature for the above method:
       self.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, typ, dotext, day)
     """
-    return self.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, typ, dotext, day)
+    return self.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, dotext, day)
 
   def find_l3yyyymmdd_filepaths_by_refmonth_typ_ext(self, refmonthdate, typ, dotext=None):
     try:
@@ -198,7 +222,7 @@ class DatePrefixedOSFinder:
       month = refmonthdate.month
     except TypeError:
       return []
-    return self.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, typ, dotext)
+    return self.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, dotext)
 
   def find_all_l3yyyymm_filepaths(self, dot_ext=None):
     """
@@ -211,7 +235,7 @@ class DatePrefixedOSFinder:
       if refmonthdate is None:
         continue
       year, month = refmonthdate.year, refmonthdate.month
-      l3yyyymmdd_filepaths = self.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, dot_ext)
+      l3yyyymmdd_filepaths = self.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month)
       if l3yyyymmdd_filepaths is None or len(l3yyyymmdd_filepaths) > 0:
         all_l3yyyymmdd_filepaths += l3yyyymmdd_filepaths
     return all_l3yyyymmdd_filepaths
