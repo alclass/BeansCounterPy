@@ -82,7 +82,7 @@ class DatePrefixedOSEntriesFinder:
       # foldernames = osfs.find_foldernames_from_path(self.rootdirpath)
       # self._firstlevel_year_folderpaths = sorted(map(lambda e: os.path.join(self.rootdirpath, e), foldernames))
       self._firstlevel_year_folderpaths = hilo.\
-          find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(
+          find_l1folderpaths_all_years_from_basefolder_opt_substr(
             self.rootdirpath
           )
     return self._firstlevel_year_folderpaths
@@ -187,7 +187,7 @@ class DatePrefixedOSEntriesFinder:
     yearbasefolderpath = self.find_yearprefix_folderpath_by_year(refmonthdate)
     if yearbasefolderpath is None:
       return []
-    filepaths = hilo.find_filepaths_w_year_month_ext_in_folderpath(
+    filepaths = hilo.find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_ext_substr(
       refmonthdate, yearbasefolderpath, dot_ext
     )
     return filepaths
@@ -201,7 +201,7 @@ class DatePrefixedOSEntriesFinder:
     yearbasefolderpath = self.find_yearprefix_folderpath_by_year(year)
     if yearbasefolderpath is None:
       return []
-    filenames = hilo.find_filenames_w_year_month_ext_in_folderpath(
+    filenames = hilo.find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_ext_substr(
       refmonthdate, yearbasefolderpath, dot_ext
     )
     return filenames

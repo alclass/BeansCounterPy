@@ -87,7 +87,11 @@ def make_refmonth_or_current(refmonth):
   return datetime.date(year=today.year, month=today.month, day=1)
 
 
-def try_make_date_with(pdate):
+def make_date_with_or_today(pdate):
+  return make_date_with(pdate) or datetime.date.today()
+
+
+def make_date_with(pdate):
   if isinstance(pdate, datetime.date):
     return pdate
   if pdate is None:
@@ -108,7 +112,7 @@ def return_datelist_or_empty(datelist):
   outlist = []
   try:
     for pdate in datelist:
-      odate = try_make_date_with(pdate)
+      odate = make_date_with(pdate)
       if odate:
         outlist.append(odate)
   except TypeError:  # catches if datelist is not subscriptable
@@ -154,11 +158,11 @@ def gen_date_range_ini_to_fim(dateini, datefim, descending=False):
   Notice that, differently from range(4, 7), which excludes the 7 itself, day "7" is included in the output
   """
   # treat dateini
-  dateini = try_make_date_with(dateini)
+  dateini = make_date_with(dateini)
   if dateini is None:
     return []
   # treat datefim
-  datefim = try_make_date_with(datefim)
+  datefim = make_date_with(datefim)
   if datefim is None:
     datefim = datetime.date.today()
   if dateini == datefim:
@@ -169,6 +173,24 @@ def gen_date_range_ini_to_fim(dateini, datefim, descending=False):
   if not descending:  # ie, ascending
     return gen_date_range_ini_to_fim_asc(dateini, datefim)
   gen_date_range_ini_to_fim_desc(dateini, datefim)
+
+
+def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
+  """
+  recuperates year plus a blank
+  """
+  newentries = []
+  if entries is None:
+    return []
+  for e in entries:
+    try:
+      _ = int(e[0:4])
+      if e[4:5] != ' ':
+        continue
+      newentries.append(e)
+    except (IndexError, ValueError):
+      pass
+  return newentries
 
 
 def adhoctest():

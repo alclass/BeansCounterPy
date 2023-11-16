@@ -103,7 +103,7 @@ class SingleFileConverter:
       try:
         pp = self.input_filename.split(' ')
         pdate = pp[0]
-        self._date = hilodt.try_make_date_with(pdate)
+        self._date = hilodt.make_date_with(pdate)
         if not isinstance(self._date, datetime.date):
           # default is today's date
           self._date = datetime.date.today()
@@ -207,7 +207,7 @@ class BatchConverter:
 
 
 def get_input_output_filepaths(pdate):
-    pdate = hilodt.try_make_date_with(pdate)
+    pdate = hilodt.make_date_with(pdate)
     converter = trnsf.WithPandasHtmlToCsvConverter(pdate)
     input_filepath = converter.deccomma_html_filepath
     output_filepath = converter.decpoint_html_filepath

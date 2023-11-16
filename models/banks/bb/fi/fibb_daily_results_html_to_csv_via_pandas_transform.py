@@ -31,7 +31,7 @@ class WithPandasHtmlToCsvConverter:
 
   def treat_date(self):
     if not isinstance(self.date, datetime.date):
-      self.date = hilodt.try_make_date_with(self.date)
+      self.date = hilodt.make_date_with(self.date)
       if not isinstance(self.date, datetime.date):
         error_msg = 'Error: program could not transform input date [%d] to object date' % self.date
         raise ValueError(error_msg)

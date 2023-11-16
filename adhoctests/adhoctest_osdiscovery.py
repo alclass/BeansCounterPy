@@ -17,18 +17,18 @@ def adhost1():
   )
   disc = fnd.DatePrefixedOSFinder(bfp)
   print(disc)
-  l1folders = disc.find_l1yyyy_folderpaths_by_typ()
+  l1folders = disc.find_l1yyyy_folderpaths_w_opt_substr()
   for l1folder in l1folders:
     print('l1', l1folder)
   year = 2022
-  l2folders = disc.find_l2yyyymm_folderpaths_any_months_by_year_typ(year)
+  l2folders = disc.find_l2yyyymm_folderpaths_any_months_by_year_opt_substr(year)
   print('-' * 40)
   for l2folder in l2folders:
     print('l2folder', l2folder)
   if len(l2folders) == 0:
     print('no l2folders for year', year)
   month = 10
-  l2files = disc.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month)
+  l2files = disc.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month)
   print('-' * 40)
   for l2file in l2files:
     print('l2file', l2file)
@@ -38,7 +38,7 @@ def adhost1():
 
 def adhost2():
   """
-    l1_folders = disc.find_l1yyyy_folderpaths_by_typ(year)
+    l1_folders = disc.find_l1yyyy_folderpaths_w_opt_substr(year)
     print('l1', '-' * 40)
     print(year)
   """
@@ -49,7 +49,7 @@ def adhost2():
   )
   disc = fnd.DatePrefixedOSFinder(bfp)
   print(disc)
-  l1folders = disc.find_l1yyyy_folderpaths_by_typ()
+  l1folders = disc.find_l1yyyy_folderpaths_w_opt_substr()
   for l1folder in l1folders:
     print('l1', l1folder)
   year = 2023
@@ -57,28 +57,28 @@ def adhost2():
     print('l2folder', l2folder)
   if len(l1folders) == 0:
     print('no l2folders for year', year)
-  l2folders = disc.find_l2yyyymm_folderpaths_any_months_by_year_typ(year)
+  l2folders = disc.find_l2yyyymm_folderpaths_any_months_by_year_opt_substr(year)
   print('l2', '-' * 40)
   for l2folder in l2folders:
     print('l2+folder', l2folder)
   if len(l2folders) == 0:
     print('no l2files for year', year)
   month = 10
-  l3files = disc.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month)
+  l3files = disc.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month)
   print('l3', '-' * 40)
   for l3file in l3files:
     print('l3file', l3file)
   if len(l3files) == 0:
     print('no l3files for year', year, 'month', month)
   ext = 'csv'
-  l3files = disc.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, dot_ext=ext)
+  l3files = disc.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month, dot_ext=ext)
   print('l3', ext,  '-' * 40)
   for l3file in l3files:
     print('l3file ext', ext, l3file)
   if len(l3files) == 0:
     print('no l3files for year', year, 'month', month, 'ext', ext)
   month = 11
-  l3files = disc.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, dot_ext=ext)
+  l3files = disc.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month, dot_ext=ext)
   print('l3', year, month, ext,  '-' * 40)
   for l3file in l3files:
     print('l3file ext', ext, l3file)

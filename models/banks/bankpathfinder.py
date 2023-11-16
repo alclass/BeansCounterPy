@@ -27,19 +27,19 @@ class BankOSFolderFileFinder:
   RFLP = bkmd.BankProps.RFLP
   SUBTYPERES = bkmd.BankProps.SUBTYPERES
 
-  def __init__(self, bank3letter, typecat=None, typ=None):
+  def __init__(self, bank3letter, typecat=None, reporttype=None):
     self.bank3letter = bank3letter
     self.banknumber = bkgen.BANK.get_banknumber_by_its3letter(self.bank3letter)
     self._basefolderpath = None
     self._typecat = typecat
     _ = self.typecat
-    self.typ = typ
-    self.treat_typ()
-    self.prxfinder = prfx.DatePrefixedOSFinder(self.basefolderpath, self.typ)
+    self.reporttype = reporttype
+    self.treat_reporttype()
+    self.prxfinder = prfx.DatePrefixedOSFinder(self.basefolderpath, self.reporttype)
 
-  def treat_typ(self):
-    if self.typ is not self.SUBTYPERES:
-      self.typ = self.RFLP
+  def treat_reporttype(self):
+    if self.reporttype is not self.SUBTYPERES:
+      self.reporttype = self.RFLP
 
   @property
   def basefolderpath(self):
@@ -85,7 +85,7 @@ class BankOSFolderFileFinder:
     l2folderpath = 'to-find-out'
     try:
       l2foldername = str(year) + '-' + str(month).zfill(2) + ' ' + sufix
-      l1basefolderpath = self.find_l1yyyy_folderpath_by_year(year)
+      l1basefolderpath = self.find_l1yyyyfolderpath_by_year_opt_substr(year)
       l2folderpath = os.path.join(l1basefolderpath, l2foldername)
       if os.path.isdir(l2folderpath):
         os.makedirs(l2folderpath)
@@ -133,10 +133,10 @@ class BankOSFolderFileFinder:
     filename = dateprefix + ' ' + sufix + dot_ext
     return filename
 
-  def find_l1yyyy_folderpath_by_year(self, year, typ=None):
+  def find_l1yyyyfolderpath_by_year_opt_substr(self, year, substr=None):
     if self.typecat is None:
       return None
-    l1yearfolderpaths = self.prxfinder.find_l1yyyyfolderpath_by_year_typ(self.basefolderpath, typ)
+    l1yearfolderpaths = self.prxfinder.find_l1yyyyfolderpath_by_year_n_opt_substr(year, substr)
     if l1yearfolderpaths and len(l1yearfolderpaths) == 1:
       return l1yearfolderpaths[0]
     return None
@@ -144,7 +144,7 @@ class BankOSFolderFileFinder:
   def find_l2yyyymm_folderpath_by_year_month_typ(self, year, month, typ=None):
     if self.typecat is None:
       return None
-    l2yearmonthfolderpaths = self.prxfinder.find_l2yyyymm_folderpaths_by_year_month_typ(year, month, typ)
+    l2yearmonthfolderpaths = self.prxfinder.find_l2yyyymm_folderpaths_by_year_month_opt_substr(year, month, typ)
     if l2yearmonthfolderpaths and len(l2yearmonthfolderpaths) == 1:
       return l2yearmonthfolderpaths[0]
     return None
@@ -157,7 +157,8 @@ class BankOSFolderFileFinder:
     return l2yearmonthfolderpath
 
   def find_l3yyyymm_filepaths_by_year_month_ext(self, year, month, dot_ext=None):
-    l3yearmonthfolderpaths = self.prxfinder.find_l3yyyymm_filepaths_by_year_month_typ_ext(year, month, dot_ext=dot_ext)
+    l3yearmonthfolderpaths = self.prxfinder.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month,
+                                                                                                     dot_ext=dot_ext)
     return l3yearmonthfolderpaths
 
   def find_l3yyyymm_filepaths_by_refmonth_ext(self, refmonth, dot_ext):
@@ -168,6 +169,25 @@ class BankOSFolderFileFinder:
     except (AttributeError, TypeError):
       pass
     return []
+
+  def find_l3yyyymmdd_filepath_w_year_month_day_opt_ext_substr(self, year, month, day, dot_ext=None, substr=None):
+    try:
+      year = int(year)
+      month = int(month)
+      day = int(day)
+    except (TypeError, ValueError):
+      return None
+    if dot_ext is None:
+      dot_ext = '.csv'
+    if not dot_ext.startswith('.'):
+      dot_ext = '.' + dot_ext
+    ppaths = self.prxfinder.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(
+      year, month, day, dot_ext, substr
+    )
+    if ppaths and len(ppaths) == 1:
+      l3yyyymmddfilepath = ppaths[0]
+      return l3yyyymmddfilepath
+    return None
 
   def find_l3yyyymm_filepath_w_typ_by_refmonth_ext(self, refmonth, dot_ext=None):
     if dot_ext is None:
@@ -238,7 +258,7 @@ def adhoctest():
   print(bfinder.basefolderpath)
   year = 2023
   print('Find folderpath for year', year)
-  print(bfinder.find_l1yyyy_folderpath_by_year(year))
+  print(bfinder.find_l1yyyyfolderpath_by_year_opt_substr(year))
   month = 10
   print('find_l2yyyymm_folderpath_by_year_month_typ', year, 'month', month)
   print(bfinder.find_l2yyyymm_folderpath_by_year_month_typ(year, month))

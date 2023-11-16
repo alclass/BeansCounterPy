@@ -35,13 +35,13 @@ class FolderNodeForDatePrefixTree:
     self._year_fim = year_fim
 
   def find_foldernames_that_starts_with_a_yearplusblank(self):
-    foldernames = hilo.find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(self.rootpath)
+    foldernames = hilo.find_l1foldernames_all_years_from_basefolder_opt_substr(self.rootpath)
     if foldernames is None or len(foldernames) == 0:
       return []
     return foldernames
 
   def find_1stlevel_yearprefix_folderpaths(self):
-    return hilo.find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(self.rootpath)
+    return hilo.find_l1folderpaths_all_years_from_basefolder_opt_substr(self.rootpath)
 
   def find_1stlevel_yearprefix_folderpath_for(self, year):
     """
@@ -49,10 +49,10 @@ class FolderNodeForDatePrefixTree:
     If more than one folder are found, a ValueError exception is raised from the calling function
       (This should be considered an inconsistent data directory and it's ok for the exception to be raised.)
     """
-    return hilo.find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(self.rootpath, year)
+    return hilo.find_l1foldernames_all_years_from_basefolder_opt_substr(self.rootpath, year)
 
   def find_1stlevel_yearfolderpath_for(self, year):
-    return hilo.find_folderpath_that_starts_with_a_spec_year_via_re_in_basefolder(self.rootpath, year)
+    return hilo.find_l1foldernames_all_years_from_basefolder_opt_substr(self.rootpath, year)
 
   def find_2ndlevel_yearmonth_folderpath_for(self, year, month):
     refmonthdate = datetime.date(year=year, month=month, day=1)

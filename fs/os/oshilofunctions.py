@@ -35,6 +35,76 @@ def does_name_start_with_a_yearplusblank_via_re(name):
   return False
 
 
+def extract_year_from_prefix_in_name(name):
+  """
+  For the extraction of year, year should be followed by a blank
+  """
+  try:
+    pp = name.split(' ')
+    year = int(pp[0])
+    return year
+  except (IndexError, TypeError, ValueError):
+    pass
+  return None
+
+
+def extract_year_from_prefix_in_path(ppath):
+  try:
+    if ppath.find(os.sep) < 0:
+      return extract_year_from_prefix_in_name(ppath)
+    foldername = os.path.split(ppath)[-1]
+    return extract_year_from_prefix_in_name(foldername)
+  except (IndexError, TypeError, ValueError):
+    pass
+  return None
+
+
+def extract_year_month_from_prefix_in_name(name):
+  try:
+    pp = name.split(' ')
+    strdate = pp[0].split('-')
+    year = int(strdate[0])
+    month = int(strdate[1])
+    refmonthdate = datetime.date(year=year, month=month, day=1)
+    return refmonthdate
+  except (IndexError, TypeError, ValueError):
+    pass
+  return None
+
+
+def extract_prefix_year_month_as_refmonth_from_path(ppath):
+  try:
+    if ppath.find(os.sep) < 0:
+      return extract_year_month_from_prefix_in_name(ppath)
+    foldername = os.path.split(ppath)[-1]
+    return extract_year_month_from_prefix_in_name(foldername)
+  except (IndexError, TypeError, ValueError):
+    pass
+  return None
+
+
+def extract_filepaths_from_folderpaths(folderpaths, pdot_ext):
+  dot_ext = '*'
+  if pdot_ext is not None:
+    if not pdot_ext.startswith('.'):
+      dot_ext = '.' + pdot_ext
+    else:
+      dot_ext = pdot_ext
+  filepaths = []
+  for folderpath in folderpaths:
+    fpaths = glob.glob(folderpath + '/' + dot_ext)
+    filepaths.append(fpaths)
+  return filepaths
+
+
+def find_yyyymm_filepaths_whose_from_1stlevel_yyyytypfolder_from_folderpath(
+    basefolderpath, year, typ=None, dot_ext=None
+):
+  folderpaths = find_specyear_typ_folderpaths_from_folderpath(basefolderpath, year, typ)
+  filepaths = extract_filepaths_from_folderpaths(folderpaths, dot_ext)
+  return filepaths
+
+
 def find_names_that_start_with_a_yeardashmonth_via_if(names):
   outnames = []
   for e in names:
@@ -60,7 +130,7 @@ def find_names_that_start_with_a_yeardashmonth_via_re(entries):
 
 
 def find_specyear_typ_folderpaths_from_folderpath(basefolderpath, year, typ=None):
-  foldernames = find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath, typ)
+  foldernames = find_l1foldernames_all_years_from_basefolder_opt_substr(basefolderpath, typ)
   specyearfoldernames = filter(lambda e: e.startswith(str(year)), foldernames)
   specyearfolderpaths = [os.path.join(basefolderpath, e) for e in specyearfoldernames]
   return specyearfolderpaths
@@ -76,53 +146,45 @@ def find_foldernames_in_folderpath(basefolderpath, typ=None):
   return sorted(foldernames)
 
 
-def find_spec_year_typ_folderpaths_any_months_from_folderpath(basefolderpath, year, typ=None):
-  foldernames = find_foldernames_in_folderpath(basefolderpath, typ)
+def find_l2yyyyfolderpaths_any_months_from_folderpath_w_year_opt_substr(basefolderpath, year, substr=None):
+  foldernames = find_foldernames_in_folderpath(basefolderpath, substr)
   try:
-    prefix = '{year} '.format(year=year)
+    prefix = '{year}-'.format(year=year)
     foldernames = filter(lambda e: e.startswith(str(prefix)), foldernames)
+    if isinstance(substr, str):
+      foldernames = filter(lambda e: e.find(substr) > -1, foldernames)
   except (TypeError, ValueError):
     pass
   folderpaths = [os.path.join(basefolderpath, e) for e in foldernames]
   return sorted(folderpaths)
 
 
-def find_spec_year_month_typ_folderpaths_from_folderpath(basefolderpath, year, month, typ=None):
-  foldernames = find_foldernames_in_folderpath(basefolderpath, typ)
+def find_l2yyyymmfolderpaths_from_folderpath_w_year_month_opt_substr(basefolderpath, year, month, substr=None):
+  foldernames = find_foldernames_in_folderpath(basefolderpath, substr)
   try:
     prefix = '{year}-{month:02} '.format(year=year, month=month)
     foldernames = filter(lambda e: e.startswith(str(prefix)), foldernames)
+    if isinstance(substr, str):
+      foldernames = filter(lambda e: e.find(substr) > -1, foldernames)
   except (TypeError, ValueError):
     pass
   folderpaths = [os.path.join(basefolderpath, e) for e in foldernames]
   return folderpaths
 
 
-def extract_filepaths_from_folderpaths(folderpaths, pdot_ext):
-  dot_ext = '*'
-  if pdot_ext is not None:
-    if not pdot_ext.startswith('.'):
-      dot_ext = '.' + pdot_ext
-    else:
-      dot_ext = pdot_ext
-  filepaths = []
-  for folderpath in folderpaths:
-    fpaths = glob.glob(folderpath + '/' + dot_ext)
-    filepaths.append(fpaths)
-  return filepaths
-
-
-def find_yyyymm_filepaths_whose_from_1stlevel_yyyytypfolder_from_folderpath(
-    basefolderpath, year, typ=None, dot_ext=None
+def find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_ext_substr(
+    basefolderpath, year, month, dot_ext=None, substr=None
 ):
-  folderpaths = find_specyear_typ_folderpaths_from_folderpath(basefolderpath, year, typ)
-  filepaths = extract_filepaths_from_folderpaths(folderpaths, dot_ext)
-  return filepaths
+  return find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_day_ext_substr(
+    basefolderpath, year, month, day=None, dot_ext=dot_ext, substr=substr
+  )
 
 
-def find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext=None, day=None):
+def find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_day_ext_substr(
+    basefolderpath, year, month, day=None, dot_ext=None, substr=None
+):
   """
-  When using the last parameter "day", this method should only be called by the next function ie
+  When using parameter "day", this method should only be called by the next function ie
     find_filenames_w_year_month_day_ext_in_folderpath(basefolderpath, year, month, day, dot_ext)
     (a kind of private function under the hypothesis "day is not None")
   """
@@ -138,71 +200,100 @@ def find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, d
   if 0 > month > 12:
     return []
   if day is None:
-    prefixstr = '{year}-{month:02}'.format(year=year, month=month)  # notice that 'yyyy-mm ' or 'yyy-mm-dd' are expected
+    # notice that 'yyyy-mm ' or 'yyy-mm-dd' are expected
+    prefixstr = '{year}-{month:02}'.format(year=year, month=month)
   else:
-    prefixstr = '{year}-{month:02}-{day:02}'.format(year=year, month=month, day=day)
-  filenames = osfs.find_filenames_from_path(basefolderpath)
-  if filenames is None or len(filenames) == 0:
+    prefixstr = '{year}-{month:02}-{day:02} '.format(year=year, month=month, day=day)
+  l2_or_l3_filenames = osfs.find_filenames_from_path(basefolderpath)
+  if l2_or_l3_filenames is None or len(l2_or_l3_filenames) == 0:
     return []
-  yearmonthfilenames = sorted(filter(lambda e: e.startswith(prefixstr), filenames))
+  l2_or_l3_filenames = filter(lambda e: e.startswith(prefixstr), l2_or_l3_filenames)
+  if isinstance(substr, str):
+    l2_or_l3_filenames = filter(lambda e: e.find(substr) > -1, l2_or_l3_filenames)
   if dot_ext is None:
-    return yearmonthfilenames
-  dot_ext = str(dot_ext)
-  if not dot_ext.startswith('.'):
-    dot_ext = '.' + dot_ext
-  yearmonthfilenames = sorted(filter(lambda e: e.endswith(dot_ext), yearmonthfilenames))
-  return yearmonthfilenames
+    return l2_or_l3_filenames
+  if isinstance(dot_ext, str):
+    if not dot_ext.startswith('.'):
+      dot_ext = '.' + dot_ext
+    l2_or_l3_filenames = filter(lambda e: e.endswith(dot_ext), l2_or_l3_filenames)
+  return sorted(l2_or_l3_filenames)
 
 
-def find_filenames_w_year_month_day_ext_in_folderpath(basefolderpath, year, month, day, dot_ext=None):
-  """
-  This function just reorders the parameters sequence, so that, in here, day is placed after month
-  """
-  return find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext, day)
-
-
-def find_filenames_w_year_month_as_refmonth_n_ext_in_folderpath(basefolderpath, refmonthdate, dot_ext=None):
+def find_l2_or_l3_filenames_from_folderpath_w_year_month_as_refmonth_opt_ext_substr(
+    basefolderpath, refmonthdate, dot_ext=None, substr=None
+):
   try:
     year = refmonthdate.year
     month = refmonthdate.month
-    filenames = find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext)
+    filenames = find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_ext_substr(
+      basefolderpath, year, month, dot_ext, substr
+    )
     if filenames is None or len(filenames) == 0:
       return []
     filenames = sorted(filenames)
-    filepaths = [os.path.join(basefolderpath, e) for e in filenames]
-    return filepaths
+    return filenames
   except (AttributeError, TypeError):
     pass
   return []
 
 
-def find_filenames_w_year_ext_in_folderpath(basefolderpath, year, pdot_ext=None):
+def find_l2_or_l3_filepaths_from_folderpath_w_year_month_opt_day_ext_substr(
+    basefolderpath, year, month, day=None, dot_ext=None, substr=None
+):
+  filenames = find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_day_ext_substr(
+    basefolderpath, year, month, day, dot_ext, substr
+  )
+  filepaths = sorted(map(lambda e: os.path.join(basefolderpath, e), filenames))
+  return filepaths
+
+
+def find_l2_or_l3_filepaths_from_folderpath_w_year_month_opt_ext_substr(
+    basefolderpath, year, month, dot_ext=None, substr=None
+):
+  filenames = find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_ext_substr(
+    basefolderpath, year, month, dot_ext, substr
+  )
+  filepaths = sorted(map(lambda e: os.path.join(basefolderpath, e), filenames))
+  return filepaths
+
+
+def find_l2_or_l3_filepaths_from_folderpath_w_year_month_as_refmonth_opt_ext_substr(
+    basefolderpath, refmonthdate, dot_ext=None, substr=None
+):
+  filenames = find_l2_or_l3_filenames_from_folderpath_w_year_month_as_refmonth_opt_ext_substr(
+    basefolderpath, refmonthdate, dot_ext, substr
+  )
+  filepaths = [os.path.join(basefolderpath, e) for e in filenames]
+  return filepaths
+
+
+def find_yyyyfilenames_from_folderpath_w_year_opt_ext_substr(basefolderpath, year, dot_ext=None, substr=None):
   """
 
   """
-  if year is None:
-    return []
   if basefolderpath is None or not os.path.isdir(basefolderpath):
     return []
-  dot_ext = '*'
-  if pdot_ext is not None:
-    if not pdot_ext.startswith('.'):
-      dot_ext = '.' + pdot_ext
+  asterisk_dot_ext = '*'
+  if dot_ext is not None:
+    if not dot_ext.startswith('.'):
+      asterisk_dot_ext = asterisk_dot_ext + '.' + dot_ext
     else:
-      dot_ext = pdot_ext
-  filepaths = glob.glob(basefolderpath + '/' + dot_ext)
+      asterisk_dot_ext = asterisk_dot_ext + dot_ext
+  filepaths = glob.glob(basefolderpath + '/' + asterisk_dot_ext)
   filepaths = filter(lambda e: os.path.isfile(e), filepaths)
+  filenames = [os.path.split(fp)[-1] for fp in filepaths]
   try:
-    stryear = str(year)
-  except ValueError:
-    return sorted(filepaths)
-  filenames = [os.path.split(e)[-1] for e in filepaths]
-  filenames = sorted(filter(lambda e: e.startswith(stryear), filenames))
+    stryear = str(year) + ' '
+    filenames = filter(lambda e: e.startswith(stryear), filenames)
+  except (TypeError, ValueError):
+    pass
+  if isinstance(substr, str):
+    filenames = filter(lambda e: e.find(substr) > -1, filenames)
   return filenames
 
 
-def find_filepaths_w_year_n_ext_in_folderpath(basefolderpath, year, pdot_ext=None):
-  filenames = find_filenames_w_year_ext_in_folderpath(basefolderpath, year, pdot_ext)
+def find_yyyyfilepaths_from_folderpath_w_year_opt_ext_substr(basefolderpath, year, dot_ext=None, substr=None):
+  filenames = find_yyyyfilenames_from_folderpath_w_year_opt_ext_substr(basefolderpath, year, dot_ext, substr)
   if filenames is None or len(filenames) == 0:
     return []
   filepaths = [os.path.join(basefolderpath, e) for e in filenames]
@@ -210,7 +301,9 @@ def find_filepaths_w_year_n_ext_in_folderpath(basefolderpath, year, pdot_ext=Non
 
 
 def find_filepaths_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext=None):
-  yearmonthfilenames = find_filenames_w_year_month_ext_in_folderpath(basefolderpath, year, month, dot_ext)
+  yearmonthfilenames = find_l2_or_l3_filenames_from_folderpath_w_year_month_opt_ext_substr(
+    basefolderpath, year, month, dot_ext
+  )
   if yearmonthfilenames is None or len(yearmonthfilenames) == 0:
     return []
   yearmonthfilepaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearmonthfilenames))
@@ -257,78 +350,51 @@ def find_yearmonthfolderpath_from(yearfolderpath, refmonthdate):
   return yearmonthfolderpaths[0]
 
 
-def find_folderpaths_whose_foldernames_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath, typ=None):
+def find_l1foldernames_all_years_from_basefolder_opt_substr(basefolderpath, substr=None):
   foldernames = osfs.find_foldernames_from_path(basefolderpath)
   yearfoldernames = filter(lambda e: yearplusblank_re.match(e), foldernames)
-  if typ is not None:
-    yearfoldernames = filter(lambda e: e.find(typ) > -1, yearfoldernames)
-  yeartypfolderpaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yearfoldernames))
-  return yeartypfolderpaths
-
-
-def find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath, typ=None):
-  foldernames = osfs.find_foldernames_from_path(basefolderpath)
-  yearfoldernames = filter(lambda e: yearplusblank_re.match(e), foldernames)
-  if typ is not None:
-    yearfoldernames = filter(lambda e: e.find(typ) > -1, yearfoldernames)
+  if isinstance(substr, str):
+    yearfoldernames = filter(lambda e: e.find(substr) > -1, yearfoldernames)
   yearfoldernames = sorted(yearfoldernames)
   return yearfoldernames
 
 
-def find_folderpaths_whose_foldernames_starts_with_a_yeardashmonthplusblank_via_re_in_basefolder(basefolderpath):
-  """
-  The compiled-re yeardashmonthplusblank_re tests mm for an intnumber not an intnumber within [1..12]
-  """
-  foldernames = osfs.find_foldernames_from_path(basefolderpath)
-  yearfoldernames = sorted(filter(lambda e: yeardashmonthplusblank_re.match(e), foldernames))
-  return yearfoldernames
+def find_l1folderpaths_all_years_from_basefolder_opt_substr(basefolderpath, substr=None):
+  yyyyfoldernames = find_l1foldernames_all_years_from_basefolder_opt_substr(basefolderpath, substr)
+  yyyyfolderpaths = sorted(map(lambda e: os.path.join(basefolderpath, e), yyyyfoldernames))
+  return yyyyfolderpaths
 
 
 def find_foldernames_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
-  yearfoldernames = find_foldernames_that_starts_with_a_yearplusblank_via_re_in_basefolder(basefolderpath)
+  yearfoldernames = find_l1foldernames_all_years_from_basefolder_opt_substr(basefolderpath)
   stryearplusblank = str(year) + ' '
   yearfoldernames = sorted(filter(lambda e: e.startswith(stryearplusblank), yearfoldernames))
   return yearfoldernames
 
 
 def find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
-  foldernames = find_foldernames_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year)
+  foldernames = find_l1foldernames_all_years_from_basefolder_opt_substr(basefolderpath, year)
   if len(foldernames) > 0:
     return foldernames[0]
   return None
 
 
-def find_folderpaths_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
-  yearfoldernames = find_foldernames_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ)
+def find_l1yyyyfoldernames_from_basefolder_w_year_opt_substr(basefolderpath, year, substr=None):
+  yearfoldernames = find_l1foldernames_all_years_from_basefolder_opt_substr(basefolderpath, substr)
+  try:
+    year = int(year)
+    yearprefixstr = f'{year} '  # notice the blank/gap/charspace after the year in the prefix
+    yearfoldernames = sorted(filter(lambda e: yearprefixstr.startswith(yearprefixstr), yearfoldernames))
+    return yearfoldernames
+  except (TypeError, ValueError):
+    pass
+  return []
+
+
+def find_l1yyyyfolderpaths_from_basefolder_w_year_opt_substr(basefolderpath, year, substr=None):
+  yearfoldernames = find_l1yyyyfoldernames_from_basefolder_w_year_opt_substr(basefolderpath, year, substr)
   yearfolderpaths = [os.path.join(basefolderpath, e) for e in yearfoldernames]
   return yearfolderpaths
-
-
-def find_folderpath_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ=None):
-  yearfoldername = find_foldername_that_starts_with_a_spec_year_via_re_in_basefolder(basefolderpath, year, typ)
-  try:
-    yearfolderpath = os.path.join(basefolderpath, yearfoldername)
-  except TypeError:
-    return None
-  return yearfolderpath
-
-
-def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
-  """
-  recuperates year plus a blank
-  """
-  newentries = []
-  if entries is None:
-    return []
-  for e in entries:
-    try:
-      _ = int(e[0:4])
-      if e[4:5] != ' ':
-        continue
-      newentries.append(e)
-    except (IndexError, ValueError):
-      pass
-  return newentries
 
 
 def find_lesser_or_greater_yeardashmonth_prefix_filename_from_basefolder(basepath, is_lesser=True):
