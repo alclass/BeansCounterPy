@@ -1,70 +1,23 @@
 #!/usr/bin/env python3
 """
-commands/books/regexp_isbns_from_jsons.py
-  => an experiment to find an efficient way to find ISBN's inside json files
+commands/books/search_isbns_from_jsons.py
+  => searches ISBN's inside json files using known dict attributes
 
+  Basically, the dict attributes used are the following:
+    volinf = item['volumeInfo']
+    title = volinf['title']
+    identifiers_dictlist = volinf['industryIdentifiers']
+    isbn13 = identifiers_dictlist[0]
+    isbn10 = identifiers_dictlist[1]
 """
-import datetime
 import os
-import glob
 import json
 import pandas as pd
-import settings as sett
+import commands.books.ibsn_n_file_helperfunctions as isbnfs
 pd.set_option('display.max_rows', 100)
 
 
-def extract_seq_n_title_from_seqfilename(filename):
-  name, _ = os.path.splitext(filename)
-  # there's a 3-digit number plus blank as prefix
-  seq = int(name[:3])
-  derivedtitle = name[4:]
-  pos = derivedtitle.find(' - ')
-  if pos > -1:
-    derivedtitle = derivedtitle[: pos]
-  return seq, derivedtitle
-
-
-def get_bookdata_dirpath():
-  rootpath = sett.get_apps_data_rootdir_abspath()
-  middlename = 'bookdata'
-  bookpath = os.path.join(rootpath, middlename)
-  return bookpath
-
-
-def form_output_excelfilepath():
-  databookpath = get_bookdata_dirpath()
-  today = datetime.date.today()
-  filename = f"{today} titles with isbn's.xlsx"
-  filepath = os.path.join(databookpath, filename)
-  return filepath
-
-
-def get_json_filepaths():
-  bookdirpath = get_bookdata_dirpath()
-  jsonfilepaths = glob.glob(bookdirpath + '/*.json')
-  return sorted(jsonfilepaths)
-
-
-def get_bookdata_filepath():
-  bookdirpath = get_bookdata_dirpath()
-  files = glob.glob(bookdirpath + '/*.xlsx')
-  if len(files) > 0:
-    return files[0]
-  return None
-
-
-def jsonfile_exists(name):
-  filename = name + '.json'
-  folderpath = get_bookdata_dirpath()
-  try:
-    filepath = os.path.join(folderpath, filename)
-    return os.path.isfile(filepath)  # returns True or False depending on file existence
-  except TypeError:
-    pass
-  return False
-
-
-class ISBNFinder:
+class IBSNSearcher:
 
   def __init__(self):
     self.df = None  # reserved to receive a pandas's dataframe
@@ -76,6 +29,10 @@ class ISBNFinder:
     self.process()
 
   def find_on_text(self, text):
+    """
+    This method has been used. The search is done by method instropect_json().
+      Maybe it should be replanned as a second checker for the present of the publisher's name on record.
+    """
     packt_str = 'Packt'
     pos = text.find(packt_str)
     if pos > -1:
@@ -85,7 +42,7 @@ class ISBNFinder:
       print(packt_str, 'not found')
 
   def roll_jsonfiles_as_text(self):
-    filepaths = get_json_filepaths()
+    filepaths = isbnfs.get_json_filepaths()
     for jsonpath in filepaths:
       text = open(jsonpath).read()
       self.find_on_text(text)
@@ -116,13 +73,13 @@ class ISBNFinder:
       self.n_jsons_without_info += 1
 
   def roll_jsonfiles_w_structure(self):
-    filepaths = get_json_filepaths()
+    filepaths = isbnfs.get_json_filepaths()
     for n_file, jsonpath in enumerate(filepaths):
       filename = os.path.split(jsonpath)[1]
       json_fd = open(jsonpath, 'r', encoding='utf-8')
       jsondict = json.load(json_fd)
       print(n_file + 1, filename)
-      fileseq, derivedtitle = extract_seq_n_title_from_seqfilename(filename)
+      fileseq, derivedtitle = isbnfs.extract_seq_n_title_from_seqfilename(filename)
       self.instropect_json(jsondict, derivedtitle, fileseq)
       self.n_rolled += 1
 
@@ -134,7 +91,7 @@ class ISBNFinder:
     print('n_jsons_without_info', self.n_jsons_without_info)
     self.transform_tupledict_to_datafram()
     print(self.df.head())
-    excelfilepath = form_output_excelfilepath()
+    excelfilepath = isbnfs.form_todayprefixed_output_excelfilepath()
     filename = os.path.split(excelfilepath)[1]
     print('Saving', filename, 'at', excelfilepath)
     self.df.to_excel(excelfilepath)
@@ -175,7 +132,7 @@ def adhoctest():
 
 
 def process():
-  ISBNFinder()
+  IBSNSearcher()
 
 
 if __name__ == '__main__':
