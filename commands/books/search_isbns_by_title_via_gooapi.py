@@ -22,42 +22,13 @@ requests.exceptions.ConnectionError:
  => it seems a DNS failure not exactly a limitation issue
 """
 import os
-import glob
 import time
 import pandas as pd
 import requests
-import settings as sett
+import commands.books.ibsn_n_file_helperfunctions as isbnfs
 API_URL_to_interpole = 'https://www.googleapis.com/books/v1/volumes?q=title:{title_with_pluses}'
 INTERVAL_INBETWEEN_APICALLS_IN_SEC = 2
 pd.set_option('display.max_rows', 100)
-
-
-def get_bookdata_dirpath():
-  rootpath = sett.get_apps_data_rootdir_abspath()
-  middlename = 'bookdata'
-  bookpath = os.path.join(rootpath, middlename)
-  return bookpath
-
-
-def get_bookdata_filepath():
-  bookdirpath = get_bookdata_dirpath()
-  files = glob.glob(bookdirpath + '/*.xlsx')
-  if len(files) > 0:
-    return files[0]
-  return None
-
-
-def extract_title_from_series(series):
-  """
-  row is a 2D-tuple. The 2nd element is a 'payload' Series object.
-  This object can be "indexed" with fieldnames (e.g. series.title).
-  """
-  try:
-    title = series.title
-    return title
-  except (AttributeError, TypeError):
-    pass
-  return None
 
 
 class ISBNSearcher:
@@ -83,7 +54,7 @@ class ISBNSearcher:
     return self._n_rows_with_isbn  # may return None
 
   def set_excelpath_or_raise(self):
-    excelfilepath = get_bookdata_filepath()
+    excelfilepath = isbnfs.get_bookdata_filepath()
     if excelfilepath is None or not os.path.isfile(excelfilepath):
       error_msg = 'Excel filepath does not exist [%s]' % str(excelfilepath)
       raise OSError(error_msg)
@@ -124,7 +95,7 @@ class ISBNSearcher:
 
   def form_json_filepath(self, seq, title):
     jsonfilename = self.form_json_filename(seq, title)
-    dirpath = get_bookdata_dirpath()
+    dirpath = isbnfs.get_bookdata_dirpath()
     jsonfilepath = os.path.join(dirpath, jsonfilename)
     return jsonfilepath
 
@@ -149,7 +120,7 @@ class ISBNSearcher:
     json_payload = req.text  # req.content
     self.save_json_response_from_api(seq, title, json_payload)
     jsonfilename = self.form_json_filename(seq, title)
-    print(seq, 'of', self.n_rows, 'Written', self.n_jsonfiles_saved,'th json file: ', jsonfilename)
+    print(seq, 'of', self.n_rows, 'Written', self.n_jsonfiles_saved, 'th json file: ', jsonfilename)
 
   def call_googlebook_api_to_search_isbn_by_title(self, seq, title):
     if self.jsonfile_exists(seq, title):
@@ -173,8 +144,9 @@ class ISBNSearcher:
       seq = row[0]
       self.instanceseq += 1
       series = row[1]
-      title = extract_title_from_series(series)
-      if not title:
+      try:
+        title = series.title
+      except (AttributeError, TypeError):
         continue
       self.call_googlebook_api_to_search_isbn_by_title(seq, title)
 
