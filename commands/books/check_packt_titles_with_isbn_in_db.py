@@ -4,10 +4,7 @@ commands/books/check_packt_titles_with_isbn_in_db.py
 """
 import os
 import glob
-import time
 import pandas as pd
-import requests
-
 import settings as sett
 API_URL_to_interpole = 'https://www.googleapis.com/books/v1/volumes?q=title:{title_with_pluses}'
 INTERVAL_INBETWEEN_APICALLS_IN_SEC = 3
@@ -102,7 +99,7 @@ class ISBNLister:
       except (AttributeError, TypeError):
         pass
     n_rows = paramdf.shape[0]
-    print('n_rows', n_rows, 'original', self.n_rows)
+    print('df_rows', n_rows, 'original', self.n_rows)
 
   def process(self):
     self.read_excel_to_pandas_df()

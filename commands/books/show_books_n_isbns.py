@@ -23,8 +23,7 @@ import pandas as pd
 import commands.books.functions_packt_books_data_excel_json_pandas as isbnfs
 # URL_to_interpole = 'https://subscription.packtpub.com/search?query={isbn13}/1'
 # URL_to_interpole = 'https://www.packtpub.com/product/atitle/{isbn13}/1'
-URL_to_interpol = 'https://subscription.packtpub.com/book/data/{isbn13}/'
-URL_query_interpol = 'https://subscription.packtpub.com/search?query={title_with_pluses}'
+URL_to_interpole = 'https://subscription.packtpub.com/book/data/{isbn13}/'
 BROWSER_COMM = 'xdg-open'
 BROWSER_CLI_TO_INTERPOL = '{browsercomm} "{url}"'
 
@@ -40,25 +39,14 @@ def ask_continuation(scrseq):
 
 class BookPageOpener:
 
-  def __init__(self, report_mode=True):
-    self.report_mode = report_mode  # report_mode does not browser-open url's, it just prints them out
-    self.report_mode = report_mode  # report_mode does not browser-open url's, it just prints them out
-    self.total_isbns = 0
+  def __init__(self):
     self.n_isbns = 0
     self.n_rows_w_na = 0
     self.n_rows = 0
     self.instanceseq = 0
     self.df = None
-    self.dateprefixed_excelfilepath = None
-    self.find_n_treat_dateprefixed_excelfilepath()
-    self.process()
-
-  def find_n_treat_dateprefixed_excelfilepath(self):
     self.dateprefixed_excelfilepath = isbnfs.search_mostrecent_dateprefixed_excelfile_in_folder()
-    if not self.dateprefixed_excelfilepath:
-      print('There is no date prefixed excel file available (eg "2023-11-17 data.xlsv").')
-      print('Data folder looked up:', isbnfs.get_bookdata_dirpath())
-      return False
+    self.process()
 
   def issue_cli_to_browser_open_bookpage(self, series):
     """
@@ -76,7 +64,7 @@ class BookPageOpener:
     else:
       isbn13list = isbn13liststr.strip(' \t\r\n')
     for i, isbn13 in enumerate(isbn13list):
-      url = URL_to_interpol.format(isbn13=isbn13)
+      url = URL_to_interpole.format(isbn13=isbn13)
       n_isbns_of_title = i + 1
       print(self.instanceseq, 'n_isbns_of_title', n_isbns_of_title, isbn13, title)
       cli = BROWSER_CLI_TO_INTERPOL.format(browsercomm=BROWSER_COMM, url=url)
@@ -87,26 +75,6 @@ class BookPageOpener:
       else:
         return False
     return True
-
-  def print_series(self, series):
-    """
-
-    """
-    title = series.title
-    isbn13liststr = series.isbn13liststr
-    if isbn13liststr.find(', ') > -1:
-      isbn13list = isbn13liststr.split(', ')
-    else:
-      elem = isbn13liststr.strip(' \t\r\n')
-      isbn13list = [elem]
-    n_isbns_for_title = len(isbn13list)
-    scrmsg = f'Book {self.instanceseq} | n_isbns_for_title={n_isbns_for_title} | title {title}'
-    print(scrmsg)
-    for i, isbn13 in enumerate(isbn13list):
-      self.total_isbns += 1
-      url = URL_to_interpol.format(isbn13=isbn13)
-      scrmsg = f'\t{i+1} | isbn13={isbn13} | url {url}'
-      print(scrmsg)
 
   def init_dataframe(self):
     self.df = pd.read_excel(self.dateprefixed_excelfilepath)
@@ -123,11 +91,8 @@ class BookPageOpener:
       self.df.drop(idx, axis=0, inplace=True)
       print('len', nrows, ' rand =', r, ' del_idx =', idx, 'Series =>',  series.title, series.isbn13liststr)
       self.instanceseq += 1
-      if self.report_mode:
-        self.print_series(series)
-      else:
-        do_continue = self.issue_cli_to_browser_open_bookpage(series)
-        _ = do_continue
+      do_continue = self.issue_cli_to_browser_open_bookpage(series)
+      _ = do_continue
       iloop += 1
       if iloop > 1000:
         break
@@ -168,6 +133,10 @@ class BookPageOpener:
         continue
 
   def process(self):
+    if not self.dateprefixed_excelfilepath:
+      print('There is no date prefixed excel file available (eg "2023-11-17 data.xlsv").')
+      print('Data folder looked up:', isbnfs.get_bookdata_dirpath())
+      return False
     self.init_dataframe()
     self.consume_frame_popping_series()
     # self.randomroll_isbns_if_any()
@@ -177,7 +146,6 @@ class BookPageOpener:
   def __str__(self):
     return f"""BookPageOpener:
     n_isbns = {self.n_isbns}
-    total_isbns = {self.total_isbns}
     n_rows_w_na = {self.n_rows_w_na}
     df_rows = {self.n_rows}
     instanceseq = {self.instanceseq}

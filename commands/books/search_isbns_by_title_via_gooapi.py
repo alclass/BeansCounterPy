@@ -25,7 +25,7 @@ import os
 import time
 import pandas as pd
 import requests
-import commands.books.ibsn_n_file_helperfunctions as isbnfs
+import commands.books.functions_packt_books_data_excel_json_pandas as isbnfs
 API_URL_to_interpole = 'https://www.googleapis.com/books/v1/volumes?q=title:{title_with_pluses}'
 INTERVAL_INBETWEEN_APICALLS_IN_SEC = 2
 pd.set_option('display.max_rows', 100)
@@ -80,7 +80,7 @@ class ISBNSearcher:
   def remove_rows_with_isbn(self):
     self.df = self.df[pd.isna(self.df['isbn'])]  # ie keep rows for which isbn is NaN
     self.n_rows = self.df.shape[0]
-    print('n_rows', self.n_rows, 'originally', self.n_rows_original)
+    print('df_rows', self.n_rows, 'originally', self.n_rows_original)
     print('n rows with isbn', self.n_rows_with_isbn)
 
   def read_excel_to_pandas_df(self):

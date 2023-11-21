@@ -1,123 +1,34 @@
 #!/usr/bin/env python3
 """
-  datehilofs.py
+fs/datesetc/datehilofs.py
     "hilo" here just means extension date function using strings. Eg, month with a 3-letter string.
+  Avoid importing datefunctions.py, in the same package as this, to liberate it to import from this,
+    in other words, to avoid circulation importation and somehow maintain 'upstream'
+    (or unidirectional dependence).
 """
 import copy
 import time
 import datetime
 from dateutil.relativedelta import relativedelta
-import fs.datesetc.datefs as dtfs
 month3letterlist = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec'.split('|')
 
 
-def get_3letter_monthdict(month3letter=None):
-  if month3letter is None:
-    return None
-  try:
-    smonth3letter = str(month3letter).lower()
-    if len(smonth3letter) < 3:
-      return None
-    if len(smonth3letter) > 3:
-      smonth3letter = smonth3letter[:3]  # truncate it to a new variable
-    i = month3letterlist.index(smonth3letter)
-    return i + 1
-  except ValueError:
-    pass
-  return None
-
-
-def render_pydate_as_ddmmmyyyy_with_month3letter(pdate, sep='/'):
-  if pdate is None:
-    return None
-  try:
-    idate = dtfs.return_date_or_recup_it_from_str(pdate)
-    idx = idate.month - 1
-    month3letter = month3letterlist[idx]
-    outdate = '{day:02}{sep}{month3letter}{sep}{year}'.format(
-      day=idate.day, month3letter=month3letter, year=idate.year, sep=sep,
-    )
-    return outdate
-  except (AttributeError, IndexError):
-    pass
-  return None
-
-
-def render_pydate_as_ddmmmyyyy_with_month3letter_or_today(pdate):
-  if pdate is None:
-    today = datetime.date.today()
-    return render_pydate_as_ddmmmyyyy_with_month3letter(today)
-  return render_pydate_as_ddmmmyyyy_with_month3letter(pdate)
-
-
-def make_pydate_from_ddmmmyyyy_with_month3letter(ddmmmyyyy_with_month3letter):
-  try:
-    pp = ddmmmyyyy_with_month3letter.split('-')
-    year = int(pp[2])
-    day = int(pp[0])
-    month3letter = pp[1]
-    idx = month3letterlist.index(month3letter)
-    month = idx + 1
-    return datetime.date(year=year, month=month, day=day)
-  except (AttributeError, IndexError, ValueError):
-    pass
-  return None
-
-
-def make_todaypydate_with_month3letter():
-  today = datetime.date.today()
-  return render_pydate_as_ddmmmyyyy_with_month3letter(today)
-
-
-def make_refmonth_or_current(refmonth):
-  if isinstance(refmonth, datetime.date):
-    if refmonth.day == 1:
-       return refmonth
-    else:
-      return datetime.date(year=refmonth.year, month=refmonth.month, day=1)
-  try:
-    refmonth = refmonth.strip(' \t\r\n')
-    pp = refmonth.split('-')
-    year = int(pp[0])
-    month = int(pp[1])
-    return datetime.date(year=year, month=month, day=1)
-  except (AttributeError, IndexError, TypeError, ValueError):
-    pass
-  today = datetime.date.today()
-  return datetime.date(year=today.year, month=today.month, day=1)
-
-
-def make_date_with_or_today(pdate):
-  return make_date_with(pdate) or datetime.date.today()
-
-
-def make_date_with(pdate):
-  if isinstance(pdate, datetime.date):
-    return pdate
-  if pdate is None:
-    return None
-  try:
-    strdate = str(pdate)
-    pp = strdate.split('-')
-    year = int(pp[0])
-    month = int(pp[1])
-    day = int(pp[2])
-    return datetime.date(year=year, month=month, day=day)
-  except (IndexError, ValueError):
-    pass
-  return None
-
-
-def return_datelist_or_empty(datelist):
-  outlist = []
-  try:
-    for pdate in datelist:
-      odate = make_date_with(pdate)
-      if odate:
-        outlist.append(odate)
-  except TypeError:  # catches if datelist is not subscriptable
-    pass
-  return outlist
+def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
+  """
+  recuperates year plus a blank
+  """
+  newentries = []
+  if entries is None:
+    return []
+  for e in entries:
+    try:
+      _ = int(e[0:4])
+      if e[4:5] != ' ':
+        continue
+      newentries.append(e)
+    except (IndexError, ValueError):
+      pass
+  return newentries
 
 
 def gen_date_range_ini_to_fim_asc(dateini, datefim):
@@ -172,25 +83,164 @@ def gen_date_range_ini_to_fim(dateini, datefim, descending=False):
   # from here: dateini < datefim
   if not descending:  # ie, ascending
     return gen_date_range_ini_to_fim_asc(dateini, datefim)
-  gen_date_range_ini_to_fim_desc(dateini, datefim)
+  return gen_date_range_ini_to_fim_desc(dateini, datefim)
 
 
-def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
+def gen_refmonthdate_ini_fim_range_asc(p_refmonthdateini, p_refmonthdatefim):
+  current_date = copy.copy(p_refmonthdateini)
+  while current_date <= p_refmonthdatefim:
+    yield current_date
+    current_date = current_date + relativedelta(months=1)
+  return
+
+
+def gen_refmonthdate_ini_fim_range_desc(p_refmonthdateini, p_refmonthdatefim):
+  current_date = copy.copy(p_refmonthdateini)
+  while current_date >= p_refmonthdatefim:
+    yield current_date
+    current_date = current_date - relativedelta(months=1)
+  return
+
+
+def gen_refmonthdate_ini_fim_range(p_refmonthdateini, p_refmonthdatefim, descending=False):
+  refmonthdateini = make_refmonth_or_none(p_refmonthdateini)
+  refmonthdatefim = make_refmonth_or_none(p_refmonthdatefim)
+  if not descending:  # ie, ascending
+    return gen_refmonthdate_ini_fim_range_asc(refmonthdateini, refmonthdatefim)
+  return gen_refmonthdate_ini_fim_range_desc(refmonthdateini, refmonthdatefim)
+
+
+def get_3letter_monthdict(month3letter=None):
+  if month3letter is None:
+    return None
+  try:
+    smonth3letter = str(month3letter).lower()
+    if len(smonth3letter) < 3:
+      return None
+    if len(smonth3letter) > 3:
+      smonth3letter = smonth3letter[:3]  # truncate it to a new variable
+    i = month3letterlist.index(smonth3letter)
+    return i + 1
+  except ValueError:
+    pass
+  return None
+
+
+def is_str_dateprefixed(stri):
   """
-  recuperates year plus a blank
+  Returns True if string has a "yyyy-mm-dd " (date+blank) beginning
   """
-  newentries = []
-  if entries is None:
-    return []
-  for e in entries:
-    try:
-      _ = int(e[0:4])
-      if e[4:5] != ' ':
-        continue
-      newentries.append(e)
-    except (IndexError, ValueError):
-      pass
-  return newentries
+  try:
+    pp = stri.split(' ')
+    strdate = pp[0]
+    pdate = make_date_with(strdate)
+    if pdate:
+      return True
+  except (AttributeError, IndexError):
+    pass
+  return False
+
+
+def make_date_with_or_today(pdate):
+  return make_date_with(pdate) or datetime.date.today()
+
+
+def make_date_with(pdate):
+  if isinstance(pdate, datetime.date):
+    return pdate
+  if pdate is None:
+    return None
+  try:
+    strdate = str(pdate)
+    pp = strdate.split('-')
+    year = int(pp[0])
+    month = int(pp[1])
+    day = int(pp[2])
+    return datetime.date(year=year, month=month, day=day)
+  except (IndexError, ValueError):
+    pass
+  return None
+
+
+def make_date_from_ddmmmyyyy_with_month3letter(ddmmmyyyy_with_month3letter):
+  """
+  Examples:
+    input: '01-jan-2023' => output: datetime.date(year=2023, month=1, day=1)
+    input: '17-oct-2015' => output: datetime.date(year=2015, month=10, day=17)
+  """
+  try:
+    pp = ddmmmyyyy_with_month3letter.split('-')
+    year = int(pp[2])
+    day = int(pp[0])
+    month3letter = pp[1]
+    idx = month3letterlist.index(month3letter)
+    month = idx + 1
+    return datetime.date(year=year, month=month, day=day)
+  except (AttributeError, IndexError, ValueError):
+    pass
+  return None
+
+
+def make_today_as_a_month3letter_date():
+  today = datetime.date.today()
+  return render_date_as_ddmmmyyyy_with_month3letter_or_none(today)
+
+
+def make_refmonth_or_none(refmonth):
+  if isinstance(refmonth, datetime.date):
+    if refmonth.day == 1:
+       return refmonth
+    else:
+      return datetime.date(year=refmonth.year, month=refmonth.month, day=1)
+  try:
+    refmonth = refmonth.strip(' \t\r\n')
+    pp = refmonth.split('-')
+    year = int(pp[0])
+    month = int(pp[1])
+    return datetime.date(year=year, month=month, day=1)
+  except (AttributeError, IndexError, TypeError, ValueError):
+    pass
+  return None
+
+
+def make_refmonth_or_current(p_refmonth=None):
+  refmonthdate = make_refmonth_or_none(p_refmonth)
+  if refmonthdate is None:
+    today = datetime.date.today()
+    return datetime.date(year=today.year, month=today.month, day=1)
+  return refmonthdate
+
+
+def render_date_as_ddmmmyyyy_with_month3letter_or_none(pdate, sep='/'):
+  if pdate is None:
+    return None
+  try:
+    idx = pdate.month - 1
+    month3letter = month3letterlist[idx]
+    outdate = '{day:02}{sep}{month3letter}{sep}{year}'.format(
+      day=pdate.day, month3letter=month3letter, year=pdate.year, sep=sep,
+    )
+    return outdate
+  except (AttributeError, IndexError):
+    pass
+  return None
+
+
+def render_date_as_ddmmmyyyy_with_month3letter_or_today(pdate, sep='/'):
+  idate = make_date_with_or_today(pdate)
+  return render_date_as_ddmmmyyyy_with_month3letter_or_none(idate, sep)
+
+
+def return_datelist_or_empty_from_strlist(datelist):
+  outlist = []
+  try:
+    for pdate in datelist:
+      odate = make_date_with(pdate)
+      if odate:
+        outlist.append(odate)
+  except TypeError:  # catches if datelist is not subscriptable
+    pass
+  return outlist
 
 
 def adhoctest():
@@ -207,12 +257,12 @@ def adhoctest():
   n = get_3letter_monthdict(month3letter)
   print(month3letter, n)
   strdate = '2023-2-4'
-  pdate = dtfs.transform_strdate_yyyymmdd_to_date_sep_by(strdate)  # default sep is '-'
-  mmmstrdate = render_pydate_as_ddmmmyyyy_with_month3letter(pdate)  # default sep is '/'
+  pdate = make_date_with(strdate)
+  mmmstrdate = render_date_as_ddmmmyyyy_with_month3letter_or_none(pdate)  # default sep is '/'
   print('pdate', pdate, ' => ddmmmyyyy', mmmstrdate)
-  mmmstrdate = render_pydate_as_ddmmmyyyy_with_month3letter(pdate, '-')  # default sep is '/'
+  mmmstrdate = render_date_as_ddmmmyyyy_with_month3letter_or_none(pdate, '-')  # default sep is '/'
   print('pdate', pdate, ' => ddmmmyyyy', mmmstrdate)
-  pdate = make_pydate_from_ddmmmyyyy_with_month3letter(mmmstrdate)
+  pdate = make_date_from_ddmmmyyyy_with_month3letter(mmmstrdate)
   print('ddmmmyyyy', mmmstrdate, ' => pdate', pdate)
   dateini = '2023-2-4'
   datefim = '2023-2-7'

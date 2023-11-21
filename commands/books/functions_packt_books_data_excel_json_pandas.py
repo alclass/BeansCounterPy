@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-commands/books/ibsn_n_file_helperfunctions.py
-  => helper/util functions for the isbn scripts
+commands/books/functions_packt_books_data_excel_json_pandas.py
+  => helper/util functions for the getting of Packt's book isbn's et al.
 """
 import datetime
 import glob
@@ -11,6 +11,7 @@ import settings as sett
 import fs.datesetc.datehilofs as hilodt
 str_pattern_for_beginning_number = r'^(\d+) '
 re_pattern_for_beginning_number = re.compile(r'^(\d+) ')
+DEFAULT_ISBNFILLEDIN_FILENAME = 'z-list titles authors ISBN-urls recovered from Packt.xlsx'
 
 
 def extract_seq_n_title_from_seqfilename(filename):
@@ -33,7 +34,6 @@ def extract_seq_n_title_from_seqfilename(filename):
   seq = None
   derivedtitle = None
   name, _ = os.path.splitext(filename)
-  repatternstr_for_beginning_number = r'^(\d+) '
   matchobj = re_pattern_for_beginning_number.match(name)
   if matchobj:
     try:
@@ -82,25 +82,35 @@ def get_json_filepaths():
   return sorted(jsonfilepaths)
 
 
-def search_an_excelfile_dateprefixed():
-  bookdatafolderpath = get_bookdata_dirpath()
+def get_filepath_for_isbnfilledin_packt_titles(p_basefolder=None, p_filename=None):
+  if p_filename is not None:
+    filename = p_filename
+  else:
+    filename = DEFAULT_ISBNFILLEDIN_FILENAME
+  if p_basefolder is not None:
+    bookdatafolderpath = p_basefolder
+  else:
+    bookdatafolderpath = get_bookdata_dirpath()
+  filepath = os.path.join(bookdatafolderpath, filename)
+  return filepath
+
+
+def search_mostrecent_dateprefixed_excelfile_in_folder(p_basefolder=None):
+  if p_basefolder is not None:
+    bookdatafolderpath = p_basefolder
+  else:
+    bookdatafolderpath = get_bookdata_dirpath()
+  if not os.path.isdir(bookdatafolderpath):
+    error_msg = 'Error: Folder does not exist [%s].' % str(bookdatafolderpath)
+    raise OSError
   xlsx_filepaths = glob.glob(bookdatafolderpath + '/*.xlsx')
-  dateprefixed_filepaths = []
-  for fpath in xlsx_filepaths:
-    if not os.path.isfile(fpath):
-      continue
-    filename = os.path.split(fpath)[1]
-    try:
-      pp = filename.split(' ')
-      strdate = pp[0]
-      pdate = hilodt.make_date_with(strdate)
-      if pdate:
-        dateprefixed_filepaths.append(fpath)
-    except (AttributeError, IndexError):
-      pass
-    if len(dateprefixed_filepaths) > 0:
-      sorted(dateprefixed_filepaths)
-      return dateprefixed_filepaths[-1]
+  xlsx_filepaths = filter(lambda fp: os.path.isfile(fp), xlsx_filepaths)
+  filenames = [os.path.split(fp)[1] for fp in xlsx_filepaths]
+  dateprefixed_filenames = sorted(filter(lambda fn: hilodt.is_str_dateprefixed(fn), filenames))
+  if len(dateprefixed_filenames) > 0:
+    mostrecentfilename = dateprefixed_filenames[-1]
+    mostrecentfilepath = os.path.join(bookdatafolderpath, mostrecentfilename)
+    return mostrecentfilepath
   return None
 
 
@@ -128,9 +138,14 @@ def adhoctest():
     if i > 2:
       print('\t', 'etc')
       break
-  filepath = search_an_excelfile_dateprefixed()
+  filepath = search_mostrecent_dateprefixed_excelfile_in_folder()
   testseq += 1
-  print(testseq, 'search_an_excelfile_dateprefixed() =>', filepath)
+  print(testseq, 'search_mostrecent_dateprefixed_excelfile_in_folder() =>', filepath)
+
+
+def adhoctest2():
+  mostrecent_dateprefixed_excelfile = search_mostrecent_dateprefixed_excelfile_in_folder()
+  print('mostrecent_dateprefixed_excelfile', mostrecent_dateprefixed_excelfile)
 
 
 def process():
@@ -140,5 +155,6 @@ def process():
 if __name__ == '__main__':
   """
   process()
-  """
   adhoctest()
+  """
+  adhoctest2()

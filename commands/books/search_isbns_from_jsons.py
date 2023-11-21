@@ -10,11 +10,13 @@ commands/books/search_isbns_from_jsons.py
     isbn13 = identifiers_dictlist[0]
     isbn10 = identifiers_dictlist[1]
 """
+from collections import namedtuple
 import os
 import json
 import pandas as pd
-import commands.books.ibsn_n_file_helperfunctions as isbnfs
+import commands.books.functions_packt_books_data_excel_json_pandas as isbnfs
 pd.set_option('display.max_rows', 100)
+BookNT = namedtuple('BookNT', ['title', 'isbn13list'])
 
 
 class IBSNSearcher:
@@ -25,7 +27,7 @@ class IBSNSearcher:
     self.n_found = 0
     self.n_jsons_without_info = 0
     self.instanceseq = 0
-    self.output_tupledict = {}  # dict key is seqfile (or fileseq), its value is tuple (isbn13, title)
+    self.output_namedtupledict = {}  # dict key is seqfile (or fileseq), its value is tuple (isbn13, title)
     self.process()
 
   def find_on_text(self, text):
@@ -61,12 +63,18 @@ class IBSNSearcher:
             isbn13 = identifiers_dictlist[0]
             isbn10 = identifiers_dictlist[1]
             isbn13label = isbn13['type']
+            # isbn10label = isbn10['type']
             isbn13_strnumber = isbn13['identifier']
+            # isbn10_strnumber = isbn10['identifier']
             if isbn13label == 'ISBN_13' and len(isbn13_strnumber) == 13:
               print('\t', isbn13label, isbn13_strnumber)
-              if fileseq not in self.output_tupledict:
-                self.output_tupledict[fileseq] = (isbn13_strnumber, title)
-            print('\t', isbn10['type'], isbn10['identifier'])
+              if fileseq not in self.output_namedtupledict:
+                booknt = BookNT(title=title, isbn13list=[isbn13_strnumber])
+                self.output_namedtupledict[fileseq] = booknt
+              else:
+                booknt = self.output_namedtupledict[fileseq]
+                booknt.isbn13list.append(isbn13_strnumber)
+            # print('\t', isbn10['type'], isbn10['identifier'])
           except IndexError:
             print('No isbn found.')
     except KeyError:
@@ -83,40 +91,42 @@ class IBSNSearcher:
       self.instropect_json(jsondict, derivedtitle, fileseq)
       self.n_rolled += 1
 
-  def process(self):
-    # self.roll_jsonfiles_as_text()
-    self.roll_jsonfiles_w_structure()
+  def transform_tupledict_to_datafram(self):
     print('instanceseq', self.instanceseq)
     print('n_rolled', self.n_rolled)
     print('n_jsons_without_info', self.n_jsons_without_info)
-    self.transform_tupledict_to_datafram()
-    print(self.df.head())
-    excelfilepath = isbnfs.form_todayprefixed_output_excelfilepath()
-    filename = os.path.split(excelfilepath)[1]
-    print('Saving', filename, 'at', excelfilepath)
-    self.df.to_excel(excelfilepath)
-    # self.report_tupledict()
-
-  def transform_tupledict_to_datafram(self):
     dictlist = []
     print('transform_tupledict_to_datafram')
-    sorted(self.output_tupledict)
-    for seqfile in self.output_tupledict.keys():
-      tupl = self.output_tupledict[seqfile]
-      isbn13 = tupl[0]
-      title = tupl[1]
-      pdict = {'seq': seqfile, 'isbn': isbn13, 'title': title}
+    sorted(self.output_namedtupledict)
+    for seqfile in self.output_namedtupledict.keys():
+      booknt = self.output_namedtupledict[seqfile]
+      title = booknt.title
+      isbn13liststr = ', '.join(booknt.isbn13list)
+      n_isbns = len(booknt.isbn13list)
+      pdict = {'n_isbns': n_isbns, 'title': title, 'isbn13liststr': isbn13liststr}
       dictlist.append(pdict)
     self.df = pd.DataFrame(dictlist)
 
-  def report_tupledict(self):
+  def save_excel_file(self):
+    """
+    """
+    excelfilepath = isbnfs.form_todayprefixed_output_excelfilepath()
+    filename = os.path.split(excelfilepath)[1]
+    # remove column 'n_isbns' for it's dynamically created derived from isbn13liststr
+    self.df.drop(['n_isbns'], axis=1, inplace=True)
+    print('Saving', filename, 'at', excelfilepath)
+    self.df.to_excel(excelfilepath)
+
+  def process(self):
+    # self.roll_jsonfiles_as_text()
+    self.roll_jsonfiles_w_structure()
+    self.transform_tupledict_to_datafram()
+    self.save_excel_file()
+    self.report_processed_dataframe()
+
+  def report_processed_dataframe(self):
     print('Reporting')
-    sorted(self.output_tupledict)
-    for seqfile in self.output_tupledict.keys():
-      tupl = self.output_tupledict[seqfile]
-      isbn13 = tupl[0]
-      title = tupl[1]
-      print(seqfile, isbn13, title)
+    print(self.df.to_string())
 
   def __str__(self):
     outstr = f"""

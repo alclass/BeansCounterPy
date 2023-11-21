@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 settings.py
-  has parameters for the app and also uses parametes from local_settings.py which is not in the underlying GitHub.
+  has parameters for the app and also uses parametes from local_settings.py which is not in the underlfrifri
+  GitHub.
 """
 import os
 import sys
