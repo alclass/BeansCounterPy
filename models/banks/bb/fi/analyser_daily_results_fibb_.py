@@ -18,7 +18,7 @@ ReportProps = ffnd.ReportProps
 class ResultAnalyser:
 
   def __init__(self, pdate=None, reporttype=None):
-    self.date = hilodt.make_date_with(pdate) or datetime.date.today()
+    self.date = hilodt.make_date_or_none(pdate) or datetime.date.today()
     self.reporttype = reporttype
     self.treat_reporttype()
     self.finder = ffnd.BBFIFileFinder(self.date, self.reporttype)

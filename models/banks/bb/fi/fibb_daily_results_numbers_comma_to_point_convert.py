@@ -42,8 +42,11 @@ class SingleFileConverter:
       6 if the user wants to recreate it, she/he must delete it first
       7 if output_folderpath does not exist, it is created/made
     """
-    # 1 if input filepath does not exist, the default one (prefixed with today's date) is gotten
-    if self.input_filepath is None or not os.path.isfile(self.input_filepath):
+    if not os.path.isfile(self.input_filepath):
+      error_msg = f'Input file [{self.input_filepath}] does not exist. Please, place it in folder and rerun.'
+      raise OSError(error_msg)
+    # 1 if input filepath is None, the default one (prefixed with today's date) is gotten
+    if self.input_filepath is None:
       # at this point, finder may not yet have been initialized, get one with today's date (needed for the default)
       today = datetime.date.today()
       bfinder = ffnd.BBFIFileFinder(today, ffnd.BBFIFileFinder.Props.ACOES)
@@ -103,7 +106,7 @@ class SingleFileConverter:
       try:
         pp = self.input_filename.split(' ')
         pdate = pp[0]
-        self._date = hilodt.make_date_with(pdate)
+        self._date = hilodt.make_date_or_none(pdate)
         if not isinstance(self._date, datetime.date):
           # default is today's date
           self._date = datetime.date.today()
@@ -207,7 +210,7 @@ class BatchConverter:
 
 
 def get_input_output_filepaths(pdate):
-    pdate = hilodt.make_date_with(pdate)
+    pdate = hilodt.make_date_or_none(pdate)
     converter = trnsf.WithPandasHtmlToCsvConverter(pdate)
     input_filepath = converter.deccomma_html_filepath
     output_filepath = converter.decpoint_html_filepath

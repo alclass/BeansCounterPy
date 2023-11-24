@@ -196,7 +196,7 @@ class DatePrefixedOSEntriesFinder:
     if refmonthdate is None:
       return []
     if type(refmonthdate) != datetime.date:
-      refmonthdate = dtfs.make_date_with_day1(refmonthdate)
+      refmonthdate = dtfs.make_date_with_day1_or_none(refmonthdate)
     year = refmonthdate.year
     yearbasefolderpath = self.find_yearprefix_folderpath_by_year(year)
     if yearbasefolderpath is None:
@@ -275,7 +275,7 @@ class DatePrefixedOSEntriesFinder:
       property not stored in object, recomputed each time
     """
     _lesser_refmonthdate = hilo.extract_date_from_yearmonthprefix_str(self.lesser_yearmonth_filename)
-    _lesser_refmonthdate = dtfs.make_date_with_day1(_lesser_refmonthdate)
+    _lesser_refmonthdate = dtfs.make_date_with_day1_or_none(_lesser_refmonthdate)
     return _lesser_refmonthdate
 
   @property
@@ -284,7 +284,7 @@ class DatePrefixedOSEntriesFinder:
       property not stored in object, recomputed each time
     """
     _greater_refmonthdate = hilo.extract_date_from_yearmonthprefix_str(self.greater_yearmonth_filename)
-    _greater_refmonthdate = dtfs.make_date_with_day1(_greater_refmonthdate)
+    _greater_refmonthdate = dtfs.make_date_with_day1_or_none(_greater_refmonthdate)
     return _greater_refmonthdate
 
   def find_yearprefix_foldername_by_year(self, year):
@@ -345,8 +345,8 @@ class DatePrefixedOSEntriesFinder:
   def gen_refmonths_within_daterange_or_wholeinterval(self, p_refmonthini=None, p_refmonthfim=None):
     refmonthdate_ini = self.refmonthdate_ini
     refmonthdate_fim = self.refmonthdate_fim
-    p_refmonthini = dtfs.make_date_with_day1(p_refmonthini)
-    p_refmonthfim = dtfs.make_date_with_day1(p_refmonthfim)
+    p_refmonthini = dtfs.make_date_with_day1_or_none(p_refmonthini)
+    p_refmonthfim = dtfs.make_date_with_day1_or_none(p_refmonthfim)
     if p_refmonthini is None or p_refmonthini < refmonthdate_ini or p_refmonthini > refmonthdate_fim:
        pass
     else:

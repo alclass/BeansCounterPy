@@ -50,7 +50,7 @@ class FundoAplic:
           error_msg = 'Error: data_fim_cota (%s) could not be transform into a formal date type.' % self.data_saldo_atu
           raise ValueError(error_msg)
         self.data_saldo_atu = pdate
-        self.refmonthdate = dtfs.make_date_with_day1(pdate)
+        self.refmonthdate = dtfs.make_date_with_day1_or_none(pdate)
 
   @classmethod
   def attrs(cls):

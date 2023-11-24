@@ -144,7 +144,7 @@ def transform_strdate_to_date_with_fieldpos_n_sep(strdate, fieldpos='yyyymmdd', 
 def transform_strdate_to_date(strdate):
   if strdate is None:
     return None
-  if type(strdate) == datetime.date:
+  if isinstance(strdate, datetime.date):
     return strdate
   try:
     strdate = str(strdate)
@@ -223,7 +223,7 @@ def transform_yyyydashmm_to_daterange_in_refmonth_dict(str_refmonth_range_dict):
 def validate_refmonthdate_or_none(refmonthdate=None):
   if refmonthdate is None:
     return None
-  if type(refmonthdate) != datetime.date:
+  if isinstance(refmonthdate, datetime.date):
     refmonthdate = transform_strdate_to_date(str(refmonthdate))
   if refmonthdate.day != 1:
     return datetime.date(refmonthdate.year, refmonthdate.month, 1)
@@ -237,7 +237,7 @@ def validate_refmonthdate_or_morerecent(refmonthdate=None):
   if refmonthdate is None:
     refmonthdate = datetime.date.today()
     return validate_refmonthdate_or_morerecent(refmonthdate)
-  if type(refmonthdate) != datetime.date:
+  if isinstance(refmonthdate, datetime.date):
     refmonthdate = transform_strdate_to_date_or_today(str(refmonthdate))
   if refmonthdate.day != 1:
     return datetime.date(refmonthdate.year, refmonthdate.month, 1)
@@ -280,9 +280,14 @@ def test_some():
 def transform_strdate_or_yyyymm_to_date_day1(pdate):
   if pdate is None:
     return None
+  if isinstance(pdate, datetime.date):
+    if pdate.day == 1:
+      return pdate
+    return datetime.date(year=pdate.year, month=pdate.month, day=1)
   try:
-    pdate = str(pdate)
-    pp = pdate.split('-')
+    pdate = str(pdate).strip(' \t\r\n')
+    ppp = pdate.split(' ')
+    pp = ppp[0].split('-')
     year = int(pp[0])
     month = int(pp[1])
     pdate = datetime.date(year=year, month=month, day=1)
@@ -305,7 +310,7 @@ def make_date_w_day1_or_w_current_months_firstday(pdate=None):
     Notice that current date is the same as datetime.date.today() and depends on
       the correctness of the computer's system clock.
   """
-  rdate = make_date_with_day1(pdate)
+  rdate = make_date_with_day1_or_none(pdate)
   if rdate is None:
     today = datetime.date.today()
     if today.day == 1:
@@ -314,24 +319,40 @@ def make_date_w_day1_or_w_current_months_firstday(pdate=None):
   return rdate
 
 
-def make_date_with_day1(pdate=None):
+def make_date_with_day1_or_none(pdate=None):
   if pdate is None:
     return None
-  if type(pdate) != datetime.date:
-    try:
-      pdate = str(pdate)
-      pdate = transform_strdate_or_yyyymm_to_date_day1(pdate)
-      if pdate is not None:
-        return pdate
-    except ValueError:
-      pass
-  if pdate.day == 1:
-    return pdate
-  return datetime.date(year=pdate.year, month=pdate.month, day=1)
+  if isinstance(pdate, datetime.date):
+    if pdate.day == 1:
+      return pdate
+    return datetime.date(year=pdate.year, month=pdate.month, day=1)
+  try:
+    pdate = str(pdate)
+    pdate = transform_strdate_or_yyyymm_to_date_day1(pdate)
+    if pdate is not None:
+      return pdate
+  except ValueError:
+    pass
+  return None
+
+
+def make_refmonthdate_or_current(stri):
+  refmonthdate = make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(stri)
+  if refmonthdate is not None:
+    return refmonthdate
+  today = datetime.date.today()
+  if today.day == 1:
+    return today
+  return datetime.date(year=today.year, month=today.month, day=1)
+
+
+def make_refmonthdate_or_none(stri):
+  return make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(stri)
 
 
 def make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(conventioned_filename):
   try:
+    conventioned_filename = conventioned_filename.strip(' \t\r\n')
     pp = conventioned_filename.split(' ')
     yearmonth = pp[0]
     ppp = yearmonth.split('-')
@@ -345,10 +366,10 @@ def make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(conventioned_
 
 
 def generate_monthrange(refmonthdate_ini=None, refmonthdate_fim=None):
-  refmonthdate_ini = make_date_with_day1(refmonthdate_ini)
-  refmonthdate_fim = make_date_with_day1(refmonthdate_fim)
+  refmonthdate_ini = make_date_with_day1_or_none(refmonthdate_ini)
+  refmonthdate_fim = make_date_with_day1_or_none(refmonthdate_fim)
   today = datetime.date.today()
-  refmonthtoday = make_date_with_day1(today)
+  refmonthtoday = make_date_with_day1_or_none(today)
   if refmonthdate_fim > refmonthtoday:
     refmonthdate_fim = refmonthtoday
   if refmonthdate_ini > refmonthtoday:
@@ -394,7 +415,7 @@ def transform_year_into_refmonthrange_or_recent_year(year=None):
 def return_date_or_recup_it_from_str(pdate):
   if pdate is None:
     return None
-  if type(pdate) == datetime.date:
+  if isinstance(pdate, datetime.date):
     return pdate
   try:
     pdate = str(pdate)

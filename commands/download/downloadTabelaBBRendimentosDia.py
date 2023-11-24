@@ -10,10 +10,12 @@ import datetime
 import os
 import sys
 import requests
+import fs.datesetc.argparse_dates as apdt  # apdt.get_args
 import models.banks.bb.fi.bbfi_file_find as ffnd  # for ffnd.BBFIFileFinder.Props.commapoint_htmlfilename_to_interpol
 import models.banks.bankpathfinder as bkfnd  # .BankOSFolderFileFinder
 import models.banks.bb.fi.fibb_daily_results_numbers_comma_to_point_convert as commapoint  # .SingleFileConverter
 import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as transf  # .WithPandasHtmlToCsvConverter
+
 # (old) URL_BB_RENTAB_DIA = 'http://www21.bb.com.br/portalbb/rentabilidade/index.jsp?tipo=01'
 URL_BB_RENTAB_DIA = 'https://www37.bb.com.br/portalbb/tabelaRentabilidade/rentabilidade/gfi7,802,9085,9089,1.bbx'
 BB_BANK3LETTER = 'bdb'
@@ -166,22 +168,34 @@ class BBRendDiaDownloader:
     return outstr
 
 
-def download_n_gen_csv():
+def download_n_gen_csv(pdate=None):
   """
 
   """
   today = datetime.date.today()
-  print("Step 1 download HTML rendimentos no dia (original has comma decimal-place numbers)")
-  downloader = BBRendDiaDownloader()
-  downloader.download()
-  print(downloader)
+  if pdate is None:
+    idate = today
+  else:
+    idate = pdate
+  print("Step 1 is the downloading HTML, it can only happen for paramenter date being 'today'")
+  if idate == today:
+    print("Step 1 download HTML rendimentos no dia (original has comma decimal-place numbers)")
+    downloader = BBRendDiaDownloader()
+    downloader.download()
+    print(downloader)
   print("Step 2 transform the comma decimal-place HTML above to a point separated one")
-  dec_to_point_er = commapoint.SingleFileConverter()
+  input_filepath, output_filepath = commapoint.get_input_output_filepaths(idate)
+  dec_to_point_er = commapoint.SingleFileConverter(input_filepath, output_filepath)
   dec_to_point_er.process()
   print("Step 3 convert the HTML with point decimal-place numbers to 3 csv's (for there are 3 data tables in it)")
-  print('transf.WithPandasHtmlToCsvConverter.dispatch', today)
-  converter = transf.WithPandasHtmlToCsvConverter(today)
+  print('transf.WithPandasHtmlToCsvConverter.dispatch', idate)
+  converter = transf.WithPandasHtmlToCsvConverter(idate)
   converter.process()
+
+
+def download_n_gen_csv_thru_dates(datelist=()):
+  for pdate in datelist:
+    download_n_gen_csv(pdate)
 
 
 def adhoctest():
@@ -189,7 +203,13 @@ def adhoctest():
 
 
 def process():
+  """
   download_n_gen_csv()
+  """
+  args = apdt.get_args()
+  print(args)
+  dispatcher = apdt.Dispatcher(args, func=download_n_gen_csv_thru_dates)
+  dispatcher.dispatch()
 
 
 if __name__ == '__main__':

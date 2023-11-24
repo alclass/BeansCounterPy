@@ -20,7 +20,7 @@ def get_csv_filepath():
    # self._csv_filepath = self.finder.get_csv_filepath_for_date_n_type_or_raise()
     rentabdia_basefolderpath = self.dtprfxd_finder.find_l2yyyymm_folderpath_by_year_month_typ(
       self.date.year, self.date.month
-  # pdate = hilodt.make_date_with(strdate)
+  # pdate = hilodt.make_date_or_none(strdate)
 
   dtprfxd_finder = prfx.DatePrefixedOSFinder(basefolderpath=)
   ppath = dtprfxd_finder.find_l3yyyymm_filepath_w_typ_by_refmonth_ext(refmonth=refmonth, dot_ext='.csv')

@@ -45,7 +45,7 @@ class BBFIFileStaticFinder:
     """
     basefolderpath = cls.get_basefolder_for_daily_results()
     dtprfx_dirtree = dtfnd.DatePrefixedOSFinder(basefolderpath)
-    pdate = hilodt.make_date_with(pdate)
+    pdate = hilodt.make_date_or_none(pdate)
     ext = 'csv'
     filepaths = dtprfx_dirtree.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(
       pdate.year, pdate.month, pdate.day, ext, reporttype

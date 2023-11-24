@@ -6,6 +6,7 @@ fs/datesetc/datehilofs.py
     in other words, to avoid circulation importation and somehow maintain 'upstream'
     (or unidirectional dependence).
 """
+import calendar
 import copy
 import time
 import datetime
@@ -31,7 +32,7 @@ def find_strinlist_that_starts_with_a_5charyearblank_via_if(entries):
   return newentries
 
 
-def gen_date_range_ini_to_fim_asc(dateini, datefim):
+def gen_date_range_ini_to_fim_asc(dateini, datefim, cutoff=None):
   """
   private:
     this function should only be called by gen_date_range_ini_to_fim(dateini, datefim, descending=False)
@@ -39,12 +40,14 @@ def gen_date_range_ini_to_fim_asc(dateini, datefim):
   """
   current_date = copy.copy(dateini)
   while current_date <= datefim:
+    if cutoff and current_date > cutoff:
+      return
     yield current_date
     current_date = current_date + relativedelta(days=1)
   return
 
 
-def gen_date_range_ini_to_fim_desc(dateini, datefim):
+def gen_date_range_ini_to_fim_desc(dateini, datefim, cutoff=None):
   """
   private:
     this function should only be called by gen_date_range_ini_to_fim(dateini, datefim, descending=False)
@@ -52,12 +55,14 @@ def gen_date_range_ini_to_fim_desc(dateini, datefim):
   """
   current_date = copy.copy(datefim)
   while current_date >= dateini:
+    if cutoff and current_date < cutoff:
+      return
     yield current_date
     current_date = current_date - relativedelta(days=1)
   return
 
 
-def gen_date_range_ini_to_fim(dateini, datefim, descending=False):
+def gen_date_range_ini_to_fim(dateini, datefim, descending=False, cutoff=None):
   """'
   Example: gen_date_range_ini_to_fim('2023-2-4', '2023-2-7')
     will generate:
@@ -69,11 +74,11 @@ def gen_date_range_ini_to_fim(dateini, datefim, descending=False):
   Notice that, differently from range(4, 7), which excludes the 7 itself, day "7" is included in the output
   """
   # treat dateini
-  dateini = make_date_with(dateini)
+  dateini = make_date_or_none(dateini)
   if dateini is None:
     return []
   # treat datefim
-  datefim = make_date_with(datefim)
+  datefim = make_date_or_none(datefim)
   if datefim is None:
     datefim = datetime.date.today()
   if dateini == datefim:
@@ -82,8 +87,33 @@ def gen_date_range_ini_to_fim(dateini, datefim, descending=False):
     return []
   # from here: dateini < datefim
   if not descending:  # ie, ascending
-    return gen_date_range_ini_to_fim_asc(dateini, datefim)
-  return gen_date_range_ini_to_fim_desc(dateini, datefim)
+    return gen_date_range_ini_to_fim_asc(dateini, datefim, cutoff)
+  return gen_date_range_ini_to_fim_desc(dateini, datefim, cutoff)
+
+
+def gen_daily_dates_for_refmonth(prefmonthdate, decrescent=False, cutoff=None):
+  firstdateinmonth = copy.copy(prefmonthdate)
+  _, ndaysinmonth = calendar.monthrange(prefmonthdate.year, prefmonthdate.month)
+  lastdateinmonth = datetime.date(year=firstdateinmonth.year, month=firstdateinmonth.month, day=ndaysinmonth)
+  if decrescent:
+    startpoint = lastdateinmonth
+    finishpoint = firstdateinmonth
+    return gen_date_range_ini_to_fim_desc(startpoint, finishpoint, cutoff)
+  startpoint = firstdateinmonth
+  finishpoint = lastdateinmonth
+  return gen_date_range_ini_to_fim_asc(startpoint, finishpoint, cutoff)
+
+
+def gen_daily_dates_for_year(pyear, decrescent=False, cutoff=None):
+  firstdayinyear = datetime.date(year=pyear, month=1, day=1)
+  lastdayinyear = datetime.date(year=pyear, month=12, day=31)
+  if decrescent:
+    startpoint = lastdayinyear
+    finishpoint = firstdayinyear
+    return gen_date_range_ini_to_fim_desc(startpoint, finishpoint, cutoff)
+  startpoint = firstdayinyear
+  finishpoint = lastdayinyear
+  return gen_date_range_ini_to_fim_asc(startpoint, finishpoint, cutoff)
 
 
 def gen_refmonthdate_ini_fim_range_asc(p_refmonthdateini, p_refmonthdatefim):
@@ -133,7 +163,7 @@ def is_str_dateprefixed(stri):
   try:
     pp = stri.split(' ')
     strdate = pp[0]
-    pdate = make_date_with(strdate)
+    pdate = make_date_or_none(strdate)
     if pdate:
       return True
   except (AttributeError, IndexError):
@@ -142,10 +172,10 @@ def is_str_dateprefixed(stri):
 
 
 def make_date_with_or_today(pdate):
-  return make_date_with(pdate) or datetime.date.today()
+  return make_date_or_none(pdate) or datetime.date.today()
 
 
-def make_date_with(pdate):
+def make_date_or_none(pdate):
   if isinstance(pdate, datetime.date):
     return pdate
   if pdate is None:
@@ -235,7 +265,7 @@ def return_datelist_or_empty_from_strlist(datelist):
   outlist = []
   try:
     for pdate in datelist:
-      odate = make_date_with(pdate)
+      odate = make_date_or_none(pdate)
       if odate:
         outlist.append(odate)
   except TypeError:  # catches if datelist is not subscriptable
@@ -257,7 +287,7 @@ def adhoctest():
   n = get_3letter_monthdict(month3letter)
   print(month3letter, n)
   strdate = '2023-2-4'
-  pdate = make_date_with(strdate)
+  pdate = make_date_or_none(strdate)
   mmmstrdate = render_date_as_ddmmmyyyy_with_month3letter_or_none(pdate)  # default sep is '/'
   print('pdate', pdate, ' => ddmmmyyyy', mmmstrdate)
   mmmstrdate = render_date_as_ddmmmyyyy_with_month3letter_or_none(pdate, '-')  # default sep is '/'

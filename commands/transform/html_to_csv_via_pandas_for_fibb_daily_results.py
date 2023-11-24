@@ -32,8 +32,8 @@ class ArgsDispatcher:
     args => Namespace(ini=None, fim=None, datelist=None)
     Namespace(ini=None, fim=None, datelist=None)
     """
-    self.dateini = hilodt.make_date_with(args.ini)
-    self.datefim = hilodt.make_date_with(args.fim)
+    self.dateini = hilodt.make_date_or_none(args.ini)
+    self.datefim = hilodt.make_date_or_none(args.fim)
     self.datelist = hilodt.return_datelist_or_empty_from_strlist(args.datelist)
     self.integrate_datelist_w_ini_fim_range()
 
