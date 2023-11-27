@@ -110,6 +110,15 @@ class DatePrefixedOSFinder:
       l1yearfolderpath, year, substr)
     return l2yyyyfolderpaths
 
+  def find_all_refmonths_l2yyyymmfolder_by_year_opt_substr(self, year, substr=None):
+    l2yyyyfolderpaths = self.find_l2yyyymm_folderpaths_any_months_by_year_opt_substr(year, substr)
+    refmonthdates = []
+    for l2yyyyfolderpath in l2yyyyfolderpaths:
+      foldername = os.path.split(l2yyyyfolderpath)[-1]
+      refmonthdate = hilo.derive_refmonthdate_from_a_yearmonthprefixedstr_or_mostrecent(foldername)
+      refmonthdates.append(refmonthdate)
+    return refmonthdates
+
   def find_l2yyyymm_folderpaths_by_year_month_opt_substr(self, year, month, substr=None):
     """
     theses are:
@@ -195,6 +204,12 @@ class DatePrefixedOSFinder:
       return []
     return self.find_l2_or_l3_filepaths_by_year_month_opt_ext_substr(year, month, dotext, substr)
 
+  def find_last_l2_or_l3_filepath_by_refmonth_opt_ext_substr(self, refmonthdate, dotext=None, substr=None):
+    fps_in_month = self.find_l2_or_l3_filepaths_by_refmonth_opt_ext_substr(refmonthdate, dotext, substr)
+    if fps_in_month and len(fps_in_month) > 0:
+      return fps_in_month[-1]
+    return None
+
   def find_all_l3yyyymm_filenames(self, dot_ext=None):
     all_l3yyyymmdd_filepaths = self.find_all_l3yyyymm_filepaths()
     all_l3yyyymmdd_filenames = [os.path.split(fp)[-1] for fp in all_l3yyyymmdd_filepaths]
@@ -221,7 +236,7 @@ class DatePrefixedOSFinder:
     return outstr
 
 
-def adhost1():
+def adhoctest1():
   bfp = (
     '/home/dados/Sw3/ProdProjSw/BeansCounterPy_PrdPrj/dados/bankdata/001 BDB bankdata/'
     'FI Extratos Mensais Ano a Ano BB OD'
@@ -247,7 +262,7 @@ def adhost1():
     print('no l2files for year', year)
 
 
-def adhost2():
+def adhoctest2():
   """
     l1_folders = disc.find_l1yyyy_folderpaths_w_opt_substr(year)
     print('l1', '-' * 40)
@@ -303,4 +318,4 @@ def process():
 
 
 if __name__ == '__main__':
-  adhost2()
+  adhoctest2()
