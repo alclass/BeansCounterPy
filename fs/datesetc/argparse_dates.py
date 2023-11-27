@@ -54,7 +54,7 @@ class Dispatcher:
     self.n_funcapply = 0
     self.today = datetime.date.today()
 
-  def treat_func(self, plist):
+  def treat_func(self):
     if self.func and not callable(self.func):
       error_msg = 'Func (%s) must be callable in Dispatcher' % str(self.func)
       raise RuntimeError(error_msg)

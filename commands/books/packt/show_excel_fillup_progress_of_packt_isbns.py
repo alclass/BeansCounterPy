@@ -7,8 +7,8 @@ The worksheet basic columns are: title | publication-date | url (with the ISBN) 
 """
 import os
 import pandas as pd
-import commands.books.functions_packt_books_data_excel_json_pandas as bkfs  # bkfs.get_bookdata_dirpath
-import commands.books.functions_dataframe as dffs  # dffs.extract_rows_that_have_at_least_one_na
+import commands.books.packt.functions_packt_books_data_excel_json_pandas as bkfs  # bkfs.get_bookdata_dirpath
+import commands.books.packt.functions_dataframe as dffs  # dffs.extract_rows_that_have_at_least_one_na
 API_URL_to_interpole = 'https://www.googleapis.com/books/v1/volumes?q=title:{title_with_pluses}'
 INTERVAL_INBETWEEN_APICALLS_IN_SEC = 3
 pd.set_option('display.max_rows', 100)
