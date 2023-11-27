@@ -11,7 +11,8 @@ import settings as sett
 import fs.datesetc.datehilofs as hilodt
 str_pattern_for_beginning_number = r'^(\d+) '
 re_pattern_for_beginning_number = re.compile(r'^(\d+) ')
-DEFAULT_ISBNFILLEDIN_FILENAME = 'z-list titles authors ISBN-urls recovered from Packt.xlsx'
+DEFAULT_LISTING_EXCEL_FILENAME = 'z-list titles authors ISBN-urls recovered from Packt.xlsx'
+DEFAULT_LISTING_JSON_FILENAME = 'z-list_packt_books_urls_isbns.json'
 
 
 def extract_seq_n_title_from_seqfilename(filename):
@@ -68,12 +69,30 @@ def get_bookdata_dirpath():
   return bookpath
 
 
-def get_bookdata_filepath():
+def get_bookdata_first_alphaordered_excel_filepath():
   bookdirpath = get_bookdata_dirpath()
   files = glob.glob(bookdirpath + '/*.xlsx')
   if len(files) > 0:
     return files[0]
   return None
+
+
+def get_bookslisting_excel_filepath(p_filename=None):
+  if p_filename is None:
+    filename = DEFAULT_LISTING_EXCEL_FILENAME
+  else:
+    filename = p_filename
+  bookslisting_excel_filepath = os.path.join(get_bookdata_dirpath(), filename)
+  return bookslisting_excel_filepath
+
+
+def get_bookslisting_json_filepath(p_filename=None):
+  if p_filename is None:
+    filename = DEFAULT_LISTING_JSON_FILENAME
+  else:
+    filename = p_filename
+  bookslisting_json_filepath = os.path.join(get_bookdata_dirpath(), filename)
+  return bookslisting_json_filepath
 
 
 def get_json_filepaths():
@@ -86,7 +105,7 @@ def get_filepath_for_isbnfilledin_packt_titles(p_basefolder=None, p_filename=Non
   if p_filename is not None:
     filename = p_filename
   else:
-    filename = DEFAULT_ISBNFILLEDIN_FILENAME
+    filename = DEFAULT_LISTING_EXCEL_FILENAME
   if p_basefolder is not None:
     bookdatafolderpath = p_basefolder
   else:
@@ -126,9 +145,9 @@ def adhoctest():
   dirpath = get_bookdata_dirpath()
   testseq += 1
   print(testseq, 'get_bookdata_dirpath() =>', dirpath)
-  filepath = get_bookdata_filepath()
+  filepath = get_bookdata_first_alphaordered_excel_filepath()
   testseq += 1
-  print(testseq, 'get_bookdata_filepath() =>', filepath)
+  print(testseq, 'get_bookdata_first_alphaordered_excel_filepath() =>', filepath)
   filepaths = get_json_filepaths()
   n_files = len(filepaths)
   testseq += 1
@@ -146,6 +165,8 @@ def adhoctest():
 def adhoctest2():
   mostrecent_dateprefixed_excelfile = search_mostrecent_dateprefixed_excelfile_in_folder()
   print('mostrecent_dateprefixed_excelfile', mostrecent_dateprefixed_excelfile)
+  bookslisting_excel_filepath = get_bookslisting_excel_filepath()
+  print('bookslisting_excel_filepath', bookslisting_excel_filepath)
 
 
 def process():

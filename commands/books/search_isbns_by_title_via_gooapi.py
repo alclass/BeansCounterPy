@@ -54,7 +54,7 @@ class ISBNSearcher:
     return self._n_rows_with_isbn  # may return None
 
   def set_excelpath_or_raise(self):
-    excelfilepath = isbnfs.get_bookdata_filepath()
+    excelfilepath = isbnfs.get_bookdata_first_alphaordered_excel_filepath()
     if excelfilepath is None or not os.path.isfile(excelfilepath):
       error_msg = 'Excel filepath does not exist [%s]' % str(excelfilepath)
       raise OSError(error_msg)

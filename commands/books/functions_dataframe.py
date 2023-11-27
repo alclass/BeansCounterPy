@@ -3,7 +3,8 @@
 commands/books/functions_dataframe.py
   => helper/util functions for the getting of Packt's book isbn's et al.
 """
-import random
+import os.path
+
 import numpy as np
 import pandas as pd
 
