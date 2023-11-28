@@ -198,18 +198,38 @@ def download_n_gen_csv_thru_dates(datelist=()):
     download_n_gen_csv(pdate)
 
 
+def process_download_convert_transform():
+  today = datetime.date.today()
+  args = apdt.get_args()
+  scrmsg = f"""downloadTabelaBBRendimentosDia.py
+  CLI args given are:  {args}
+    Obs: 
+     1) if no parameter arg is given, 'today' {today} will default for the 3 operations
+        (ie download/convert/transform)';
+     2) the download operation only works for 'today', because the html data carries daily data;
+        (the user can, without confusing, choose 'today', for example, when it's a Saturday or a Sunday,
+        that download will refer to Friday);
+     3) if another date than today is given, convert & transfom will look for same date html,
+        ie, a download that happened before but was not yet processed (ie converted/transformed);
+     4) the script does not process if a same date prefixed html or csv file already exists in folder;
+        (if the user wants to reprocess it, she must delete the date prefixed files in the results folder); 
+  """
+  print(scrmsg)
+  # 'today' is the last checked option, if nothing else is entered, making it true will dispatch it, like a default,
+  # if other options than 'today' are chosen, no problem, program returns before getting to the 'today if'
+  args.today = True
+  dispatcher = apdt.Dispatcher(args, func=download_n_gen_csv_thru_dates)
+  dispatcher.dispatch()
+
+
 def adhoctest():
   pass
 
 
 def process():
   """
-  download_n_gen_csv()
   """
-  args = apdt.get_args()
-  print(args)
-  dispatcher = apdt.Dispatcher(args, func=download_n_gen_csv_thru_dates)
-  dispatcher.dispatch()
+  process_download_convert_transform()
 
 
 if __name__ == '__main__':
