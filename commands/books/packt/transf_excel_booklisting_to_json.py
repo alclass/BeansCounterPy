@@ -2,9 +2,10 @@
 """
 commands/books/transf_excel_booklisting_to_json.py
 """
-import os.path
+import datetime
+import os
 import pandas as pd
-import commands.books.functions_packt_books_data_excel_json_pandas as pkfs
+import commands.books.packt.functions_packt_books_data_excel_json_pandas as pkfs
 
 
 class Converter:
@@ -13,7 +14,8 @@ class Converter:
     self.bookslisting_excel_fp = pkfs.get_bookslisting_excel_filepath()
     self.bookslisting_json_fp = pkfs.get_bookslisting_json_filepath()
     self.df = None
-    self.has_converted = False
+    self.bool_converted_to_json = False
+    self.convert_msg = 'n/a'
 
   @property
   def basefolder(self):
@@ -47,14 +49,19 @@ class Converter:
       scrmsg = f"Writing json [{self.bookslisting_json_fn}]"
       print(scrmsg)
       self.df.to_json(self.bookslisting_json_fp)
+      self.bool_converted_to_json = True
+      now = datetime.datetime.now()
+      self.convert_msg = 'converted to json @ ' + str(now)
       return True
     else:
       scrmsg = f"Json file [{self.bookslisting_json_fn}] already exists, not reconverting it."
+      now = datetime.datetime.now()
+      self.convert_msg = 'target file exists so convertion could not happen @ ' + str(now)
       print(scrmsg)
       return False
 
   def convert(self):
-    self.has_converted = self.transform_excel_to_json()
+    self.bool_converted_to_json = self.transform_excel_to_json()
 
   def __str__(self):
     outstr = f"""
@@ -62,7 +69,8 @@ class Converter:
     Json filename = {self.bookslisting_json_fn}
     Base folder = {self.basefolder}
     N of rows = {self.n_rows}
-    Json convertion run = {self.has_converted}
+    Json has been converted = {self.bool_converted_to_json}
+    convert msg = {self.convert_msg}
     """
     return outstr
 
