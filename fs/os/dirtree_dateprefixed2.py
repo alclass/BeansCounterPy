@@ -3,7 +3,6 @@
 """
 import datetime
 import fs.os.oshilofunctions as hilo
-import settings as sett
 
 
 class FolderNodeForDatePrefixTree:
@@ -47,7 +46,7 @@ class FolderNodeForDatePrefixTree:
     """
     If not found, it returns None
     If more than one folder are found, a ValueError exception is raised from the calling function
-      (This should be considered an inconsistent data directory and it's ok for the exception to be raised.)
+      (This should be considered an inconsistent data directory, and it's ok for the exception to be raised.)
     """
     return hilo.find_l1foldernames_all_years_from_basefolder_opt_substr(self.rootpath, year)
 
@@ -60,10 +59,10 @@ class FolderNodeForDatePrefixTree:
     return hilo.find_yearmonthfolderpath_from(yearfolderpath, refmonthdate)
 
   def get_filepaths_by_year_month(self, year, month):
-    refmonthdate = datetime.date(year=year, month=month, day=1)
+    # refmonthdate = datetime.date(year=year, month=month, day=1)
     yearfolderpath = self.find_1stlevel_yearfolderpath_for(year)
     # attention here with the order of parameters: first is refmonthdate then yearfolderpath
-    return hilo.find_filepaths_w_year_month_ext_in_folderpath(refmonthdate, yearfolderpath)
+    return hilo.find_filepaths_w_year_month_ext_in_folderpath(yearfolderpath, year, month)
 
 
 def adhoctest():
