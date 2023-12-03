@@ -21,7 +21,6 @@ import datetime
 import glob
 import os
 import re
-import fs.datesetc.datefs as dtfs
 import fs.os.osfunctions as osfs
 str_yearplusblank_re = r'^\d{4}\ '
 yearplusblank_re = re.compile(str_yearplusblank_re)
