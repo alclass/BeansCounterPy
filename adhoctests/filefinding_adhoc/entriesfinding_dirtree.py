@@ -18,7 +18,7 @@ import models.banks.bb.fi.bbfi_file_find as bkfind  # bkfind.BBFIFileFinder
 def get_csv_filepath():
   """
    # self._csv_filepath = self.finder.get_csv_filepath_for_date_n_type_or_raise()
-    rentabdia_basefolderpath = self.dtprfxd_finder.find_l2yyyymm_folderpath_by_year_month_typ(
+    rentabdia_basefolderpath = self.dtprfxd_finder.find_or_create__l2yyyymm_folderpath_by_year_month_typ(
       self.date.year, self.date.month
   # pdate = hilodt.make_date_or_none(strdate)
 

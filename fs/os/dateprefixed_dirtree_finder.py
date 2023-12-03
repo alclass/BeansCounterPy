@@ -211,11 +211,11 @@ class DatePrefixedOSFinder:
     return None
 
   def find_all_l3yyyymm_filenames(self, dot_ext=None):
-    all_l3yyyymmdd_filepaths = self.find_all_l3yyyymm_filepaths()
+    all_l3yyyymmdd_filepaths = self.find_all_l3yyyymm_filepaths(dot_ext)
     all_l3yyyymmdd_filenames = [os.path.split(fp)[-1] for fp in all_l3yyyymmdd_filepaths]
     return all_l3yyyymmdd_filenames
 
-  def find_all_l3yyyymm_filepaths(self):
+  def find_all_l3yyyymm_filepaths(self, dot_ext=None):
     """
     returns the first element from find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(typ=None)
     """
@@ -226,7 +226,7 @@ class DatePrefixedOSFinder:
       if refmonthdate is None:
         continue
       year, month = refmonthdate.year, refmonthdate.month
-      l3yyyymmdd_filepaths = self.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month)
+      l3yyyymmdd_filepaths = self.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month, dot_ext)
       if l3yyyymmdd_filepaths is None or len(l3yyyymmdd_filepaths) > 0:
         all_l3yyyymmdd_filepaths += l3yyyymmdd_filepaths
     return sorted(all_l3yyyymmdd_filepaths)

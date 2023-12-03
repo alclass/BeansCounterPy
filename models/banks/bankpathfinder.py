@@ -85,7 +85,7 @@ class BankOSFolderFileFinder:
     l2folderpath = 'to-find-out'
     try:
       l2foldername = str(year) + '-' + str(month).zfill(2) + ' ' + sufix
-      l1basefolderpath = self.find_l1yyyyfolderpath_by_year_opt_substr(year)
+      l1basefolderpath = self.find_or_create_l1yyyyfolderpath_by_year_opt_substr(year)
       l2folderpath = os.path.join(l1basefolderpath, l2foldername)
       if os.path.isdir(l2folderpath):
         os.makedirs(l2folderpath)
@@ -133,28 +133,53 @@ class BankOSFolderFileFinder:
     filename = dateprefix + ' ' + sufix + dot_ext
     return filename
 
-  def find_l1yyyyfolderpath_by_year_opt_substr(self, year, substr=None):
+  def create_l1yyyyfolderpath_by_year_opt_substr(self, year, substr=None):
+    # substring is not used (TO-DO: improved it maybe allowing it in name forming
+    _ = substr
+    basefolderpath = self.prxfinder.basefolderpath
+    sufix = self.FOLDERSUFFIXDICT[self.REND_RESULTS_KEY]
+    foldername = f"{year} {sufix}"
+    folderpath = os.path.join(basefolderpath, foldername)
+    if not os.path.exists(folderpath):
+      scrmsg = f"Creating folder {folderpath}"
+      print(scrmsg)
+      os.makedirs(folderpath)
+      return folderpath
+    return None
+
+  def find_or_create_l1yyyyfolderpath_by_year_opt_substr(self, year, substr=None):
     if self.typecat is None:
-      return None
+      scrmsg = f"Program Error: Type cat is None in create_or_find_l1yyyyfolderpath_by_year_opt_substr (year={year})"
+      raise ValueError(scrmsg)
     l1yearfolderpaths = self.prxfinder.find_l1yyyyfolderpath_by_year_n_opt_substr(year, substr)
     if l1yearfolderpaths and len(l1yearfolderpaths) == 1:
-      return l1yearfolderpaths[0]
+      l1yearfolderpath = l1yearfolderpaths[0]
+      return l1yearfolderpath
+    # at this point, folder does not exist; next it'll try to create it
+    l1yearfolderpath = self.create_l1yyyyfolderpath_by_year_opt_substr(year, substr)
+    return l1yearfolderpath
+
+  def create_l2yyyymm_folderpath_by_year_month_substr(self, year, month, substr=None):
+    basefolderpath = self.prxfinder.find_l1yyyyfolderpath_by_year_n_opt_substr(year, substr)
+    sufix = self.FOLDERSUFFIXDICT[self.REND_RESULTS_KEY]
+    foldername = f"{year}-{month:02} {sufix}"
+    folderpath = os.path.join(basefolderpath, foldername)
+    if not os.path.exists(folderpath):
+      scrmsg = f"Creating folder {folderpath}"
+      os.makedirs(folderpath)
+      return folderpath
     return None
 
-  def find_l2yyyymm_folderpath_by_year_month_typ(self, year, month, typ=None):
+  def find_or_create_l2yyyymm_folderpath_by_year_month_substr(self, year, month, substr=None):
     if self.typecat is None:
       return None
-    l2yearmonthfolderpaths = self.prxfinder.find_l2yyyymm_folderpaths_by_year_month_opt_substr(year, month, typ)
-    if l2yearmonthfolderpaths and len(l2yearmonthfolderpaths) == 1:
-      return l2yearmonthfolderpaths[0]
-    return None
-
-  def find_or_create_l2yyyymm_folderpath_by_year_month_typ(self, year, month, typ=None):
-    l2yearmonthfolderpath = self.find_l2yyyymm_folderpath_by_year_month_typ(year, month, typ)
-    if l2yearmonthfolderpath is None:
-      # (to think about) typ is not used here, maybe an exception should be raised if typ is not None
-      l2yearmonthfolderpath = self.create_l2_folder(year, month)
-    return l2yearmonthfolderpath
+    l2yearmonthfolderpaths = self.prxfinder.find_l2yyyymm_folderpaths_by_year_month_opt_substr(year, month, substr)
+    if len(l2yearmonthfolderpaths) > 0:
+      l2yyyymm_folderpath = l2yearmonthfolderpaths[0]
+      return l2yyyymm_folderpath
+    # at this point, folder does not exist, it must create it
+    l2yyyymm_folderpath = self.create_l2yyyymm_folderpath_by_year_month_substr(year, month, substr)
+    return l2yyyymm_folderpath
 
   def find_l3yyyymm_filepaths_by_year_month_ext(self, year, month, dot_ext=None):
     l3yearmonthfolderpaths = self.prxfinder.find_l2_or_l3_filepaths_by_year_month_opt_day_ext_substr(year, month,
@@ -258,10 +283,11 @@ def adhoctest():
   print(bfinder.basefolderpath)
   year = 2023
   print('Find folderpath for year', year)
-  print(bfinder.find_l1yyyyfolderpath_by_year_opt_substr(year))
-  month = 10
-  print('find_l2yyyymm_folderpath_by_year_month_typ', year, 'month', month)
-  print(bfinder.find_l2yyyymm_folderpath_by_year_month_typ(year, month))
+  print(bfinder.find_or_create_l1yyyyfolderpath_by_year_opt_substr(year))
+  month = 12
+  print('find_or_create__l2yyyymm_folderpath_by_year_month_typ', year, 'month', month)
+  l2yyyymm_folderpath = bfinder.find_or_create_l2yyyymm_folderpath_by_year_month_substr(year, month)
+  print('l2yyyymm_folderpath', l2yyyymm_folderpath)
   print('Find filepaths for year', year, 'month', month)
   fpaths = bfinder.find_l3yyyymm_filepaths_by_year_month_ext(year, month)
   for fpath in fpaths:

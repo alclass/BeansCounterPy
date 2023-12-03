@@ -22,7 +22,7 @@ BANK3LETTER = 'bdb'
 def adhoctest():
   bkfinder = bkfd.BankOSFolderFileFinder(bank3letter=BANK3LETTER)
   today = datetime.date.today()
-  t = bkfinder.find_l1yyyyfolderpath_by_year_opt_substr(today.year)
+  t = bkfinder.find_or_create_l1yyyyfolderpath_by_year_opt_substr(today.year)
   print(t)
   pass
 

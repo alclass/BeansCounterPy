@@ -46,7 +46,7 @@ class WithPandasHtmlToCsvConverter:
       )
     """
     pthfnder = pthfnd.BankOSFolderFileFinder(self.BDB_BANK3LETTER, self.TYPRE)
-    _folderpath = pthfnder.find_l2yyyymm_folderpath_by_year_month_typ(self.date.year, self.date.month)
+    _folderpath = pthfnder.find_or_create_l2yyyymm_folderpath_by_year_month_substr(self.date.year, self.date.month)
     return _folderpath
 
   @property

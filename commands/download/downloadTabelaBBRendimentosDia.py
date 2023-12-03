@@ -50,19 +50,10 @@ class BBRendDiaDownloader:
     """
     bank3letter = 'bdb'
     dtprfxd_finder = bkfnd.BankOSFolderFileFinder(bank3letter, bkfnd.BankCat.REND_RESULTS_KEY)
-    rentabdia_basefolderpath = dtprfxd_finder.find_l2yyyymm_folderpath_by_year_month_typ(
-      self.today.year, self.today.month
-    )
     today = datetime.date.today()
-    l2folderpath = dtprfxd_finder.find_l2yyyymm_folderpath_by_year_month_typ(today.year, today.month)
-    if l2folderpath is None:
-      error_msg = (
-          'Data or OS Error: from folder [{basefolderpath}] l2 subfolder returned None with'
-          ' year {year} and month {month}'.
-          format(basefolderpath=rentabdia_basefolderpath, year=today.year, month=today.month)
-      )
-      raise ValueError(error_msg)
-    # use the interpolate constant at
+    l2folderpath = dtprfxd_finder.find_or_create_l2yyyymm_folderpath_by_year_month_substr(
+      today.year, today.month
+    )
     filepath = os.path.join(l2folderpath, self.default_target_filename)
     return filepath
 

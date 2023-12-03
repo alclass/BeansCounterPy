@@ -53,7 +53,7 @@ class SingleFileConverter:
       input_filename = bfinder.get_conventioned_input_commasep_html_filename()
       findertypecat = pthfnd.BankOSFolderFileFinder.REND_RESULTS_KEY
       pthfinder = pthfnd.BankOSFolderFileFinder(self.bank3letter, findertypecat)
-      folderpath = pthfinder.find_l2yyyymm_folderpath_by_year_month_typ(year=self.date.year, month=self.date.month)
+      folderpath = pthfinder.find_or_create__l2yyyymm_folderpath_by_year_month_typ(year=self.date.year, month=self.date.month)
       self.input_filepath = os.path.join(folderpath, input_filename)
     # date can be extracted after the check above, for it will look up the prefix in the input filename
     _ = self.date
