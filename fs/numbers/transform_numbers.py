@@ -68,8 +68,6 @@ def swap_thousandcommas_n_decplacecomma_to_europeanformat(str_or_number):
       str_or_number = place_thousand_dots_in_number_as_strnumber(str_or_number)
 
 
-
-
 def transform_european_stringnumber_to_pythonfloat(p_strnumber):
   if p_strnumber is None or len(p_strnumber) == 0:
     return None
