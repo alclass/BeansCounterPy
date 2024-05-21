@@ -166,6 +166,7 @@ class BankOSFolderFileFinder:
     folderpath = os.path.join(basefolderpath, foldername)
     if not os.path.exists(folderpath):
       scrmsg = f"Creating folder {folderpath}"
+      print(scrmsg)
       os.makedirs(folderpath)
       return folderpath
     return None

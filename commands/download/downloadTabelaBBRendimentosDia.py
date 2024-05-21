@@ -132,6 +132,7 @@ class BBRendDiaDownloader:
       return False
     url = URL_BB_RENTAB_DIA
     print(url)
+    # noinspection PyVulnerableApiCode
     req = requests.get(url)
     fd = open(self.targetfilepath, 'wb')
     fd.write(req.content)

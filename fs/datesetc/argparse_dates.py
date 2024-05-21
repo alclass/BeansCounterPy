@@ -53,6 +53,7 @@ class Dispatcher:
     self.n_rolls = 0
     self.n_funcapply = 0
     self.today = datetime.date.today()
+    self.treat_func()
 
   def treat_func(self):
     if self.func and not callable(self.func):
