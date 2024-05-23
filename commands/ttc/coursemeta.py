@@ -13,6 +13,16 @@ MP3_PRODUCTION_PREFICES = [
 ]
 
 
+class KnowledgeArea:
+  def __init__(self, name, pid=None):
+    self.pid = pid
+    if self.pid is None:
+      self.name = 'root'
+    else:
+      self.name = name
+
+
+
 class CourseMetaInfo:
 
   def __init__(self):
