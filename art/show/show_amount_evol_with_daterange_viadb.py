@@ -7,7 +7,7 @@ show_amount_evol_with_daterange_viadatafile.py
 import sys
 import fs.datesetc.datefs as dtfs
 import fs.numbers.transform_numbers as transfn
-import commands.to_correct.scrape_monthly_rendextracts as scr_bb_extrs
+import art.to_correct.scrape_monthly_rendextracts as scr_bb_extrs
 
 
 def transpose_dict(fundo_results_dictlist):

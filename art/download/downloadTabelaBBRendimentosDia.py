@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-commands/download/downloadTabelaBBRendimentosDia.py
+art/download/downloadTabelaBBRendimentosDia.py
   downloads BB's app-fundos daily report
   After downloading, it:
     a) converts comma-sep html into a point-sep one;

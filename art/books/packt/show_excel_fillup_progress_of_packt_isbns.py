@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-commands/books/show_excel_fillup_progress_of_packt_isbns.py
+art/books/show_excel_fillup_progress_of_packt_isbns.py
   => shows progress in how many url's are still missing in the main worksheet
 The worksheet basic columns are: title | publication-date | url (with the ISBN) | formerly found ISBN's
 
 """
 import os
 import pandas as pd
-import commands.books.packt.functions_packt_books_data_excel_json_pandas as bkfs  # bkfs.get_bookdata_dirpath
-import commands.books.packt.functions_dataframe as dffs  # dffs.extract_rows_that_have_at_least_one_na
+import art.books.packt.functions_packt_books_data_excel_json_pandas as bkfs  # bkfs.get_bookdata_dirpath
+import art.books.packt.functions_dataframe as dffs  # dffs.extract_rows_that_have_at_least_one_na
 API_URL_to_interpole = 'https://www.googleapis.com/books/v1/volumes?q=title:{title_with_pluses}'
 INTERVAL_INBETWEEN_APICALLS_IN_SEC = 3
 pd.set_option('display.max_rows', 100)

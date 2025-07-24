@@ -13,7 +13,7 @@ TO-DO: it is needed for system to have an interface-like approach that is assyme
 Because data finding from textfiles is different by bank, a method with the same name (conventioned)
   might be called dynamically (ie, either by eval() or by a handler() (ie, handler followed by ())
 
-Initial sketch: it's in commands.show.to_corretc_list_triple_rends_from_db.py
+Initial sketch: it's in art.show.to_corretc_list_triple_rends_from_db.py
 """
 import models.banks.banksgeneral as bkgen  # contains BANK which is mostly a static/classmethod class
 import models.banks.cef.extractCefFiDataFromXml as extrCef

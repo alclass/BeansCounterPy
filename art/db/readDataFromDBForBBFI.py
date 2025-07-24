@@ -2,7 +2,7 @@
 """
 readDataFromDBForBBFI.py
   reads data from SQL-DB.
-  @see also commands/db/insertBBFIDataFromFileToDB.py
+  @see also art/db/insertBBFIDataFromFileToDB.py
 
 """
 # import fs.db.dbasfolder.lookup_monthrange_in_datafolder as lkup  # for finding "conventioned" paths

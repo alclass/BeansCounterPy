@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-commands/books/search_isbns_by_title_via_gooapi.py
+art/books/search_isbns_by_title_via_gooapi.py
 
 Note on the "open" (ie, without a token) API limitation used by this script:
   According to the GoogleBook API docs, two limits are observed, ie:
@@ -25,7 +25,7 @@ import os
 import time
 import pandas as pd
 import requests
-import commands.books.functions_packt_books_data_excel_json_pandas as isbnfs
+import art.books.functions_packt_books_data_excel_json_pandas as isbnfs
 API_URL_to_interpole = 'https://www.googleapis.com/books/v1/volumes?q=title:{title_with_pluses}'
 INTERVAL_INBETWEEN_APICALLS_IN_SEC = 2
 pd.set_option('display.max_rows', 100)

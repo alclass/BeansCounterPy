@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-commands/ttc/coursemeta.py
+art/ttc/coursemeta.py
 
 This script attempts to read metadata information
   from TTC stored courses throughout a conventioned directory tree.

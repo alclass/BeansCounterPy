@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-commands/books/check_packt_titles_with_isbn_in_db.py
+art/books/check_packt_titles_with_isbn_in_db.py
 """
 import os
 import glob

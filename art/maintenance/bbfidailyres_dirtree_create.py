@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-commands/maintenance/bbfidailyres_dirtree_create.py
+art/maintenance/bbfidailyres_dirtree_create.py
   creates the directory structure for bb fi daily resuls with
   the leaf directory corresponding to current month's.
 
 Example: suppose month is 2023-12: issuing the command
 
-  $commands/maintenance/bbfidailyres_dirtree_create.py
+  $art/maintenance/bbfidailyres_dirtree_create.py
 will make
 
 {conf_base_folder}/001 BCB/Fi/2023-12

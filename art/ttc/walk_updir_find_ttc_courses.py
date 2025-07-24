@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-commands/ttc/walk_updir_find_ttc_courses.py
+art/ttc/walk_updir_find_ttc_courses.py
 
 This script attempts to read metadata information
   from TTC stored courses throughout a conventioned directory tree.
@@ -11,7 +11,7 @@ This script attempts to read metadata information
 # import fs.datesetc.datehilofs as hilodt
 import os
 import sys
-import commands.ttc.coursemeta as cmet
+import art.ttc.coursemeta as cmet
 COURSE_ID_PREFIX = cmet.COURSE_ID_PREFIX
 COURSE_URL_INTERPOL = cmet.COURSE_URL_INTERPOL
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-commands/download/fibb_daily_results_html_to_csv_via_pandas_transform.py
+art/download/fibb_daily_results_html_to_csv_via_pandas_transform.py
   scrapes the HTML of BB rendimentos diários
 
 https://scrapeops.io/python-web-scraping-playbook/best-python-html-parsing-libraries/

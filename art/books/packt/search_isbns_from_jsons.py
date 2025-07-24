@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-commands/books/search_isbns_from_jsons.py
+art/books/search_isbns_from_jsons.py
   => searches ISBN's inside json files using known dict attributes
 
   Basically, the dict attributes used are the following:
@@ -14,7 +14,7 @@ from collections import namedtuple
 import os
 import json
 import pandas as pd
-import commands.books.packt.functions_packt_books_data_excel_json_pandas as isbnfs
+import art.books.packt.functions_packt_books_data_excel_json_pandas as isbnfs
 pd.set_option('display.max_rows', 100)
 BookNT = namedtuple('BookNT', ['title', 'isbn13list'])
 
