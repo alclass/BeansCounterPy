@@ -25,7 +25,7 @@ import os
 import time
 import pandas as pd
 import requests
-import art.books.functions_packt_books_data_excel_json_pandas as isbnfs
+import art.books.packt.functions_packt_books_data_excel_json_pandas as isbnfs
 API_URL_to_interpole = 'https://www.googleapis.com/books/v1/volumes?q=title:{title_with_pluses}'
 INTERVAL_INBETWEEN_APICALLS_IN_SEC = 2
 pd.set_option('display.max_rows', 100)
@@ -71,7 +71,7 @@ class ISBNSearcher:
     4  rename column indices with known 'fieldnames'
     """
     self.df = self.df.drop([0], axis=0)
-    colindices = list(range(0, 3))
+    colindices = list(range(0, 4))
     self.df.columns = colindices
     self.df = self.df.drop([0], axis=1)
     self.df.rename({1: 'isbn', 2: 'title'}, axis=1, inplace=True)
@@ -139,6 +139,8 @@ class ISBNSearcher:
     time.sleep(INTERVAL_INBETWEEN_APICALLS_IN_SEC)
 
   def roll_rows_for_each_booktitle(self):
+    size = len(self.df)
+    print('Size of dt iterrows', size)
     for row in self.df.iterrows():
       # row is a 2D-tuple, first elem is 1-based-index int, second elem is a Series representing the row
       seq = row[0]
@@ -146,13 +148,25 @@ class ISBNSearcher:
       series = row[1]
       try:
         title = series.title
+        print(title)
       except (AttributeError, TypeError):
         continue
-      self.call_googlebook_api_to_search_isbn_by_title(seq, title)
+      # self.call_googlebook_api_to_search_isbn_by_title(seq, title)
 
   def process(self):
+    print('\t1) read_excel_to_pandas_df')
     self.read_excel_to_pandas_df()
+    print('\t2) roll_rows_for_each_booktitle')
     self.roll_rows_for_each_booktitle()
+
+  def __str__(self):
+    outstr = f"""
+    n_rows = {self.n_rows}
+    n_rows_original = {self.n_rows_original}
+    n_rows_with_isbn = {self.n_rows_with_isbn}
+    bookdata_excelfilepath = {self.bookdata_excelfilepath}
+    """
+    return outstr
 
 
 def adhoctest():
@@ -160,7 +174,8 @@ def adhoctest():
 
 
 def process():
-  ISBNSearcher()
+  searcher = ISBNSearcher()
+  print(searcher)
 
 
 if __name__ == '__main__':
