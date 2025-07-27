@@ -9,8 +9,8 @@ import os.path
 import models.banks.banksgeneral as bkgen
 import models.banks.bankpropsmod as bkmd
 # find_l2_or_l3_filepaths_by_year_month_opt_ext_substr
-import fs.os.dateprefixed_dirtree_finder as dtfnd  # dtfnd.DatePrefixedOSFinder
-import fs.datesetc.datehilofs as hilodt  # dtfnd.DatePrefixedOSFinder
+import lib.os.dateprefixed_dirtree_finder as dtfnd  # dtfnd.DatePrefixedOSFinder
+import lib.datesetc.datehilofs as hilodt  # dtfnd.DatePrefixedOSFinder
 
 
 class ReportProps:

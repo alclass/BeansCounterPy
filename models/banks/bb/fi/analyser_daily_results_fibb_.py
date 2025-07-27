@@ -5,10 +5,10 @@ art/download/fibb_daily_results_numbers_comma_to_point_convert.py
 """
 import datetime
 import os.path
-import fs.datesetc.datehilofs as hilodt
+import lib.datesetc.datehilofs as hilodt
 import models.banks.bb.fi.bbfi_file_find as ffnd  # ffnd.BBFIFileFinder
 import models.banks.bankpathfinder as bkfnd  # .BankOSFolderFileFinder
-import fs.os.dateprefixed_dirtree_finder as dtprxdt  # dtprxdt.DatePrefixedOSFinder
+import lib.os.dateprefixed_dirtree_finder as dtprxdt  # dtprxdt.DatePrefixedOSFinder
 import pandas as pd
 pd.set_option('display.max_columns', None)
 BDB_BANK3LETTER = 'bdb'

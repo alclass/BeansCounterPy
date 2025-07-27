@@ -4,7 +4,7 @@
 # import os
 # import sqlite3
 # import fs.hashfunctions.hash_mod as hm
-import fs.db.dbbase_cm as dbb
+import lib.db.dbbase_cm as dbb
 
 
 class DBRentabFundos(dbb.DBBase):

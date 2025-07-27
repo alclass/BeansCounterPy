@@ -5,9 +5,9 @@ list_fundos_by_month.py
 """
 import os
 # import fs.db.dbasfolder.discover_bbfi_datadirections as discbbfi
-import fs.datesetc.datefs as dtfs
+import lib.datesetc.datefs as dtfs
 
-import fs.db.reader_fundoresults_db as dbread
+import lib.db.reader_fundoresults_db as dbread
 # from prettytable import PrettyTable, ALL, FRAME
 # from prettytable import PrettyTable
 import pandas as pd

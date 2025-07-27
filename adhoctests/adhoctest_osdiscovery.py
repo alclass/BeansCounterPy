@@ -6,8 +6,8 @@ fs/os/dirtree_dateprefixed2.py
 """
 import datetime
 import os.path
-import fs.os.oshilofunctions as hilo
-import fs.os.dateprefixed_dirtree_finder as fnd  # fnd.DatePrefixedOSFinder
+import lib.os.oshilofunctions as hilo
+import lib.os.dateprefixed_dirtree_finder as fnd  # fnd.DatePrefixedOSFinder
 
 
 def adhost1():

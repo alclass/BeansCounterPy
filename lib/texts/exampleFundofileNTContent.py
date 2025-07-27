@@ -3,7 +3,7 @@
 
 """
 import os
-import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
+import lib.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
 import models.banks.banksgeneral as bkgen
 
 

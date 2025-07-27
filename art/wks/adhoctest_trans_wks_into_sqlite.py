@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
 BeansCounter:
-  art/wks/trans_wks_into_sqlite.py
+  art/wks/adhoctest_trans_wks_into_sqlite.py
 
+adhoctest for converting a spreadsheet to a sqlite table
+guidelines:
+  a) start with a simple worksheet with a simple table without dates
+  b) run script to see if it converts it to a sqlite table
 """
 import argparse
 import pandas as pd

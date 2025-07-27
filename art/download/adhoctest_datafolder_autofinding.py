@@ -3,7 +3,7 @@
 art/download/adhoctest_datafolder_autofinding.py
 """
 import models.banks.bankpathfinder as pthfnd  # .BankOSFolderFileFinder
-import fs.datesetc.datehilofs as hilodt
+import lib.datesetc.datehilofs as hilodt
 
 
 

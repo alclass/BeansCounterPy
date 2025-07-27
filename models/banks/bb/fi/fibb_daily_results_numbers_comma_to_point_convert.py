@@ -5,9 +5,9 @@ art/download/fibb_daily_results_numbers_comma_to_point_convert.py
 """
 import datetime
 import os
-import fs.datesetc.datehilofs as hilodt
-import fs.os.osfunctions as osfs
-import fs.re.refunctions as decpla
+import lib.datesetc.datehilofs as hilodt
+import lib.os.osfunctions as osfs
+import lib.re.refunctions as decpla
 import models.banks.bb.fi.bbfi_file_find as ffnd  # for ffnd.BBFIFileFinder.Props.commapoint_htmlfilename_to_interpol
 import models.banks.bankpathfinder as pthfnd  # .BankOSFolderFileFinder
 import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as trnsf  # WithPandasHtmlToCsvConverter
@@ -183,7 +183,7 @@ class BatchConverter:
     """
     print(self.seq, 'Converting', filename)
     input_text = open(inputfilepath).read()
-    output_text = decpla.convert_decimalplace_comma_to_point_via_re_for(input_text)
+    output_text = decpla.convert_commadecimalplacenumber_to_pointnumber_via_re_for(input_text)
     _ = osfs.save_file_with_text(output_filepath, output_text)
     return output_text
 

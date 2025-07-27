@@ -3,7 +3,7 @@
 
 
 """
-import fs.texts.texts_scrapehelper as scrapehelper
+import lib.texts.texts_scrapehelper as scrapehelper
 import settings as sett
 import models.banks.bb.fi.bbScraperWithFileText as extScr
 

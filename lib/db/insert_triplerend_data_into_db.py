@@ -9,7 +9,7 @@ import sqlite3
 # import unittest
 # import defaults_mod as defm
 import art.to_correct.scrape_monthly_rendextracts as scrpmonths
-import fs.db.dbasfolder.bankFoldersDiscover as bankFoldersDisc
+import lib.db.dbasfolder.bankFoldersDiscover as bankFoldersDisc
 
 
 class Insertor:

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
+BeansCounter:
+  art/prices/read_merclivr_fr_wks_to_sqlite.py
 
+  Parameters:
     wksfilepath='example.ods',
     sqlitepath='output.db',
     tablename='ods_data',
-
 """
 import argparse
 import sqlite3
@@ -264,6 +266,8 @@ def get_args():
 
 def usage_example():
   """
+  Parameters:
+    @see some test parameters at the local_settings
   """
   wksfilepath, sqlitepath = get_args()
   if sqlitepath is None:

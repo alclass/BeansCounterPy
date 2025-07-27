@@ -6,7 +6,7 @@ show_triplerend_with_daterange_viadatafile.py
 import sqlite3
 import sys
 import settings as sett
-import fs.datesetc.datefs as dtfs
+import lib.datesetc.datefs as dtfs
 # import scrapers.bbfi.scraper_monthly_rendextracts as scr_bb_extrs
 
 

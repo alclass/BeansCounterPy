@@ -12,7 +12,7 @@ The current stratety (a change may happen in the future) is to find the field po
 # import fs.datesetc.datefs as dtfs
 import os
 import xml.etree.ElementTree as eT
-import fs.os.oshilofunctions as hilo
+import lib.os.oshilofunctions as hilo
 import models.banks.banksgeneral as bkge
 import models.banks.cef.xmliterposDataDictForCefFundos as itPos  # itpos.CefFIsPosIndexMapper
 import models.banks.fundoAplic as fAplic  # fAplic.FundoAplic()

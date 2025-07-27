@@ -8,7 +8,7 @@ import glob
 import os
 import re
 import settings as sett
-import fs.datesetc.datehilofs as hilodt
+import lib.datesetc.datehilofs as hilodt
 str_pattern_for_beginning_number = r'^(\d+) '
 re_pattern_for_beginning_number = re.compile(r'^(\d+) ')
 DEFAULT_LISTING_EXCEL_FILENAME = 'z-list titles authors ISBN-urls recovered from Packt.xlsx'

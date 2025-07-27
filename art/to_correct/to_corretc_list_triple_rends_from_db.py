@@ -7,8 +7,8 @@ to_corretc_list_triple_rends_from_db.py
 """
 import datetime
 import sys
-import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
-import fs.datesetc.datefs as dtfs
+import lib.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
+import lib.datesetc.datefs as dtfs
 import models.banks.banksgeneral
 import models.banks.extractdistributor as extrdistr
 

@@ -5,8 +5,8 @@ bankFoldersDiscover.py
 """
 import os
 import pdfquery
-import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as fndr
-import fs.os.osfunctions as osfs
+import lib.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as fndr
+import lib.os.osfunctions as osfs
 import models.banks.banksgeneral as bkge
 CEF_BANK3LETTER = 'cef'
 

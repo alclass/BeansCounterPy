@@ -14,8 +14,8 @@ PyMuPDF, PDFminer, PDFtoText
 """
 # import copy
 import os
-import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as fndr
-import fs.os.osfunctions as osfs
+import lib.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as fndr
+import lib.os.osfunctions as osfs
 import models.banks.banksgeneral as bkge
 import models.banks.cef.listXmlNodesAndValuesForCefFi as prsXml  # prsXml.parse_xml_file
 # import models.banks.fundoAplic as fAplic

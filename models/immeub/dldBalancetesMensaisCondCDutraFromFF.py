@@ -39,7 +39,7 @@ import datetime
 from dateutil.relativedelta import relativedelta  # for adding & subtracting months in dates
 import os
 import sys
-import fs.datesetc.datefs as dtfs
+import lib.datesetc.datefs as dtfs
 import settings as sett
 CDUT_IMMEUBCODE_IN_FF = sett.CDUT_IMMEUBCODE_IN_FF
 

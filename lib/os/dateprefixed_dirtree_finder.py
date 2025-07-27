@@ -5,7 +5,7 @@ fs/os/dateprefixed_dirtree_finder.py
 """
 import datetime
 import os.path
-import fs.os.oshilofunctions as hilo
+import lib.os.oshilofunctions as hilo
 
 
 class DatePrefixedOSFinder:

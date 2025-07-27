@@ -10,7 +10,7 @@ readDataFromDBForBBFI.py
 import models.banks.banksgeneral as bkge  # for bootsrapping bank's fi's base folderpath (needed for lkup)
 # import models.banks.bb.bbScraperWithFileText as bbScrp  # for the BBFI text scraper
 # import models.banks.fundoAplicSql as fApSql  # inherited class for db-inserting
-import fs.db.createtable_fundos as creatdb
+import lib.db.createtable_fundos as creatdb
 import sqlite3
 import settings as sett
 import models.banks.fundoAplic as fAplic

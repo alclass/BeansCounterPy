@@ -17,7 +17,7 @@ $thiscommand -i '2023-10-10' -f '2023-10-27'
 """
 import argparse
 import datetime
-import fs.datesetc.datehilofs as hilodt
+import lib.datesetc.datehilofs as hilodt
 import models.banks.bb.fi.fibb_daily_results_html_to_csv_via_pandas_transform as transf  # .WithPandasHtmlToCsvConverter
 
 

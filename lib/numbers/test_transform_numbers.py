@@ -5,7 +5,7 @@ Mainly it transform the European number representation (dots for thousands and c
   into Python's American-like format (just the dot for decimal place)
 """
 import unittest
-import fs.numbers.transform_numbers as trans  # .transform_european_stringnumber_to_pythonfloat
+import lib.numbers.transform_numbers as trans  # .transform_european_stringnumber_to_pythonfloat
 
 
 class TestTransformNumber(unittest.TestCase):

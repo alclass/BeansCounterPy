@@ -4,14 +4,14 @@ models/banks/bankpathfinder.py
 """
 import inspect
 import os.path
-import fs.datesetc.datehilofs as hilodt
+import lib.datesetc.datehilofs as hilodt
 import models.banks.bankpropsmod as bkmd  # .BankProps
 
 import models.banks.bank_data_settings as bdsett  # bdsett.BankProps.BANKBASEFOLDERPATHS
 import models.banks.banksgeneral as bkgen  # bkgen.BANK
 # import fs.os.dirtree_dateprefixed2 as prfx2  # prfx.FolderNodeForDatePrefixTree
 # import fs.os.oshilofunctions as hilo
-import fs.os.dateprefixed_dirtree_finder as prfx
+import lib.os.dateprefixed_dirtree_finder as prfx
 
 
 class BankOSFolderFileFinder:

@@ -6,7 +6,7 @@ The context to be solved here is to extract data from xml that has been converte
   https://www.geeksforgeeks.org/xml-parsing-python/
 """
 # import copy
-import fs.datesetc.datefs as dtfs
+import lib.datesetc.datefs as dtfs
 
 
 class FundoAplic:

@@ -5,11 +5,11 @@ scrape_monthly_rendextracts.py
 """
 import datetime
 from dateutil.relativedelta import relativedelta
-import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as finder
+import lib.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as finder
 import models.banks.banksgeneral as bkge
 # from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
 import models.banks.bb.fi.bbScraperWithFileText as extScr
-import fs.texts.texts_scrapehelper as scrapehelper
+import lib.texts.texts_scrapehelper as scrapehelper
 # import settings
 
 YEARMONTH_INI = datetime.date(year=2022, month=8, day=1)

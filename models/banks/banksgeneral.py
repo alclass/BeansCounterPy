@@ -2,8 +2,8 @@
 """
 """
 import os
-from fs.os import osfunctions as osfs
-import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lookup
+from lib.os import osfunctions as osfs
+import lib.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as lookup
 import settings as sett
 import models.banks.bank_data_settings as bksett
 

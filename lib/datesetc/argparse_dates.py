@@ -5,8 +5,8 @@ fs/datesetc/argparse_dates.py
 """
 import argparse
 import datetime
-import fs.datesetc.datehilofs as hilodt
-import fs.datesetc.datefs as dtfs
+import lib.datesetc.datehilofs as hilodt
+import lib.datesetc.datefs as dtfs
 
 
 def get_args():

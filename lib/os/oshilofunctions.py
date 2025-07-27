@@ -21,7 +21,7 @@ import datetime
 import glob
 import os
 import re
-import fs.os.osfunctions as osfs
+import lib.os.osfunctions as osfs
 str_yearplusblank_re = r'^\d{4}\ '
 yearplusblank_re = re.compile(str_yearplusblank_re)
 str_yeardashmonthplusblank_re = r'^\d{4}\-\d{2}\ '

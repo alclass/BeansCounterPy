@@ -5,9 +5,9 @@ lookup_monthrange_convention_from_basedatafolder_on.py
 """
 import datetime
 import os
-import fs.os.osfunctions as osfs
-import fs.os.oshilofunctions as hilo
-import fs.datesetc.datefs as dtfs
+import lib.os.osfunctions as osfs
+import lib.os.oshilofunctions as hilo
+import lib.datesetc.datefs as dtfs
 
 
 def get_class_attrs(pclass):

@@ -3,8 +3,8 @@
 fs/texts/texts_scrapehelper.py
 
 """
-import fs.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
-import fs.texts.exampleFundofileNTContent as exMod
+import lib.db.dbasfolder.lookup_monthrange_convention_from_basedatafolder_on as find
+import lib.texts.exampleFundofileNTContent as exMod
 
 
 class NameCnpjScraper:
