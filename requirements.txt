@@ -19,7 +19,7 @@ Brotli==1.1.0
 certifi==2023.11.17
 chardet==5.2.0
 click==8.1.6
-cloud-init==24.3.1
+cloud-init==25.1.2
 colorama==0.4.6
 command-not-found==0.3
 configobj==5.0.8
@@ -38,16 +38,20 @@ distro==1.9.0
 distro-info==1.7+build1
 dnspython==2.6.1
 duplicity==2.1.4
+EbookLib==0.18
 et-xmlfile==1.0.1
 executing==2.0.1
 fastapi==0.115.4
 fasteners==0.18
 feedparser==6.0.10
+ffmpeg-python==0.2.0
 folder-color-caja==0.0.86
 folder-color-common==0.0.86
 fonttools==4.46.0
 fs==2.4.16
+future==1.0.0
 gpg==1.18.0
+greenlet==3.0.3
 html2text==2024.2.26
 html5-parser==0.4.12
 html5lib==1.1
@@ -129,7 +133,7 @@ PyQt6-sip==13.6.0
 PyQt6-WebEngine==6.6.0
 pyrsistent==0.20.0
 pyserial==3.5
-python-apt==2.7.7+ubuntu3
+python-apt==2.7.7+ubuntu4
 python-dateutil==2.8.2
 python-debian==0.1.49+ubuntu2
 python-xlib==0.33
@@ -149,6 +153,7 @@ sgmllib3k==1.0.0
 six==1.16.0
 sniffio==1.3.1
 soupsieve==2.5
+SQLAlchemy==1.4.50
 stack-data==0.6.3
 starlette==0.41.2
 sympy==1.12
@@ -324,5 +329,4 @@ wheel==0.42.0
 xdg==5
 xkit==0.0.0
 xxhash==0.0.0
-yt-dlp==2024.4.9
 zeroconf==0.131.0
