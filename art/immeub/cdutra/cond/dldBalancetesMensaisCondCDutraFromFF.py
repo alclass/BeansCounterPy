@@ -8,6 +8,16 @@ art/immeub/cdutra/cond/dldBalancetesMensaisCondCDutraFromFF.py
     non-reusable, because it was elaborated for a particular case)
 
 Usage:
+      $<this_script> --mesini [<yyyy-mm>]  --mesfim [<yyyy-mm>]
+
+Both parameters are optional, they default to:
+  --mesfim => the current month or another related to given mesini
+  --mesini => the month before the current one or another related to given mesfim
+  Obs:
+    a) if one refmonth (ini|fim) is given and the other not, the missing one will be related to the given one
+    b) @see also method treat_refdates() below in class Downloader for all cases (given and None)
+
+(previous) usage (deprecated):
     $<this_script> -refini="[<mm/yyyy>]"  -reffim="[<mm/yyyy>]"
 
 Parameters:
@@ -40,11 +50,19 @@ Notice on the "real estate code":
  3) the code may be manually set hardcoded (in constant DEFAULT_IMMEUBCODE)
     or, maybe better, put in a config file.
 """
+import argparse
 import copy
 import datetime
 from dateutil.relativedelta import relativedelta  # for adding & subtracting months in dates
+import lib.datesetc.refmonths_mod as rmd
 import os
 import sys
+parser = argparse.ArgumentParser(description="Baixa balancete mensal CDutra")
+parser.add_argument("--mesini", type=str,
+                    help="mês referência inicial")
+parser.add_argument("--mesfim", type=str, default=None,
+                    help="mês referência final")
+args = parser.parse_args()
 
 
 def extract_ref_from_cli(clistr):
@@ -89,19 +107,34 @@ class Downloader:
     self.treat_immeubcode()
 
   def treat_refdates(self):
-    self.refmonth_fim = transform_str_to_date_or_none(self.refmonth_fim)
-    if self.refmonth_fim is None or type(self.refmonth_fim) != datetime.date:
-      pdate = datetime.date.today()
-    else:
-      pdate = self.refmonth_fim
-    if pdate.day != 1:
-      pdate = datetime.date(year=pdate.year, month=pdate.month, day=1)
-    self.refmonth_fim = pdate
-    self.refmonth_ini = transform_str_to_date_or_none(self.refmonth_ini)
-    if self.refmonth_ini is None or type(self.refmonth_ini) != datetime.date:
+    """
+    Garantees that both refmonth_ini and refmonth_fim are set.
+    (The algorithm below shows how None values are treated -- how the default months are applied if needed.)
+    Obs: this method does not impede future dates.
+    """
+    self.refmonth_ini = rmd.make_refmonthdate_or_none(self.refmonth_ini)
+    self.refmonth_fim = rmd.make_refmonthdate_or_none(self.refmonth_fim)
+    if self.refmonth_ini is None:
+      # okay, refmonth_ini will now depend on refmonth_fim
+      if self.refmonth_fim is None:
+        # okay, make refmonth_fim be current month
+        self.refmonth_fim = rmd.make_current_refmonthdate()
+      # okay, refmonth_fim is at this point set and refmonth_ini is it minus one month
       self.refmonth_ini = self.refmonth_fim - relativedelta(months=1)
-    if self.refmonth_ini >= self.refmonth_fim:
-      self.refmonth_ini = self.refmonth_fim - relativedelta(months=1)
+      # okay, the two are set, let's return
+      return
+    # alright, at this point, refmonth_ini is set, but we still have to check refmonth_fim
+    if self.refmonth_fim is None:
+      # okay, make it one month later from refmonth_ini
+      self.refmonth_fim = self.refmonth_ini + relativedelta(months=1)
+      # okay, the two are set, let's return
+      return
+    # okay, at this point, both ini and fim were set, let's test which is greater
+    if self.refmonth_ini > self.refmonth_fim:
+      # and swap them if ini is greater than fim
+      tmp_rmd = self.refmonth_fim
+      self.refmonth_fim = self.refmonth_ini
+      self.refmonth_ini = tmp_rmd
 
   def treat_immeubcode(self):
     error_msg_to_interpol = (
@@ -164,7 +197,7 @@ class Downloader:
       self.do_download()
 
 
-def get_args():
+def get_args_old():
   """
   Example: -refini="01/2023" -reffim="05/2023"
   @see also __doc__ above
@@ -180,6 +213,12 @@ def get_args():
     elif arg.startswith('-reffim='):
       refmonth_fim = arg[len('-reffim='):]
   return refmonth_ini, refmonth_fim
+
+
+def get_args():
+  mesini = args.mesini
+  mesfim = args.mesfim
+  return mesini, mesfim
 
 
 def process():

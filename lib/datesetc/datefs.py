@@ -6,6 +6,7 @@ datefs.py
 import copy
 import datetime
 from dateutil.relativedelta import relativedelta
+import lib.datesetc.datehilofs as hilodt
 
 
 def transform_strdate_yyyymmdd_to_date_sep_by(strdate, sepchar='-'):
@@ -336,7 +337,7 @@ def make_date_with_day1_or_none(pdate=None):
   return None
 
 
-def make_refmonthdate_or_current(stri):
+def make_refmonthdate_or_current(stri=None):
   refmonthdate = make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(stri)
   if refmonthdate is not None:
     return refmonthdate
@@ -363,6 +364,15 @@ def make_refmonthdate_from_conventioned_yyyydashmmprefixedfilename(conventioned_
   except (AttributeError, IndexError, ValueError):
     pass
   return None
+
+
+def make_duedate_or_thismonth_on_the_10th(pdate):
+  indate = hilodt.make_date_or_none(pdate)
+  if indate:
+    return pdate
+  curr_refmonth = make_refmonthdate_or_current()
+  pdate = datetime.date(year=curr_refmonth.year, month=curr_refmonth.month, day=10)
+  return pdate
 
 
 def generate_monthrange(refmonthdate_ini=None, refmonthdate_fim=None):
