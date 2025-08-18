@@ -102,6 +102,9 @@ class IPTU:
         scrmsg_pagt_anual_efetuado = f"pagamento anual escolhido e efetuado"
     return scrmsg_pagt_anual_efetuado
 
+  def __repr__(self):
+    return str(self)
+
   def __str__(self):
     scrmsg_pagt_anual_efetuado = self.mount_scrmsg_pagt_anual_efetuado()
     outstr = f"""{self.__class__.__name__} object
@@ -118,26 +121,6 @@ class IPTU:
     municipio = {self.municipioname}
     today = {self.today}
     is_refyear_iptu_paid = {self.is_refyear_iptu_paid}
-    """
-    return outstr
-
-
-class RentBiller:
-
-  def __init__(self, immeub_code, price_components):
-    self.immeub_code = immeub_code
-    self.price_components = price_components
-    self.price_dict = {}
-    self.treat_attrs()
-
-  def treat_attrs(self):
-    try:
-      self.price_components[reais_baserent]
-    except AttributeError:
-      pass
-
-  def __str__(self):
-    outstr = f"""RentBiller object
     """
     return outstr
 
