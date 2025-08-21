@@ -18,13 +18,77 @@ monthlyprice_maincomponents_namedtuple = namedtuple(
 )
 
 
+class PriceItem:
+
+  def __init__(self,
+     coditem=None,
+     seqitem=None,
+     refyear=None,
+     refmonth=None,
+     refdate=None,
+     price=None,
+     cotas=None,
+     b_inrefcycle=None,
+     n_cota=None,
+     totalcotas=None,
+     ptype=None,
+     descr_line1=None,
+     descr_line2=None,
+  ):
+    self.coditem = coditem
+    self.seqitem = seqitem
+    # either refyear, refmonth or refdate
+    self.refyear = refyear
+    self.refmonth = refmonth
+    self.refdate = refdate
+    self.price = price
+    self.b_inrefcycle = b_inrefcycle or False,
+    self.n_cota = n_cota,
+    self.totalcotas = totalcotas,
+    self.type = ptype or 'mensal',
+    self.descr_line1 = descr_line1,
+    self.descr_line2 = descr_line2
+
+  def __str__(self):
+    outstr = f"""
+    {self.coditem}
+    {self.seqitem}
+    {self.refyear} 
+    {self.refmonth}
+    {self.refdate}
+    {self.price}
+    {self.b_inrefcycle}
+    {self.n_cota}
+    {self.totalcotas}
+    {self.type}
+    {self.descr_line1}
+    {self.descr_line2}
+    """
+    return outstr
+
+
 class RentBiller:
 
-  def __init__(self, immeub_code, price_components):
+  def __init__(
+      self, immeub_code, price_components,
+      refmonth, refyear, refdate,
+    ):
     self.immeub_code = immeub_code
     self.price_components = price_components
     self.price_dict = {}
+    # either refyear, refmonth or refdate
+    self.refyear = refyear
+    self.refmonth = refmonth
+    self.refdate = refdate
     self.treat_attrs()
+
+  @property
+  def recycle(self):
+    if self.refmonth:
+      return self.refmonth
+    if self.refdate:
+      return self.refdate
+    return self.refyear
 
   def treat_attrs(self):
     """
@@ -47,6 +111,14 @@ class RentBiller:
       pass
     return pdict
 
+  def generate_refmonth_billing(self):
+    outstr = f"""
+    Cobrança Aluguel | Mês {self.refcycle}
+    --------------------------------------------
+    """
+    return outstr
+
+
   def __str__(self):
     outstr = f"""RentBiller object
     {self.as_dict()}
@@ -64,6 +136,23 @@ def adhoctest1():
     price_components=price_cmp,
   )
   print(biller)
+
+  priceitem = PriceItem(
+        coditem=None,
+        seqitem=None,
+        refyear=None,
+        refmonth='2025-05',
+        refdate=None,
+        price=2000.0,
+        b_inrefcycle=None,
+        n_cota=None,
+        totalcotas=None,
+        ptype=None,
+        descr_line1=None,
+        descr_line2=None,
+    )
+  print(priceitem)
+
 
 
 def process():
