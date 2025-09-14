@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """"
-datefs.py
-  Module with date & time (helper) functions
+BeansCounterPy_PrdPrj:
+  lib/datesetc/datefs.py
+Module with date & time (helper) functions
 """
 import copy
 import datetime
