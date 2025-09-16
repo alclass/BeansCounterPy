@@ -3,6 +3,22 @@
 BeansCounter:
   art/wks/trans_wks_into_sqlite.py
 
+This module contains functionality to introspect a worksheet file
+  and load its data to a Sqlite table
+
+The main class in this module is WksToSqliteTransformer.
+  Its process-chain, with a pandas df, is the following:
+      # 1 read the working into a pandas's dataframe
+      self.df = read_spreadsheet(self.wksfilepath)
+      # 2 infer the "main" table bounds
+      self.df = infer_table_bounds(self.df)
+      if self.df.empty:
+        errmsg = "Spreadsheet appears empty or unreadable."
+        raise ValueError(errmsg)
+      # 3 take care of fieldnames using the main table's column names
+      self.normalize_colnames_to_fieldnames()
+      # 4 write the result transformed table to a Sqlite file
+      self.write_to_sqlite()
 """
 import argparse
 import pandas as pd
@@ -12,10 +28,10 @@ import re
 import settings as sett
 from pathlib import Path
 parser = argparse.ArgumentParser(description="Tranform from worksheet to Sqlite")
-parser.add_argument("--wksfilepath", type=str,
-                    help="Path to worksheet file")
-parser.add_argument("--sqlitepath", type=str, default=None,
-                    help="Path to Sqlite file")
+parser.add_argument("--wksfp", type=str,
+                    help="Filepath to worksheet file")
+parser.add_argument("--sqlfp", type=str, default=None,
+                    help="Filepath to Sqlite file")
 parser.add_argument("--tablename", type=str, default="tablename",
                     help="SQL tablename")
 args = parser.parse_args()
@@ -75,14 +91,16 @@ class WksToSqliteTransformer:
       )
       print(f"✅ Data loaded into '{self.sqlitepath}' successfully.")
     except Exception as e:
-      print(f"⚠️ Error writing to Sqlite: {e}")
+      errmsg = f"⚠️ Error writing to Sqlite: {e}"
+      print(errmsg)
 
   def process(self):
     try:
       self.df = read_spreadsheet(self.wksfilepath)
       self.df = infer_table_bounds(self.df)
       if self.df.empty:
-        raise ValueError("Spreadsheet appears empty or unreadable.")
+        errmsg = "Spreadsheet appears empty or unreadable."
+        raise ValueError(errmsg)
       self.normalize_colnames_to_fieldnames()
       self.write_to_sqlite()
     except Exception as e:
@@ -138,8 +156,8 @@ def write_to_sqlite(df, db_path, table_name='imported_table'):
 
 
 def get_args():
-  wksfilepath = args.wksfilepath
-  sqlitepath = args.sqlitepath
+  wksfilepath = args.wksfp
+  sqlitepath = args.sqlfp
   return wksfilepath, sqlitepath
 
 
