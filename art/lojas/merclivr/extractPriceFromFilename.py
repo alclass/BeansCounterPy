@@ -27,6 +27,7 @@ class Extractor:
     self.basefolderpath = basefolderpath or Path(os.getcwd())
     self.curr_dirpath = None
     self.dates_n_prices_list = []
+    self.total_price = 0.0
 
   @property
   def middlepath(self):
@@ -39,9 +40,17 @@ class Extractor:
 
   def extract_prices_in_files(self, filenames):
     for fn in filenames:
+      _, dotext = os.path.splitext(fn)
+      if dotext not in ['.ods', '.xlsx']:
+        continue
       price = extr.extract_number_after_its_prefixing_chars(fn)
+      try:  # if isinstance(price, [int, float]):
+        self.total_price += price
+      except TypeError:
+        pass
       pdate = extr.extract_date_at_the_beginning_of_str(fn)
       date_n_price = (pdate, price)
+      print(pdate, price, self.total_price)
       self.dates_n_prices_list.append(date_n_price)
 
   def traverse_dirs(self):
@@ -61,6 +70,12 @@ class Extractor:
         continue
       seq += 1
       print(seq, pdate, price)
+    scrmsg = f"Total price: {self.total_price:7.2f}"
+    print(scrmsg)
+    avrg =  self.total_price / seq
+    scrmsg = f"Average: {avrg:7.2f}"
+    print(scrmsg)
+
 
 def process():
   basefolderpath = None
