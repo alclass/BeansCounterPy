@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import sys
 import re
+import lib.texts.extractors as extr  # extr.extract_number_after_its_prefixing_chars
 restrdate = r"^(?P<date>\d{4}\-\d{2}\-\d{2})"
 recmpdate = re.compile(restrdate)
 # restrprice = r"(?<=\s)\d+(?:\.\d+)?(?=\s)"
@@ -25,28 +26,41 @@ class Extractor:
   def __init__(self, basefolderpath=None):
     self.basefolderpath = basefolderpath or Path(os.getcwd())
     self.curr_dirpath = None
+    self.dates_n_prices_list = []
+
+  @property
+  def middlepath(self):
+    """
+    self.curr_dirpath, _, filenames in os.walk(self.basefolderpath):
+    """
+    _middlepath = self.curr_dirpath[len(self.basefolderpath):]
+    _middlepath = _middlepath.lstrip(os.sep)
+    return _middlepath
 
   def extract_prices_in_files(self, filenames):
     for fn in filenames:
-      print(fn)
-      match_o_date = recmpdate.match(fn)
-      match_o_price = recmpprice.match(fn)
-      if match_o_date:
-        strdate = match_o_date.group('date')
-        price = None
-        if match_o_price:
-          price = match_o_price.group('price')
-        print('-'*40)
-        print(strdate, price, '->', fn)
+      price = extr.extract_number_after_its_prefixing_chars(fn)
+      pdate = extr.extract_date_at_the_beginning_of_str(fn)
+      date_n_price = (pdate, price)
+      self.dates_n_prices_list.append(date_n_price)
 
   def traverse_dirs(self):
     for self.curr_dirpath, _, filenames in os.walk(self.basefolderpath):
-      print(self.curr_dirpath)
+      print('@', self.middlepath)
       self.extract_prices_in_files(filenames)
 
   def process(self):
     self.traverse_dirs()
+    self.report()
 
+  def report(self):
+    seq = 0
+    for tupl in self.dates_n_prices_list:
+      pdate, price = tupl
+      if not price:
+        continue
+      seq += 1
+      print(seq, pdate, price)
 
 def process():
   basefolderpath = None
@@ -54,6 +68,8 @@ def process():
     basefolderpath = sys.argv[1]
   except IndexError:
     pass
+  scrmsg = f"Parameter entered: {basefolderpath}"
+  print(scrmsg)
   extractor = Extractor(basefolderpath=basefolderpath)
   extractor.process()
 
