@@ -7,6 +7,10 @@ Explanation:
   Every MercadoLilvre purchases leave a spreedsheet file
   having in its name the total price.
   This script walks up ML folders and extracts these prices.
+
+  TO INVESTIGATE:
+    a) with the algo version, total price results in 26447.76
+    b) with the re version, total price results in 26031.22
 """
 import os
 from pathlib import Path
@@ -43,7 +47,9 @@ class Extractor:
       _, dotext = os.path.splitext(fn)
       if dotext not in ['.ods', '.xlsx']:
         continue
-      price = extr.extract_number_after_its_prefixing_chars(fn)
+      # [same as alg-version] price = extr.extract_number_after_its_prefixing_chars(fn)
+      # price = extr.extract_price_wi_str_re_version(fn)
+      price = extr.extract_price_wi_str_alg_version(fn)
       try:  # if isinstance(price, [int, float]):
         self.total_price += price
       except TypeError:

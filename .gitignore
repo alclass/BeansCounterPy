@@ -3,9 +3,11 @@
 .vscode/
 __pycache__/
 dados/
+logs/
 venv/
 .project
 .settings/
+*.log
 *.pyc
 *.sqlite
 local_settings.py

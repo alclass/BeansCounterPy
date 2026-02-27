@@ -11,6 +11,8 @@ recmp = re.compile(restr)
 # the next regex helps extract a yyyy-mm-dd date when starting a string
 re_str_starts_w_date = r"^(?P<date>\d{4}\-\d{2}\-\d{2})"
 re_cmp_starts_w_date = re.compile(re_str_starts_w_date)
+restr_price_wi_str = r'\s(?P<price>[\d,.]+\s)'
+recmp_price_wi_str = re.compile(restr_price_wi_str)
 
 
 def extract_date_at_the_beginning_of_str(pstr):
@@ -22,6 +24,30 @@ def extract_date_at_the_beginning_of_str(pstr):
     except ValueError:
       pass
   return None
+
+def extract_price_wi_str_re_version(pstr, prefixtoprice=' ML'):
+  """
+  text = "The item costs 12.99  and is on sale."
+  # Regex: space, named group 'price' (digits/periods), space
+  match = re.search(r'\\s(?P<price>[\\d,.]+\\s)', text)
+  if match:
+      print(match.group('price').strip()) # Output: 12.99
+  """
+  # Regex: space, named group 'price' (digits/periods), space
+  # WEIRD: the compiled regex is not functioning, the one with search() is
+  # match_o = recmp_price_wi_str.match(pstr)
+  locrestr_price_wi_str = r'' + prefixtoprice + '(?P<price>[\\d,.]+\\s)'
+  match_o = re.search(locrestr_price_wi_str, pstr)
+  if match_o:
+    price = match_o.group('price').strip()
+    price = price.replace(',', '.')
+    price = float(price)
+    return price
+  return None
+
+
+def extract_price_wi_str_alg_version(pstr, prefixchars=' ML', decsep=','):
+  return extract_number_after_its_prefixing_chars(pstr, prefixchars, decsep)
 
 
 def extract_number_at_the_beginning_of_str(pstr, decsep=','):
@@ -61,6 +87,12 @@ def extract_number_after_its_prefixing_chars(pstr, prefixchars=' ML', decsep=','
   return None
 
 
+def adhoc_test4():
+  text = "The item costs 12.99  and is on sale."
+  price = extract_price_wi_reversion(text)
+  print("price", price)
+
+
 def adhoc_test3():
   t = "2025-11-21 ML99,26 2itens bla foo bar"
   pdate = extract_date_at_the_beginning_of_str(t)
@@ -90,4 +122,4 @@ if __name__ == '__main__':
   """
   adhoc_test()
   """
-  adhoc_test3()
+  adhoc_test4()
