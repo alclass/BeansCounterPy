@@ -14,16 +14,47 @@ Explanation:
 """
 import datetime
 import os
+import string
 from pathlib import Path
 import sys
 import re
 import lib.texts.extractors as extr  # extr.extract_number_after_its_prefixing_chars
+import collections as coll
+datepricent = coll.namedtuple('dateprice', ['date', 'seq', 'price'])
 restrdate = r"^(?P<date>\d{4}\-\d{2}\-\d{2})"
 recmpdate = re.compile(restrdate)
 # restrprice = r"(?<=\s)\d+(?:\.\d+)?(?=\s)"
 # restrprice = r"\s{1}ML(?P<price>\d+?\,d{2}){1}\s{1}"
 restrprice = r" [ML](?P<price>\d+\,\d{2}) "
 recmpprice = re.compile(restrprice)
+default_basefolder = (
+  "/media/friend/OurD SSD 1Tb D1/OurDocs/Biz OD/Compras OD/Lojas Virtuais CmprOD/"
+  "MercLivr CmprOD/ano a ano compras MercLivr OD"
+)
+
+
+def get_dates_payment_seqorder_or_1(phrase):
+  """
+  The order of payment is organized by a letter after the beginning date.
+
+  Examples:
+    a) an example with only one payment on date:
+      "2026-02-28 bla foo bar.ods"
+
+    b) an example with more than one payment on date:
+      "2026-03-01a bla foo bar.ods"
+      "2026-03-01b bla foo bar.ods"
+      "2026-03-01c bla foo bar.ods"
+  """
+  try:
+    c = phrase[10]
+    if c == ' ':
+      return 1
+    idx = string.ascii_lowercase.index(c)
+    return idx+1
+  except (IndexError, TypeError, ValueError):
+    pass
+  return 1
 
 
 class ExtractMethod:
@@ -57,12 +88,14 @@ class ExtractMethod:
 
 class Extractor:
 
+  default_extract_method_name = 'regex'
+
   def __init__(self, basefolderpath=None, extract_method_name=None):
     self.basefolderpath = basefolderpath or Path(os.getcwd())
     self.curr_dirpath = None
-    self.dates_n_prices_list = []
+    self.nt_dateprice_list = []
     self.total_price = 0.0
-    self.extract_method_name = extract_method_name
+    self.extract_method_name = extract_method_name or self.default_extract_method_name
 
   @property
   def middlepath(self):
@@ -74,7 +107,7 @@ class Extractor:
     _middlepath = _middlepath.lstrip(os.sep)
     return _middlepath
 
-  def extract_prices_in_files(self, filenames):
+  def extract_dateprice_nt_fr_filenames(self, filenames):
     for fn in filenames:
       _, dotext = os.path.splitext(fn)
       if dotext not in ['.ods', '.xlsx']:
@@ -98,14 +131,15 @@ class Extractor:
       pdate = extr.extract_date_at_the_beginning_of_str(fn)
       if not isinstance(pdate, datetime.date) or price is None:
         continue
-      date_n_price = (pdate, price)
-      print(pdate, price, self.total_price)
-      self.dates_n_prices_list.append(date_n_price)
+      seq = get_dates_payment_seqorder_or_1(fn)
+      date_seq_n_price = datepricent(pdate, seq, price)
+      print(date_seq_n_price)
+      self.nt_dateprice_list.append(date_seq_n_price)
 
   def traverse_dirs(self):
     for self.curr_dirpath, _, filenames in os.walk(self.basefolderpath):
       print('@', self.middlepath)
-      self.extract_prices_in_files(filenames)
+      self.extract_dateprice_nt_fr_filenames(filenames)
 
   def process(self):
     self.traverse_dirs()
@@ -113,13 +147,13 @@ class Extractor:
 
   def report(self):
     seq = 0
-    n_prices = len(self.dates_n_prices_list)
-    for tupl in self.dates_n_prices_list:
-      pdate, price = tupl
-      if not price:
+    n_prices = len(self.nt_dateprice_list)
+    for nt in self.nt_dateprice_list:
+      if not nt.price:
         continue
       seq += 1
-      print(seq, pdate, price)
+      print(nt.date, nt.seq, nt.price)
+      # print(nt)
     scrmsg = f"Total price: {self.total_price:7.2f}"
     print(scrmsg)
     avrg = 0.0
@@ -140,6 +174,8 @@ def process():
     basefolderpath = sys.argv[1]
   except IndexError:
     pass
+  if basefolderpath is None:
+    basefolderpath = default_basefolder
   scrmsg = f"Parameter entered: {basefolderpath}"
   print(scrmsg)
   extractor = Extractor(basefolderpath=basefolderpath)

@@ -34,7 +34,7 @@ class ExtractorComparator:
     for method_o in extrM.ExtractMethod.valid_method_objs():
       extractor = extrM.Extractor(basefolderpath=self.basefolderpath, extract_method_name=method_o.method_name)
       extractor.process()
-      dates_n_prices_list = extractor.dates_n_prices_list
+      dates_n_prices_list = extractor.nt_dateprice_list
       dates_n_prices_list.sort(key=lambda x: x[0])  # , reverse=True)
       self.store_dict[method_o.method_name] = dates_n_prices_list
       pass
