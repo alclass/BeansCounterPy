@@ -12,6 +12,7 @@ Explanation:
     a) with the algo version, total price results in 26447.76
     b) with the re version, total price results in 26031.22
 """
+import datetime
 import os
 from pathlib import Path
 import sys
@@ -25,20 +26,51 @@ restrprice = r" [ML](?P<price>\d+\,\d{2}) "
 recmpprice = re.compile(restrprice)
 
 
+class ExtractMethod:
+  regex = 1
+  stralgo = 2
+  method_names = ['regex', 'stralgo']
+  method_names_dict = {
+    1: 'regex',
+    2: 'stralgo',
+  }
+
+  def __init__(self, method_number):
+    self.method_number = method_number
+
+  @property
+  def method_name(self):
+    return self.method_names_dict[self.method_number]
+
+  @classmethod
+  def valid_method_numbers(cls):
+    return [cls.regex, cls.stralgo]
+
+  @classmethod
+  def valid_method_objs(cls):
+    objs = []
+    for method_number in cls.valid_method_numbers():
+      o = ExtractMethod(method_number)
+      objs.append(o)
+    return objs
+
+
 class Extractor:
 
-  def __init__(self, basefolderpath=None):
+  def __init__(self, basefolderpath=None, extract_method_name=None):
     self.basefolderpath = basefolderpath or Path(os.getcwd())
     self.curr_dirpath = None
     self.dates_n_prices_list = []
     self.total_price = 0.0
+    self.extract_method_name = extract_method_name
 
   @property
   def middlepath(self):
     """
     self.curr_dirpath, _, filenames in os.walk(self.basefolderpath):
     """
-    _middlepath = self.curr_dirpath[len(self.basefolderpath):]
+    strpath = f"{self.basefolderpath}"
+    _middlepath = self.curr_dirpath[len(strpath):]
     _middlepath = _middlepath.lstrip(os.sep)
     return _middlepath
 
@@ -48,13 +80,24 @@ class Extractor:
       if dotext not in ['.ods', '.xlsx']:
         continue
       # [same as alg-version] price = extr.extract_number_after_its_prefixing_chars(fn)
-      # price = extr.extract_price_wi_str_re_version(fn)
-      price = extr.extract_price_wi_str_alg_version(fn)
+      if self.extract_method_name == 'regex':
+        price = extr.extract_price_wi_str_re_version(fn)
+      elif self.extract_method_name == 'stralgo':
+        price = extr.extract_price_wi_str_alg_version(fn)
+      else:
+        errmsg = (
+          f"There are only two extraction methods: 'regex' and 'stralgo'."
+          f" The one given was {self.extract_method_name}"
+        )
+        raise ValueError(errmsg)
       try:  # if isinstance(price, [int, float]):
+        price = round(price, 2)
         self.total_price += price
       except TypeError:
         pass
       pdate = extr.extract_date_at_the_beginning_of_str(fn)
+      if not isinstance(pdate, datetime.date) or price is None:
+        continue
       date_n_price = (pdate, price)
       print(pdate, price, self.total_price)
       self.dates_n_prices_list.append(date_n_price)
@@ -70,6 +113,7 @@ class Extractor:
 
   def report(self):
     seq = 0
+    n_prices = len(self.dates_n_prices_list)
     for tupl in self.dates_n_prices_list:
       pdate, price = tupl
       if not price:
@@ -78,8 +122,15 @@ class Extractor:
       print(seq, pdate, price)
     scrmsg = f"Total price: {self.total_price:7.2f}"
     print(scrmsg)
-    avrg =  self.total_price / seq
+    avrg = 0.0
+    if seq > 0:
+      avrg = self.total_price / seq
     scrmsg = f"Average: {avrg:7.2f}"
+    print(scrmsg)
+    scrmsg = (
+      f"'Method: {self.extract_method_name} | N_prices: {n_prices} |"
+      f" Average: {avrg:7.2f} On folder: [{self.basefolderpath}]"
+    )
     print(scrmsg)
 
 
