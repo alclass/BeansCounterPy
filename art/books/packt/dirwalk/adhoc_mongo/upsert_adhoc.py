@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/json_tomongo_transp_functions.py
+art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
   Explanation?
     (...)
 
