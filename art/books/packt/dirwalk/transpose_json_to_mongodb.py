@@ -16,7 +16,7 @@ Key Points:
 import os
 from pathlib import Path
 import sys
-import art.books.packt.dirwalk.json_tomongo_transp_functions as trnsp
+import art.books.packt.mongo.mongodb_write_functions as trnsp
 from art.books.packt.dirwalk import DEFAULT_PACKT_JSON_FILENAME
 from art.books.packt.dirwalk import DEFAULT_MONGO_DB
 from art.books.packt.dirwalk import DEFAULT_MONGO_COLL

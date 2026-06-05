@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/read_books_from_mongo.py
+art/books/packt/mongo/read_books_from_mongo.py
 
 """
 import json

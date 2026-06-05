@@ -120,8 +120,8 @@ def search_mostrecent_dateprefixed_excelfile_in_folder(p_basefolder=None):
   else:
     bookdatafolderpath = get_bookdata_dirpath()
   if not os.path.isdir(bookdatafolderpath):
-    error_msg = 'Error: Folder does not exist [%s].' % str(bookdatafolderpath)
-    raise OSError
+    errmsg = 'Error: Folder does not exist [%s].' % str(bookdatafolderpath)
+    raise OSError(errmsg)
   xlsx_filepaths = glob.glob(bookdatafolderpath + '/*.xlsx')
   xlsx_filepaths = filter(lambda fp: os.path.isfile(fp), xlsx_filepaths)
   filenames = [os.path.split(fp)[1] for fp in xlsx_filepaths]

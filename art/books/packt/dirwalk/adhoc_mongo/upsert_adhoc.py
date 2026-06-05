@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/json_tomongo_transp_functions.py
+art/books/packt/dirwalk/mongodb_write_functions.py
   Explanation?
     (...)
 
@@ -17,7 +17,7 @@ class MongoDBUpsertor:
   def __init__(self, jsonlist, mongo_db=None, mongo_coll=None):
     self.jsonlist = jsonlist
     self.mongo_db = mongo_db
-    self.mongo_coll = mongo_db
+    self.mongo_coll = mongo_coll
     self.client = MongoClient(mongo_conn_str())
 
   def upsert(self, document):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/json_tomongo_transp_functions.py
+art/books/packt/mongo/mongodb_write_functions.py
   Explanation?
     (...)
 
@@ -71,11 +71,12 @@ def json_to_mongodb_advanced(
 ):
   # no return needed, if json does not exist, raise OSError
   verify_jsonfile_exists(json_file_path)
+  client = None
   try:
     # Connect to MongoDB
+    client = MongoClient('mongodb://localhost:27017/')
     scrmsg = f"Opening mongoDB connection: {db_name}/{coll_name}"
     print(scrmsg)
-    client = MongoClient('mongodb://localhost:27017/')
     db = client[db_name]
     collection = db[coll_name]
     # Read JSON file
@@ -106,7 +107,8 @@ def json_to_mongodb_advanced(
   except Exception as e:
     print(f"Error: {e}")
   finally:
-    client.close()
+    if client:
+      client.close()
 
 
 # Method 3: For large files using streaming
@@ -155,7 +157,7 @@ def main():
   )
 
   # For large files (requires: pip install ijson)
-  # json_to_mongodb_streaming('large_data.json', 'my_database', 'my_collection')
+  # JSON_to_mongodb_streaming('large_data.json', 'my_database', 'my_collection')
 
 
 # Usage examples
