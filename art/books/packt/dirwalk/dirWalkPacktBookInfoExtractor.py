@@ -18,8 +18,12 @@ Method 2: Custom JSON Encoder (For Nested namedtuples)
 ======================================================
 # notice Person and an Address inside it (a nested object)
 from collections import namedtuple
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
 import j-s-o-n
 
+=======
+import JSON
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
 
 class NamedTupleEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -51,6 +55,8 @@ class BookInfoDC:
   year: int
   author: str
   isbn: int
+  relpath: str | None = None
+  packtsmiddlepath: str | None = None
 
 
 class BookInfoExtractor:
@@ -65,8 +71,9 @@ class BookInfoExtractor:
   re_s_author_n_isbn = r"^.+?(\b\d{4}\b)\s*(?P<author>[\b\w+\b\s+]+.*?); Packt (?P<isbn>\d{13}).*?.epub$"
   re_c_author_n_isbn = re.compile(re_s_author_n_isbn)
 
-  def __init__(self, bookline):
-    self.bookline = bookline
+  def __init__(self, booksfilename, relpath=None):
+    self.booksfilename = booksfilename
+    self.relpath = relpath
     self.title = None
     self.year = None
     self.author = None
@@ -83,6 +90,8 @@ class BookInfoExtractor:
         year=self.year,
         author=self.author,
         isbn=self.isbn,
+        relpath=self.relpath,
+        # packtsmiddlepath=None,
       )
 
   def _asdict(self):
@@ -99,8 +108,8 @@ class BookInfoExtractor:
 
   def extract(self):
     # 1 extract pair title and year
-    match_o = self.re_c_title_n_year.match(self.bookline)
-    self.astr = self.re_c_title_n_year.findall(self.bookline)
+    match_o = self.re_c_title_n_year.match(self.booksfilename)
+    self.astr = self.re_c_title_n_year.findall(self.booksfilename)
     if match_o:
       self.matched = True
       self.title = match_o['title'].strip()
@@ -108,8 +117,8 @@ class BookInfoExtractor:
       self.author = None
       self.isbn = None
     # 2 extract pair author(s) and isbn
-    match_o = self.re_c_author_n_isbn.match(self.bookline)
-    self.astr += self.re_c_author_n_isbn.findall(self.bookline)
+    match_o = self.re_c_author_n_isbn.match(self.booksfilename)
+    self.astr += self.re_c_author_n_isbn.findall(self.booksfilename)
     if match_o:
       self.matched = True
       self.author = match_o['author'].strip()
@@ -120,11 +129,12 @@ class BookInfoExtractor:
     self.trans_namedtuple()
 
   def __str__(self):
-    outstr = f"""{self.bookline}
+    outstr = f"""{self.booksfilename}
       title = [{self.title}] 
       year = {self.year}
       author = [{self.author}] 
       isbn = {self.isbn}
+      relpath = {self.relpath}
       matched = {self.matched} | astr = {self.astr}
       {self.bookinfo_dc}
     """
@@ -137,8 +147,15 @@ class DirWalkBookInfoExtractor:
     self.basefolder_ap = basefolder_ap or Path(os.path.abspath(os.path.curdir))
     self.bookcounter = 0
     self.current_bookinfo = None
+    self.current_folder_ap = None
     self.current_dir_bookinfos = []  # a per-directory buffer for a later yield
     # self.bi_non_isbn = 0
+
+  @property
+  def relpath(self):
+    _relpath = self.current_folder_ap[len(str(self.basefolder_ap)): ]
+    _relpath = _relpath.lstrip('/')
+    return _relpath
 
   def extract_info_from_filename(self, filename):
     """
@@ -149,7 +166,11 @@ class DirWalkBookInfoExtractor:
     :return:
     """
     self.current_bookinfo = None
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
     bookinfo = BookInfoExtractor(filename)
+=======
+    bookinfo = BookInfo(filename, self.relpath)
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
     if bookinfo and bookinfo.matched:
       self.current_bookinfo = bookinfo
       self.bookcounter += 1
@@ -179,6 +200,11 @@ def adhoc_test2():
     year=2026,
     author="test author",
     isbn=int("9"*13),
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
+=======
+    relpath="test relpath",
+    packtsmiddlepath="test packtsmiddlepath",
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
   )
   print(bi_nt)
   print(asdict(bi_nt))
@@ -204,13 +230,23 @@ def get_args():
 
 
 def process():
-  rootfolder_ap = get_args()
+  """
   grab_bookinfos_thru_dirs(rootfolder_ap)
+  """
+  rootfolder_ap = get_args()
+  extractor = InfoExtractor(rootfolder_ap)
+  for i, bi in enumerate(extractor.gen_collection_w_dirwalk()):
+    seq = i + 1
+    print(seq, bi)
 
 
 if __name__ == '__main__':
   """
   adhoc_test1()
   adhoc_test2()
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
+=======
+  process()
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
   """
   process()

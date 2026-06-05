@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/transpose_json_to_mongodb.py
+art/books/packt/dirwalk/copyJsonFileBooksCollectionToMongodb.py
 
 "/home/dados/Books/epub Books"
 
@@ -16,7 +16,11 @@ Key Points:
 import os
 from pathlib import Path
 import sys
+<<<<<<< HEAD:art/books/packt/dirwalk/transpose_json_to_mongodb.py
 import art.books.packt.mongo.mongodb_write_functions as trnsp
+=======
+import art.books.packt.dirwalk.jsonToMongoReadWriteFunctions as mongorwfs
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/copyJsonFileBooksCollectionToMongodb.py
 from art.books.packt.dirwalk import DEFAULT_PACKT_JSON_FILENAME
 from art.books.packt.dirwalk import DEFAULT_MONGO_DB
 from art.books.packt.dirwalk import DEFAULT_MONGO_COLL
@@ -41,7 +45,7 @@ class FromJsonToMongo:
   def json_filepath(self):
     return self.basefolder_ap / self.packt_json_filename
 
-  def transpose_to_mongo(self):
+  def upsert_bookinfo_to_mongo(self):
     folderpath, filename = os.path.split(self.json_filepath)
     scrmsg = f"Transposing to MongoDB\n"
     scrmsg += f"\tfolder = [{folderpath}]\n]"
@@ -49,7 +53,7 @@ class FromJsonToMongo:
     scrmsg += f"\tdb = [{DEFAULT_MONGO_DB}]\n]"
     scrmsg += f"\tfile = [{DEFAULT_MONGO_COLL}]"
     print(scrmsg)
-    trnsp.json_to_mongodb_advanced(
+    mongorwfs.json_to_mongodb_advanced(
       json_file_path=self.json_filepath,
       db_name=DEFAULT_MONGO_DB,
       coll_name=DEFAULT_MONGO_COLL,
@@ -69,7 +73,7 @@ def process():
   rootfolder_ap = get_args()
   print('rootfolder_ap', rootfolder_ap)
   from_json_to_mongo = FromJsonToMongo(rootfolder_ap)
-  from_json_to_mongo.transpose_to_mongo()
+  from_json_to_mongo.upsert_bookinfo_to_mongo()
 
 
 if __name__ == '__main__':

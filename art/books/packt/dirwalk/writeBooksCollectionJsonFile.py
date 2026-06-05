@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/generateJsonCollection.py
+art/books/packt/dirwalk/writeBooksCollectionJsonFile.py
   Explanation:
     (...)
 
