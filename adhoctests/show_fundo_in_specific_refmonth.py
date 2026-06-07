@@ -24,7 +24,7 @@ def process_test():
   fundoname = 'RF LP Estrat Ativa'
   scrapetext = get_scrapetest(year, month, fundoname)
   fundoresults = extScr.SpecificCEFExtractScraper(scrapetext)
-  fundoresults.process()
+  fundoresults.print_all_records()
   datadict = fundoresults.datadict
   print(fundoresults)
 

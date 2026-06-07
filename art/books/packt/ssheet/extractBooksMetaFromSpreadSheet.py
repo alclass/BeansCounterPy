@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-art/books/book_chosen_opener_in_browser.py
-  accepts an ISBN or title from the command line and, if related book is in db,
-    opens its Packt's webpage on the default browser.
+art/books/packt/ssheet/extractBooksMetaFromSpreadSheet.py
+  Extracts metadata from Packt's (selected/owned) books from a spreadsheet (Calc or Excel via pandas)
+  previously:
+    accepts an ISBN or title from the command line and, if related book is in db,
+      opens its Packt's webpage on the default browser.
 
 Observation on books webpage URL:
 The URL-Base below only works for authenticated users
@@ -21,11 +23,29 @@ import os
 import random
 import pandas as pd
 import art.books.packt.functions_packt_books_data_excel_json_pandas as isbnfs
+from art.books.packt.dirwalk.packtInfoDirTreeExtractor import BookInfoDC
 # URL_to_interpole = 'https://subscription.packtpub.com/search?query={isbn13}/1'
 # URL_to_interpole = 'https://www.packtpub.com/product/atitle/{isbn13}/1'
 URL_to_interpole = 'https://subscription.packtpub.com/book/data/{isbn13}/'
 BROWSER_COMM = 'xdg-open'
 BROWSER_CLI_TO_INTERPOL = '{browsercomm} "{url}"'
+# e.g. https://subscription.packtpub.com/book/business-other/9781788837361
+PACKTS_URL_PREFIX = "https://subscription.packtpub.com/book/"
+
+
+def extract_knowledgearea_n_isbn13(url: str) -> tuple:
+  try:
+    remaining = url[len(PACKTS_URL_PREFIX):]
+    pp = remaining.split('/')
+    packts_midurl_ka = pp[0]
+    isbn13 = pp[1]
+    if len(isbn13) != 13:
+      warnmsg = f'isbn13 {isbn13} has not 13 chars'
+      print(warnmsg)
+    return packts_midurl_ka, isbn13
+  except (AttributeError, IndexError, TypeError):
+    pass
+  return None, None
 
 
 def ask_continuation(scrseq):
@@ -37,7 +57,7 @@ def ask_continuation(scrseq):
     return False
 
 
-class BookPageOpener:
+class PacktsSpreadSheetReader:
 
   def __init__(self):
     self.n_isbns = 0
@@ -77,8 +97,19 @@ class BookPageOpener:
     return True
 
   def init_dataframe(self):
+    """
+    title	pubdate	authors	url
+    ('Unnamed: 0', empty-column)
+    ('Unnamed: 1', 'seq') ('Unnamed: 2', 'title') ('Unnamed: 3', 'year') ('Unnamed: 4', 'authors') ('Unnamed: 5', 'url')
+    """
     self.df = pd.read_excel(self.dateprefixed_excelfilepath)
     self.n_rows = self.df.shape[0]
+    # Rename specific columns
+    self.df = self.df.rename(columns={"Unnamed: 1": "seq"})
+    self.df = self.df.rename(columns={"Unnamed: 2": "title"})
+    self.df = self.df.rename(columns={"Unnamed: 3": "year"})
+    self.df = self.df.rename(columns={"Unnamed: 4": "authors"})
+    self.df = self.df.rename(columns={"Unnamed: 5": "url"})
 
   def consume_frame_popping_series(self):
     nrows = self.df.shape[0]
@@ -115,13 +146,47 @@ class BookPageOpener:
         break
       n_rows = self.df.shape[0]
 
+  def generate_all_records(self):
+    for idx, row in enumerate(self.df.iterrows()):
+      if idx < 2:
+        # ignore idx 0 and 1
+        continue
+      try:
+        series = self.df.loc[idx]
+        title = series['title']
+        authors = series['authors']
+        year = series['year']
+        url = series['url']
+        packts_midurl_ka, isbn13 = extract_knowledgearea_n_isbn13(url)
+        if isbn13:
+          self.n_isbns += 1
+        bookinfo_dc = BookInfoDC(
+          title=title,
+          year=year,
+          authors=authors,
+          isbn13=isbn13,
+          packts_midurl_ka=packts_midurl_ka
+        )
+        yield bookinfo_dc
+
+      except (AttributeError, TypeError):
+        self.n_rows_w_na += 1
+        print('AttributeError, TypeError', self.n_rows_w_na)
+        continue
+
+  def print_all_records(self):
+    for i, bookinfo_dc in enumerate(self.generate_all_records()):
+      line = f"{bookinfo_dc}"
+      seq = i + 1
+      print(seq, line)
+
   def roll_isbns_if_any(self):
     for row in self.df.iterrows():
       seq = row[0]
       self.instanceseq += 1
       series = row[1]
       try:
-        isbn13 = series.isbn
+        isbn13 = series.isbn13
         title = series.title
         print(seq, isbn13, title)
         # do_continue = self.issue_cli_to_browser_open_bookpage(seq, isbn13, title)
@@ -138,7 +203,8 @@ class BookPageOpener:
       print('Data folder looked up:', isbnfs.get_bookdata_dirpath())
       return False
     self.init_dataframe()
-    self.consume_frame_popping_series()
+    self.print_all_records()
+    # self.consume_frame_popping_series()
     # self.randomroll_isbns_if_any()
     # self.roll_isbns_if_any()
     return True
@@ -158,7 +224,7 @@ def adhoctest():
 
 
 def process():
-  bpo = BookPageOpener()
+  bpo = PacktsSpreadSheetReader()
   print(bpo)
 
 

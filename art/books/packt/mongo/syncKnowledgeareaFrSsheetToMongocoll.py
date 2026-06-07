@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 """
-art/books/packt/mongo/sync_dirtree_w_mongocoll.py
+art/books/packt/mongo/syncKnowledgeareaFrSsheetToMongocoll.py
   Explanation
     (...)
 
-  "/home/dados/Books/epub Books"
-
+"/home/dados/Books/epub Books"
 """
 import sys
-import art.books.packt.dirwalk.packtInfoDirTreeExtractor as bkExtr
 from pymongo import MongoClient
 from art.books.packt.dirwalk import DEFAULT_MONGO_DB
 from art.books.packt.dirwalk import DEFAULT_MONGO_COLL
+from art.books.packt.ssheet.extractBooksMetaFromSpreadSheet import PacktsSpreadSheetReader
+from art.books.packt.mongo.read_books_from_mongo import MongoDBCollReader
 
 
-class SyncBookDirTreeWithMongoColl:
+class SyncKAreaFromSSheetToMongoColl:
 
   def __init__(self, basefolder_ap=None):
     self.basefolder_ap = basefolder_ap
+    self.mongoreader = MongoDBCollReader()
+    self.count_find = 0
     self.bookinfo = None
     self.n_inserted = 0
     self.n_deleted = 0
@@ -104,22 +106,33 @@ class SyncBookDirTreeWithMongoColl:
     self.mongocoll.delete_many({'isbn':None})
     self.n_deleted_as_null_isbns = self.mongocoll.deleted_count
 
+  def does_sheet_isbn_exist_in_mongo(self, sheet_bookinfo_dc):
+    isbn13 = sheet_bookinfo_dc.isbn13
+    self.count_find += 1
+    cursor = self.mongoreader.collection.find({
+      'isbn': isbn13
+    })
+    doc = list(cursor)
+    print(self.count_find, isbn13, doc)
+
+  def read_spreadsheet(self):
+    ssheet_reader = PacktsSpreadSheetReader()
+    for sheet_bookinfo_dc in ssheet_reader.generate_all_records():
+      # check it in Mongo
+      self.does_sheet_isbn_exist_in_mongo(sheet_bookinfo_dc)
+
+
   def process(self):
-    self.count_books_in_db()
-    dw_extractor = bkExtr.DirWalkBookInfoExtractor(self.basefolder_ap)
-    for i, bookinfo in enumerate(dw_extractor.gen_bookinfolist_via_dirwalk()):
-      seq = i + 1
-      self.n_books_in_dirtree = seq
-      scrmsg = f"{seq} checking {bookinfo}"
-      print(scrmsg)
-      self.is_book_in_db(bookinfo)
-    self.delete_null_isbns_in_db()
+    """
+    1 read all records in spreadsheet
+    2 for every isbn existing in spreadsheet, look up it also in Mongo
+    3 if knowledge_area is missing in Mongo, update it there
+    """
+    self.read_spreadsheet()
     self.close_mongoclient()
-    print(self)
 
   def close_mongoclient(self):
-    if self.mongoclient:
-      self.mongoclient.close()
+    self.mongoreader.close_conn()
 
   def __str__(self):
     outstr = f"""{self.__class__.__name__}
@@ -150,7 +163,7 @@ def get_args():
 
 def process():
   rootfolder_ap = get_args()
-  syncker = SyncBookDirTreeWithMongoColl(rootfolder_ap)
+  syncker = SyncKAreaFromSSheetToMongoColl(rootfolder_ap)
   syncker.process()
 
 

@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """
-<<<<<<<< HEAD:art/books/packt/mongo/mongodb_write_functions.py
-art/books/packt/mongo/mongodb_write_functions.py
-========
 art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
->>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
   Explanation?
     (...)
+    previously: art/books/packt/mongo/mongodb_write_functions.py
 
 Key Points:
     MongoDB runs on mongodb://localhost:27017 by default
@@ -70,7 +67,7 @@ def json_to_mongodb_advanced(
     json_file_path,
     db_name,
     coll_name,
-    replace_existing=False,
+    replace_existing=True,
     id_field='_id'
 ):
   # no return needed, if json does not exist, raise OSError
@@ -111,11 +108,7 @@ def json_to_mongodb_advanced(
   except Exception as e:
     print(f"Error: {e}")
   finally:
-<<<<<<<< HEAD:art/books/packt/mongo/mongodb_write_functions.py
-    if client:
-========
     if client is not None:
->>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
       client.close()
 
 

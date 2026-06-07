@@ -156,7 +156,7 @@ class BookPageOpener:
       self.instanceseq += 1
       series = row[1]
       try:
-        isbn13 = series.isbn
+        isbn13 = series.isbn13
         title = series.title
         print(seq, isbn13, title)
         # do_continue = self.issue_cli_to_browser_open_bookpage(seq, isbn13, title)

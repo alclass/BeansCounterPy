@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
+art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
+older/previous art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
   Explanation
     (...)
 
@@ -18,12 +19,7 @@ Method 2: Custom JSON Encoder (For Nested namedtuples)
 ======================================================
 # notice Person and an Address inside it (a nested object)
 from collections import namedtuple
-<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
 import j-s-o-n
-
-=======
-import JSON
->>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
 
 class NamedTupleEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -47,19 +43,48 @@ from dataclasses import dataclass, asdict
 import re
 import sys
 from pathlib import Path
+from collections.abc import Generator
 
 
 @dataclass
 class BookInfoDC:
+  """
+  Removing: inSpreadSheet: bool = False
+  Because packts_midurl_ka is extracted from Packt's selected SpreadSheet,
+    i.e., if packts_midurl_ka is not None, inSpreadSheet is True
+  """
   title: str
   year: int
-  author: str
-  isbn: int
+  authors: str
+  isbn13: int
   relpath: str | None = None
-  packtsmiddlepath: str | None = None
+  packts_midurl_ka: str | None = None
+
+  @property
+  def asdict(self):
+    return asdict(self)
+
+  @property
+  def year_as_a_4_digit_str(self):
+    """
+    year may be type date though it's defined in the DataClass as int
+    """
+    year = self.year or 'n/a'
+    try:
+      year = str(year)
+      year = year[:4]
+    except (IndexError, TypeError):
+      pass
+    return year
+
+  def __str__(self):
+    isbn13 = "<isbn13>" if self.isbn13 is None else self.isbn13
+    outstr = f"{self.title} | {self.year_as_a_4_digit_str} | {self.authors}  | {isbn13}"
+    outstr += f" | {self.packts_midurl_ka} | {self.relpath}"
+    return outstr
 
 
-class BookInfoExtractor:
+class BookInfo:
   """
 
   Former regex attempt for title did not consider special character such the dash (e.g. Socket-IO)
@@ -83,28 +108,35 @@ class BookInfoExtractor:
     self.bookinfo_dc = None
     self.process()
 
-  def trans_namedtuple(self):
+  def transpose_to_dataclass_obj(self):
     if self.matched:
       self.bookinfo_dc = BookInfoDC(
         title=self.title,
         year=self.year,
-        author=self.author,
-        isbn=self.isbn,
+        authors=self.author,
+        isbn13=self.isbn,
         relpath=self.relpath,
-        # packtsmiddlepath=None,
+        packts_midurl_ka=None,
       )
 
   def _asdict(self):
     if self.bookinfo_dc:
       try:
         return asdict(self.bookinfo_dc)
-      except AttributeError:
+      except TypeError:  # for either asdict as None or a non-asdict'able type
         pass
     return {}
 
   @property
   def asdict(self):
+    """
+    A property for method self._asdict()
+    """
     return self._asdict()
+
+  @property
+  def as_bookinfo_dc(self):
+    return self.bookinfo_dc
 
   def extract(self):
     # 1 extract pair title and year
@@ -126,7 +158,7 @@ class BookInfoExtractor:
 
   def process(self):
     self.extract()
-    self.trans_namedtuple()
+    self.transpose_to_dataclass_obj()
 
   def __str__(self):
     outstr = f"""{self.booksfilename}
@@ -166,11 +198,7 @@ class DirWalkBookInfoExtractor:
     :return:
     """
     self.current_bookinfo = None
-<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
-    bookinfo = BookInfoExtractor(filename)
-=======
     bookinfo = BookInfo(filename, self.relpath)
->>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
     if bookinfo and bookinfo.matched:
       self.current_bookinfo = bookinfo
       self.bookcounter += 1
@@ -186,33 +214,44 @@ class DirWalkBookInfoExtractor:
       if self.current_bookinfo:
         self.current_dir_bookinfos.append(self.current_bookinfo)
 
-  def gen_bookinfolist_via_dirwalk(self):
+  def gen_bookinfolist_via_dirwalk(self) -> Generator[BookInfo]:
+    """
+    This generator yields elements of type BookInfo
+    (this type cannot be used for the collection-looping JSON write-functions,
+      use the next one instead which yields an 'iterable' dict-element, BookInfo is not iterable)
+    """
     self.current_dir_bookinfos = []
     for self.current_folder_ap, _, files in os.walk(self.basefolder_ap):
       self.extract_books_meta_per_folder(files)
       for bookinfo in self.current_dir_bookinfos:
-        yield bookinfo
+        yield bookinfo  # .as_bookinfo_dc
+
+  def gen_bookinfolist_as_dicts_via_dirwalk(self) -> Generator[dict]:
+    """
+    This generator yields elements of type dict
+    """
+    for bookinfo in self.gen_bookinfolist_via_dirwalk():
+      pdict = bookinfo.asdict
+      yield pdict
 
 
 def adhoc_test2():
   bi_nt = BookInfoDC(
     title="test title",
     year=2026,
-    author="test author",
-    isbn=int("9"*13),
-<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
-=======
+    authors="test author",
+    isbn13=int("9" * 13),
     relpath="test relpath",
-    packtsmiddlepath="test packtsmiddlepath",
->>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
+    packts_midurl_ka="test packtsmiddlepath",
   )
   print(bi_nt)
-  print(asdict(bi_nt))
+  print('asdict(bi_nt)', asdict(bi_nt))
+  print('bi_nt.asdict', bi_nt.asdict)
 
 
 def adhoc_test1():
   t = "AI Blueprints 2018 Joshua Eckroth +1; Packt 9781788992879.epub"
-  bi = BookInfoExtractor(t)
+  bi = BookInfo(t)
   print('bi', bi)
 
 
@@ -234,8 +273,8 @@ def process():
   grab_bookinfos_thru_dirs(rootfolder_ap)
   """
   rootfolder_ap = get_args()
-  extractor = InfoExtractor(rootfolder_ap)
-  for i, bi in enumerate(extractor.gen_collection_w_dirwalk()):
+  extractor = DirWalkBookInfoExtractor(rootfolder_ap)
+  for i, bi in enumerate(extractor.gen_bookinfolist_via_dirwalk()):
     seq = i + 1
     print(seq, bi)
 
@@ -243,10 +282,6 @@ def process():
 if __name__ == '__main__':
   """
   adhoc_test1()
-  adhoc_test2()
-<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
-=======
   process()
->>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
   """
-  process()
+  adhoc_test2()

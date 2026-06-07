@@ -54,7 +54,7 @@ def get_daterange_args():
 
 def get_fundo_results_dictlist_within_daterange(monthref_ini, monthref_fim):
   roller = scr_bb_extrs.MonthlyRoller(yearmonth_ini=monthref_ini, yearmonth_fim=monthref_fim)
-  roller.process()
+  roller.print_all_records()
   return roller.fundo_result_records[:]
 
 

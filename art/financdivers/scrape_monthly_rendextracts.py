@@ -47,7 +47,7 @@ class MonthlyRoller:
       return
     for scrapetext in scrapetexts:
       fundoresult = extScr.SpecificCEFExtractScraper(scrapetext, refmonthdate=current_yearmonth)
-      fundoresult.process()
+      fundoresult.print_all_records()
       # str_curr_yearmonth = '{year}-{month:02d}'.format(
       #  year=current_yearmonth.year, month=current_yearmonth.month
       # )

@@ -4,13 +4,13 @@ art/books/packt/dirwalk/writeBooksCollectionJsonFile.py
   Explanation:
     (...)
 
-  "/home/dados/Books/epub Books"
+"/home/dados/Books/epub Books"
 """
 from pathlib import Path
 import json
 import os
 import sys
-import art.books.packt.dirwalk.dirWalkPacktBookInfoExtractor as pIDT
+import art.books.packt.dirwalk.packtInfoDirTreeExtractor as pIDT
 from art.books.packt.dirwalk import DEFAULT_PACKT_JSON_FILENAME
 # pIDT.bookinfo_nt
 
@@ -87,6 +87,7 @@ class GenerateJsonCollection:
     print(scrmsg)
     with open(self.json_filepath, "w", encoding="utf-8") as filedescr:
       json.dump(dictlist, filedescr, indent=2)
+    return True
 
 
 def get_args():

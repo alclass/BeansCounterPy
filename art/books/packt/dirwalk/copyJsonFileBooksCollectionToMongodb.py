@@ -53,7 +53,7 @@ class FromJsonToMongo:
     scrmsg += f"\tdb = [{DEFAULT_MONGO_DB}]\n]"
     scrmsg += f"\tfile = [{DEFAULT_MONGO_COLL}]"
     print(scrmsg)
-    mongorwfs.json_to_mongodb_advanced(
+    mongorwfs.from_jsonfile_to_mongodb_advanced(
       json_file_path=self.json_filepath,
       db_name=DEFAULT_MONGO_DB,
       coll_name=DEFAULT_MONGO_COLL,

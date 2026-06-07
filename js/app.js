@@ -19,25 +19,25 @@ let db; // Variable to hold the database connection
 
 // 4. Connect to MongoDB and start the server
 async function startServer() {
-    try {
-        // Connect to the MongoDB server
-        const client = new MongoClient(url);
-        await client.connect();
-        console.log('✅ Connected successfully to MongoDB server');
+  try {
+    // Connect to the MongoDB server
+    const client = new MongoClient(url);
+    await client.connect();
+    console.log('✅ Connected successfully to MongoDB server');
 
-        // Select the database
-        db = client.db(dbName);
-        console.log(`✅ Using database: ${dbName}`);
+    // Select the database
+    db = client.db(dbName);
+    console.log(`✅ Using database: ${dbName}`);
 
-        // Start the Express server *only after* the database connection is successful
-        app.listen(port, () => {
-            console.log(`🚀 Server is running at http://localhost:${port}`);
-            console.log(`👉 To see your data, visit http://localhost:${port}/data`);
-        });
-    } catch (error) {
-        console.error('❌ Failed to connect to MongoDB:', error);
-        process.exit(1); // Exit the process if database connection fails
-    }
+    // Start the Express server *only after* the database connection is successful
+    app.listen(port, () => {
+      console.log(`🚀 Server is running at http://localhost:${port}`);
+      console.log(`👉 To see your data, visit http://localhost:${port}/data`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to connect to MongoDB:', error);
+    process.exit(1); // Exit the process if database connection fails
+}
 }
 
 // 5. Define an API endpoint to get data from the collection

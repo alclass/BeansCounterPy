@@ -92,7 +92,7 @@ class ISBNLister:
       seq = row[0]
       series = row[1]
       try:
-        isbn = series.isbn
+        isbn = series.isbn13
         title = series.title
         if isbn:
           print(i+1, seq, isbn, title)
