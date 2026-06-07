@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/check_packt_titles_with_isbn_in_db.py
+art/books/packt/check_packt_titles_with_isbn_in_db.py
 """
 import os
 import glob
@@ -47,19 +47,19 @@ class ISBNLister:
     self.df = None
     self.bookdata_excelfilepath = None
     self.set_excelpath_or_raise()
-    self.process()
+    # self.process()
 
   def set_excelpath_or_raise(self):
     excelfilepath = get_bookdata_filepath()
     if excelfilepath is None or not os.path.isfile(excelfilepath):
-      error_msg = 'Excel filepath does not exist [%s]' % str(excelfilepath)
+      error_msg = 'Excel filepath [%s] does not exist' % str(excelfilepath)
       raise OSError(error_msg)
     self.bookdata_excelfilepath = excelfilepath
 
   def dataframe_postread_cleanup(self):
     """
     Steps:
-    1  remove first row
+    1 remove first row
     2 restablish column indices
       Obs whatever colindices are, they will become 0-based integers
           for then being renamed to known names
@@ -67,7 +67,7 @@ class ISBNLister:
     4  rename column indices with known 'fieldnames'
     """
     self.df = self.df.drop([0], axis=0)
-    colindices = list(range(0, 3))
+    colindices = list(range(0, 7))  # 3
     self.df.columns = colindices
     self.df = self.df.drop([0], axis=1)
     self.df.rename({1: 'isbn', 2: 'title'}, axis=1, inplace=True)
@@ -112,7 +112,8 @@ def adhoctest():
 
 
 def process():
-  ISBNLister()
+  isbnlister = ISBNLister()
+  isbnlister.process()
 
 
 if __name__ == '__main__':

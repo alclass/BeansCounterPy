@@ -10,7 +10,7 @@ from pathlib import Path
 import json
 import os
 import sys
-import art.books.packt.dirwalk.packtInfoDirTreeExtractor as pIDT
+import art.books.packt.dirwalk.dirWalkPacktBookInfoExtractor as pIDT
 from art.books.packt.dirwalk import DEFAULT_PACKT_JSON_FILENAME
 # pIDT.bookinfo_nt
 
@@ -33,8 +33,8 @@ class GenerateJsonCollection:
     self.basefolder_ap = Path(self.basefolder_ap)
 
   def gen_collection_thru_dirs(self):
-    extractor = pIDT.InfoExtractor(self.basefolder_ap)
-    for i, bookinfo in enumerate(extractor.gen_collection_w_dirwalk()):
+    extractor = pIDT.DirWalkBookInfoExtractor(self.basefolder_ap)
+    for i, bookinfo in enumerate(extractor.gen_bookinfolist_via_dirwalk()):
       yield bookinfo
 
   def print_via_gen_collection_thru_dirs(self):

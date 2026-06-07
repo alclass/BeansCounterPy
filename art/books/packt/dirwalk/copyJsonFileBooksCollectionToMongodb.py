@@ -16,7 +16,11 @@ Key Points:
 import os
 from pathlib import Path
 import sys
+<<<<<<< HEAD:art/books/packt/dirwalk/transpose_json_to_mongodb.py
+import art.books.packt.mongo.mongodb_write_functions as trnsp
+=======
 import art.books.packt.dirwalk.jsonToMongoReadWriteFunctions as mongorwfs
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/copyJsonFileBooksCollectionToMongodb.py
 from art.books.packt.dirwalk import DEFAULT_PACKT_JSON_FILENAME
 from art.books.packt.dirwalk import DEFAULT_MONGO_DB
 from art.books.packt.dirwalk import DEFAULT_MONGO_COLL

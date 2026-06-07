@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
+art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
   Explanation
     (...)
 
@@ -18,7 +18,12 @@ Method 2: Custom JSON Encoder (For Nested namedtuples)
 ======================================================
 # notice Person and an Address inside it (a nested object)
 from collections import namedtuple
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
+import j-s-o-n
+
+=======
 import JSON
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
 
 class NamedTupleEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -54,7 +59,7 @@ class BookInfoDC:
   packtsmiddlepath: str | None = None
 
 
-class BookInfo:
+class BookInfoExtractor:
   """
 
   Former regex attempt for title did not consider special character such the dash (e.g. Socket-IO)
@@ -136,7 +141,7 @@ class BookInfo:
     return outstr
 
 
-class InfoExtractor:
+class DirWalkBookInfoExtractor:
 
   def __init__(self, basefolder_ap=None):
     self.basefolder_ap = basefolder_ap or Path(os.path.abspath(os.path.curdir))
@@ -161,14 +166,18 @@ class InfoExtractor:
     :return:
     """
     self.current_bookinfo = None
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
+    bookinfo = BookInfoExtractor(filename)
+=======
     bookinfo = BookInfo(filename, self.relpath)
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
     if bookinfo and bookinfo.matched:
       self.current_bookinfo = bookinfo
       self.bookcounter += 1
       # bc = self.bookcounter
       # print(bc, 'bookinfo_nt', self.current_bookinfo)
 
-  def extract_info_from_folder(self, files):
+  def extract_books_meta_per_folder(self, files):
     self.current_dir_bookinfos = []
     files = filter(lambda f: f.endswith(('.epub', '.mobi')), files)
     files = filter(lambda f: f.find('Packt') > -1, files)
@@ -177,9 +186,10 @@ class InfoExtractor:
       if self.current_bookinfo:
         self.current_dir_bookinfos.append(self.current_bookinfo)
 
-  def gen_collection_w_dirwalk(self):
+  def gen_bookinfolist_via_dirwalk(self):
+    self.current_dir_bookinfos = []
     for self.current_folder_ap, _, files in os.walk(self.basefolder_ap):
-      self.extract_info_from_folder(files)
+      self.extract_books_meta_per_folder(files)
       for bookinfo in self.current_dir_bookinfos:
         yield bookinfo
 
@@ -190,8 +200,11 @@ def adhoc_test2():
     year=2026,
     author="test author",
     isbn=int("9"*13),
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
+=======
     relpath="test relpath",
     packtsmiddlepath="test packtsmiddlepath",
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
   )
   print(bi_nt)
   print(asdict(bi_nt))
@@ -199,13 +212,13 @@ def adhoc_test2():
 
 def adhoc_test1():
   t = "AI Blueprints 2018 Joshua Eckroth +1; Packt 9781788992879.epub"
-  bi = BookInfo(t)
+  bi = BookInfoExtractor(t)
   print('bi', bi)
 
 
 def grab_bookinfos_thru_dirs(rootfolder_ap):
-  extractor = InfoExtractor(rootfolder_ap)
-  for i, bookinfo in enumerate(extractor.gen_collection_w_dirwalk()):
+  extractor = DirWalkBookInfoExtractor(rootfolder_ap)
+  for i, bookinfo in enumerate(extractor.gen_bookinfolist_via_dirwalk()):
     print(i+1, bookinfo)
 
 
@@ -231,6 +244,9 @@ if __name__ == '__main__':
   """
   adhoc_test1()
   adhoc_test2()
+<<<<<<< HEAD:art/books/packt/dirwalk/dirWalkPacktBookInfoExtractor.py
+=======
   process()
+>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
   """
   process()
