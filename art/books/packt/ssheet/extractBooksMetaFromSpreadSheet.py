@@ -22,8 +22,8 @@ https://subscription.packtpub.com/search?query=9781786469687
 import os
 import random
 import pandas as pd
-import art.books.packt.functions_packt_books_data_excel_json_pandas as isbnfs
-from art.books.packt.dirwalk.packtInfoDirTreeExtractor import BookInfoDC
+import art.books.packt.ssheet.functions_packt_books_data_excel_json_pandas as isbnfs
+from art.books.packt.folders import BookInfoDC
 # URL_to_interpole = 'https://subscription.packtpub.com/search?query={isbn13}/1'
 # URL_to_interpole = 'https://www.packtpub.com/product/atitle/{isbn13}/1'
 URL_to_interpole = 'https://subscription.packtpub.com/book/data/{isbn13}/'

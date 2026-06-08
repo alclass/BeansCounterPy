@@ -8,8 +8,8 @@ art/books/packt/mongo/syncKnowledgeareaFrSsheetToMongocoll.py
 """
 import sys
 from pymongo import MongoClient
-from art.books.packt.dirwalk import DEFAULT_MONGO_DB
-from art.books.packt.dirwalk import DEFAULT_MONGO_COLL
+from art.books.packt.folders import DEFAULT_MONGO_DB
+from art.books.packt.folders import DEFAULT_MONGO_COLL
 from art.books.packt.ssheet.extractBooksMetaFromSpreadSheet import PacktsSpreadSheetReader
 from art.books.packt.mongo.read_books_from_mongo import MongoDBCollReader
 

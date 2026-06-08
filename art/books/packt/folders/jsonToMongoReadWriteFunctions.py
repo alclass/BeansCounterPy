@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
-  older/previous: art/books/packt/mongo/mongodb_write_functions.py
+art/books/packt/folders/jsonToMongoReadWriteFunctions.py
+  older/previous: art/books/packt/mongo/write_mongodb_functions.py
   Explanation?
     (...)
 
@@ -110,7 +110,7 @@ def from_jsondictlist_to_mongodb_advanced(
     elapsed = end_time - start_time
     scrmsg = f"Successfully processed {n_docs} documents to MongoDB (elapsed={elapsed}).\n"
     scrmsg += f"{end_time} | No files were written (or read).\n"
-    scrmsg += f"(The dirwalk provided the books meta information for the MongoDB collection.)\n"
+    scrmsg += f"(The folders provided the books meta information for the MongoDB collection.)\n"
     print(scrmsg)
   except Exception as e:
     print(f"Error (before finally): {e}")

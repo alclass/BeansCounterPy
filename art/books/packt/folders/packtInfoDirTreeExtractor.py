@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
-older/previous art/books/packt/dirwalk/packtInfoDirTreeExtractor.py
+art/books/packt/folders/packtInfoDirTreeExtractor.py
+older/previous art/books/packt/folders/packtInfoDirTreeExtractor.py
   Explanation
     (...)
 

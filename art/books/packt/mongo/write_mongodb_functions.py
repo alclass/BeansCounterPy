@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
+art/books/packt/folders/jsonToMongoReadWriteFunctions.py
   Explanation?
     (...)
-    previously: art/books/packt/mongo/mongodb_write_functions.py
+    previously: art/books/packt/mongo/write_mongodb_functions.py
 
 Key Points:
     MongoDB runs on mongodb://localhost:27017 by default
@@ -63,11 +63,11 @@ def verify_jsonfile_exists(json_file_path):
 
 
 # Method 2: More robust with error handling and upsert options
-def json_to_mongodb_advanced(
+def from_jsonfile_to_mongocoll_upsert(
     json_file_path,
     db_name,
     coll_name,
-    replace_existing=True,
+    replace_existing=False,
     id_field='_id'
 ):
   # no return needed, if json does not exist, raise OSError
@@ -149,7 +149,7 @@ def main():
   json_to_mongodb_simple('data.json', 'my_database', 'my_collection')
 
   # Advanced usage with options
-  json_to_mongodb_advanced(
+  from_jsonfile_to_mongocoll_upsert(
     'data.json',
     'my_database',
     'my_collection',

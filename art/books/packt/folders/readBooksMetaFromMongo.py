@@ -3,15 +3,15 @@
 <<<<<<<< HEAD:art/books/packt/mongo/read_books_from_mongo.py
 art/books/packt/mongo/read_books_from_mongo.py
 ========
-art/books/packt/dirwalk/readBooksMetaFromMongo.py
+art/books/packt/folders/readBooksMetaFromMongo.py
   Reads (Packt) books' metadata from MongoDB
->>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/dirwalk/readBooksMetaFromMongo.py
+>>>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee:art/books/packt/folders/readBooksMetaFromMongo.py
 
 """
 import json
 from pymongo import MongoClient
-from art.books.packt.dirwalk import DEFAULT_MONGO_DB
-from art.books.packt.dirwalk import DEFAULT_MONGO_COLL
+from art.books.packt.folders import DEFAULT_MONGO_DB
+from art.books.packt.folders import DEFAULT_MONGO_COLL
 
 
 class MongoDBCollReader:

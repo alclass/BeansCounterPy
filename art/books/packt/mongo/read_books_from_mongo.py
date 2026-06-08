@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/readBooksMetaFromMongo.py
+art/books/packt/folders/readBooksMetaFromMongo.py
   Reads (Packt) books' metadata from MongoDB
 
   previously: art/books/packt/mongo/read_books_from_mongo.py
 """
 import json
 from pymongo import MongoClient
-from art.books.packt.dirwalk import DEFAULT_MONGO_DB
-from art.books.packt.dirwalk import DEFAULT_MONGO_COLL
+from art.books.packt.folders import DEFAULT_MONGO_DB
+from art.books.packt.folders import DEFAULT_MONGO_COLL
 
 
 class MongoDBCollReader:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/writeBooksCollectionJsonFile.py
+art/books/packt/folders/writeBooksCollectionJsonFile.py
   Explanation:
     (...)
 
@@ -10,8 +10,8 @@ from pathlib import Path
 import json
 import os
 import sys
-import art.books.packt.dirwalk.packtInfoDirTreeExtractor as pIDT
-from art.books.packt.dirwalk import DEFAULT_PACKT_JSON_FILENAME
+import art.books.packt.folders.packtInfoDirTreeExtractor as pIDT
+from art.books.packt.folders import DEFAULT_PACKT_JSON_FILENAME
 # pIDT.bookinfo_nt
 
 
