@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-<<<<<<<< HEAD:art/books/packt/mongo/read_books_from_mongo.py
-art/books/packt/mongo/read_books_from_mongo.py
+<<<<<<<< HEAD:art/books/packt/mongo/readBooksFromMongo.py
+art/books/packt/mongo/readBooksFromMongo.py
 ========
 art/books/packt/folders/readBooksMetaFromMongo.py
   Reads (Packt) books' metadata from MongoDB

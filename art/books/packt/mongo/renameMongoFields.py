@@ -6,7 +6,7 @@ art/books/packt/mongo/renameMongoFields.py
     in a MongoDB collection.
 
 (*) This script CLI-runs,
-    but can also be also from a non-CLI caller.
+    but can also be from a non-CLI caller.
 
 The three parameters below:
   a) MongoDB connection URL
@@ -16,9 +16,9 @@ are config-based.
 """
 import sys
 from pymongo import MongoClient
-from art.books.packt.folders import DEFAULT_MONGO_DB
-from art.books.packt.folders import DEFAULT_MONGO_COLL
-from art.books.packt.folders import DEFAULT_LOCAL_MONGO_CONN_URL
+from art.books.packt import DEFAULT_MONGO_DB
+from art.books.packt import DEFAULT_MONGO_COLL
+from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
 DEFAULT_FROM_FIELD = 'isbn'
 DEFAULT_TO_FIELD = 'isbn13'
 

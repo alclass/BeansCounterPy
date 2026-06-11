@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 art/books/packt/folders/jsonToMongoReadWriteFunctions.py
-  older/previous: art/books/packt/mongo/write_mongodb_functions.py
+  older/previous: art/books/packt/mongo/writeMongodbFunctions.py
   Explanation?
     (...)
 

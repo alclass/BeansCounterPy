@@ -3,7 +3,7 @@
 art/books/packt/folders/jsonToMongoReadWriteFunctions.py
   Explanation?
     (...)
-    previously: art/books/packt/mongo/write_mongodb_functions.py
+    previously: art/books/packt/mongo/writeMongodbFunctions.py
 
 Key Points:
     MongoDB runs on mongodb://localhost:27017 by default
@@ -72,14 +72,14 @@ def from_jsonfile_to_mongocoll_upsert(
 ):
   # no return needed, if json does not exist, raise OSError
   verify_jsonfile_exists(json_file_path)
-  client = None
+  mongo_cli_conn = None
   try:
     # Connect to MongoDB
-    client = MongoClient('mongodb://localhost:27017/')
+    mongo_cli_conn = MongoClient('mongodb://localhost:27017/')
     scrmsg = f"Opening mongoDB connection: {db_name}/{coll_name}"
     print(scrmsg)
-    db = client[db_name]
-    collection = db[coll_name]
+    mongo_db = mongo_cli_conn[db_name]
+    mongo_coll = mongo_db[coll_name]
     # Read JSON file
     with open(json_file_path, 'r') as file:
       data = json.load(file)
@@ -88,7 +88,7 @@ def from_jsonfile_to_mongocoll_upsert(
       data = [data]
     if replace_existing:
       # Clear existing collection
-      collection.drop()
+      mongo_coll.drop()
     # Insert documents
     for document in data:
       # Use specified field as _id if available
@@ -96,20 +96,20 @@ def from_jsonfile_to_mongocoll_upsert(
         document['_id'] = document.pop(id_field)
       # Upsert: update if exists, insert if not
       if '_id' in document:
-        collection.update_one(
+        mongo_coll.update_one(
           {'_id': document['_id']},
           {'$set': document},
           upsert=True
         )
       else:
-        collection.insert_one(document)
+        mongo_coll.insert_one(document)
     print(f"Successfully processed {len(data)} documents")
 
   except Exception as e:
     print(f"Error: {e}")
   finally:
-    if client is not None:
-      client.close()
+    if mongo_cli_conn is not None:
+      mongo_cli_conn.close()
 
 
 # Method 3: For large files using streaming

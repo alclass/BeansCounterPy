@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 art/books/packt/folders/packtInfoDirTreeExtractor.py
-older/previous art/books/packt/folders/packtInfoDirTreeExtractor.py
   Explanation
     (...)
 
-  "/home/dados/Books/epub Books"
+"/home/dados/Books/epub Books"
 
 # the namedtuple strategy was changed to a 'dataclass' one
 from collections import namedtuple
@@ -102,7 +101,7 @@ class BookInfo:
     self.title = None
     self.year = None
     self.author = None
-    self.isbn = None
+    self.isbn13 = None
     self.astr = ''
     self.matched = False
     self.bookinfo_dc = None
@@ -114,7 +113,7 @@ class BookInfo:
         title=self.title,
         year=self.year,
         authors=self.author,
-        isbn13=self.isbn,
+        isbn13=self.isbn13,
         relpath=self.relpath,
         packts_midurl_ka=None,
       )
@@ -147,14 +146,14 @@ class BookInfo:
       self.title = match_o['title'].strip()
       self.year = match_o['year']
       self.author = None
-      self.isbn = None
+      self.isbn13 = None
     # 2 extract pair author(s) and isbn
     match_o = self.re_c_author_n_isbn.match(self.booksfilename)
     self.astr += self.re_c_author_n_isbn.findall(self.booksfilename)
     if match_o:
       self.matched = True
       self.author = match_o['author'].strip()
-      self.isbn = match_o['isbn']
+      self.isbn13 = match_o['isbn']
 
   def process(self):
     self.extract()
@@ -165,7 +164,7 @@ class BookInfo:
       title = [{self.title}] 
       year = {self.year}
       author = [{self.author}] 
-      isbn = {self.isbn}
+      isbn = {self.isbn13}
       relpath = {self.relpath}
       matched = {self.matched} | astr = {self.astr}
       {self.bookinfo_dc}
@@ -185,7 +184,7 @@ class DirWalkBookInfoExtractor:
 
   @property
   def relpath(self):
-    _relpath = self.current_folder_ap[len(str(self.basefolder_ap)): ]
+    _relpath = self.current_folder_ap[len(str(self.basefolder_ap)):]
     _relpath = _relpath.lstrip('/')
     return _relpath
 
