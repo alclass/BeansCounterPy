@@ -5,16 +5,16 @@ art/books/packt/mongo/readBooksFromMongo.py
 """
 import json
 from pymongo import MongoClient
-from art.books.packt import DEFAULT_MONGO_DB
-from art.books.packt import DEFAULT_MONGO_COLL
+from art.books.packt import DEFAULT_MONGO_DBNAME
+from art.books.packt import DEFAULT_MONGO_COLLNAME
 
 
 class MongoDBCollReader:
 
   def __init__(self, database_name=None, collection_name=None):
     self.count = 0
-    self.mongo_dbname = database_name or DEFAULT_MONGO_DB
-    self.mongo_collname = collection_name or DEFAULT_MONGO_COLL
+    self.mongo_dbname = database_name or DEFAULT_MONGO_DBNAME
+    self.mongo_collname = collection_name or DEFAULT_MONGO_COLLNAME
     self.mongo_db = None
     self.mongo_coll = None
     self.cli_conn = None

@@ -7,8 +7,8 @@ art/books/packt/mongo/syncKnowledgeareaFrSsheetToMongocoll.py
 """
 import sys
 from pymongo import MongoClient
-from art.books.packt import DEFAULT_MONGO_DB
-from art.books.packt import DEFAULT_MONGO_COLL
+from art.books.packt import DEFAULT_MONGO_DBNAME
+from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt.ssheet.extractBooksMetaFromSpreadSheet import PacktsSpreadSheetReader
 from art.books.packt.mongo.readBooksFromMongo import MongoDBCollReader
 
@@ -34,8 +34,8 @@ class SyncKAreaFromSSheetToMongoColl:
 
   def set_mongo_db_n_coll(self):
     self.mongoclient = MongoClient('mongodb://localhost:27017/')
-    self.mongodb = self.mongoclient[DEFAULT_MONGO_DB]
-    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLL]
+    self.mongodb = self.mongoclient[DEFAULT_MONGO_DBNAME]
+    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLLNAME]
 
   def is_book_in_db(self, bookinfo):
     """

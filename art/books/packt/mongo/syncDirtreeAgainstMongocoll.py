@@ -10,8 +10,8 @@ art/books/packt/mongo/syncDirtreeAgainstMongocoll.py
 import sys
 from pymongo import MongoClient
 import art.books.packt.folders.packtInfoDirTreeExtractor as bkExtr
-from art.books.packt import DEFAULT_MONGO_DB
-from art.books.packt import DEFAULT_MONGO_COLL
+from art.books.packt import DEFAULT_MONGO_DBNAME
+from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
 
 
@@ -34,8 +34,8 @@ class SyncBookDirTreeWithMongoColl:
 
   def set_mongo_db_n_coll(self):
     self.mongo_cli_conn = MongoClient(DEFAULT_LOCAL_MONGO_CONN_URL)
-    self.mongodb = self.mongo_cli_conn[DEFAULT_MONGO_DB]
-    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLL]
+    self.mongodb = self.mongo_cli_conn[DEFAULT_MONGO_DBNAME]
+    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLLNAME]
 
   def is_book_in_db(self, bookinfo):
     """

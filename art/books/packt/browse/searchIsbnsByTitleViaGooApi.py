@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/search_isbns_by_title_via_gooapi.py
+art/books/packt/browse/searchIsbnsByTitleViaGooApi.py
 
 Note on the "open" (ie, without a token) API limitation used by this script:
   According to the GoogleBook API docs, two limits are observed, ie:

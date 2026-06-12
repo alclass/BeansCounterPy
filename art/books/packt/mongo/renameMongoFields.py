@@ -16,8 +16,8 @@ are config-based.
 """
 import sys
 from pymongo import MongoClient
-from art.books.packt import DEFAULT_MONGO_DB
-from art.books.packt import DEFAULT_MONGO_COLL
+from art.books.packt import DEFAULT_MONGO_DBNAME
+from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
 DEFAULT_FROM_FIELD = 'isbn'
 DEFAULT_TO_FIELD = 'isbn13'
@@ -27,8 +27,8 @@ def rename_field_from_to(from_field: str, to_field: str):
   # 1. Connect to your MongoDB deployment
   client = MongoClient(DEFAULT_LOCAL_MONGO_CONN_URL)
   # 2. Select your database and collection
-  db = client[DEFAULT_MONGO_DB]
-  collection = db[DEFAULT_MONGO_COLL]
+  db = client[DEFAULT_MONGO_DBNAME]
+  collection = db[DEFAULT_MONGO_COLLNAME]
   # 3. Define the rename operation using the $rename operator
   # Format: {"$rename": {"old_field_name": "new_field_name"}}
   rename_operation = {

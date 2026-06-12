@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/book_chosen_opener_in_browser.py
+art/books/packt/browse/bookChosenOpenerInBrowser.py
   accepts an ISBN or title from the command line and, if related book is in db,
     opens its Packt's webpage on the default browser.
 
