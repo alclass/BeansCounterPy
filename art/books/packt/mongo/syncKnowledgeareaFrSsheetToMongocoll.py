@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
 art/books/packt/mongo/syncKnowledgeareaFrSsheetToMongocoll.py
-  Explanation
-    (...)
+  Verifies and upserts, if needed, field 'Knowledge Area'
 
 "/home/dados/Books/epub Books"
 """
 import sys
 from pymongo import MongoClient
-from art.books.packt.dirwalk import DEFAULT_MONGO_DB
-from art.books.packt.dirwalk import DEFAULT_MONGO_COLL
+from art.books.packt import DEFAULT_MONGO_DBNAME
+from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt.ssheet.extractBooksMetaFromSpreadSheet import PacktsSpreadSheetReader
-from art.books.packt.mongo.read_books_from_mongo import MongoDBCollReader
+from art.books.packt.mongo.readBooksFromMongo import MongoDBCollReader
 
 
 class SyncKAreaFromSSheetToMongoColl:
@@ -35,8 +34,8 @@ class SyncKAreaFromSSheetToMongoColl:
 
   def set_mongo_db_n_coll(self):
     self.mongoclient = MongoClient('mongodb://localhost:27017/')
-    self.mongodb = self.mongoclient[DEFAULT_MONGO_DB]
-    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLL]
+    self.mongodb = self.mongoclient[DEFAULT_MONGO_DBNAME]
+    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLLNAME]
 
   def is_book_in_db(self, bookinfo):
     """
@@ -100,16 +99,18 @@ class SyncKAreaFromSSheetToMongoColl:
 
   def count_books_in_db(self):
     self.n_books_in_db = self.mongocoll.count_documents({})
-    self.n_books_w_null_isbn = self.mongocoll.count_documents({'isbn':None})
+    self.n_books_w_null_isbn = self.mongocoll.count_documents({
+      'isbn': None
+    })
 
   def delete_null_isbns_in_db(self):
-    self.mongocoll.delete_many({'isbn':None})
+    self.mongocoll.delete_many({'isbn': None})
     self.n_deleted_as_null_isbns = self.mongocoll.deleted_count
 
   def does_sheet_isbn_exist_in_mongo(self, sheet_bookinfo_dc):
     isbn13 = sheet_bookinfo_dc.isbn13
     self.count_find += 1
-    cursor = self.mongoreader.collection.find({
+    cursor = self.mongoreader.mongo_coll.find({
       'isbn': isbn13
     })
     doc = list(cursor)
@@ -120,7 +121,6 @@ class SyncKAreaFromSSheetToMongoColl:
     for sheet_bookinfo_dc in ssheet_reader.generate_all_records():
       # check it in Mongo
       self.does_sheet_isbn_exist_in_mongo(sheet_bookinfo_dc)
-
 
   def process(self):
     """

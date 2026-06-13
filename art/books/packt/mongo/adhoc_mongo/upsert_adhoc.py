@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 <<<<<<< HEAD
-art/books/packt/dirwalk/mongodb_write_functions.py
+art/books/packt/folders/writeMongodbFunctions.py
 =======
-art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
+art/books/packt/folders/jsonToMongoReadWriteFunctions.py
 >>>>>>> 91d06ab3b1f9fdb943a436ad7badc16df437feee
   Explanation?
     (...)

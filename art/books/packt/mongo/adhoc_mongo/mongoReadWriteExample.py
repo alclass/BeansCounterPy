@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+"""
+art/books/packt/mongo/adhoc_mongo/mongoReadWriteExample.py
+
+"""
 from pymongo import MongoClient
 
 # 1. Connect to MongoDB (Change the URI if you use MongoDB Atlas)

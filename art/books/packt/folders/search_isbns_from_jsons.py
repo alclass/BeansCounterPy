@@ -14,7 +14,7 @@ from collections import namedtuple
 import os
 import json
 import pandas as pd
-import art.books.packt.functions_packt_books_data_excel_json_pandas as isbnfs
+import art.books.packt.ssheet.functions_packt_books_data_excel_json_pandas as isbnfs
 pd.set_option('display.max_rows', 100)
 BookNT = namedtuple('BookNT', ['title', 'isbn13list'])
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/mongo/sync_dirtree_w_mongocoll.py
+art/books/packt/mongo/syncDirtreeAgainstMongocoll.py
   Explanation
     (...)
 
@@ -8,10 +8,11 @@ art/books/packt/mongo/sync_dirtree_w_mongocoll.py
 
 """
 import sys
-import art.books.packt.dirwalk.packtInfoDirTreeExtractor as bkExtr
 from pymongo import MongoClient
-from art.books.packt.dirwalk import DEFAULT_MONGO_DB
-from art.books.packt.dirwalk import DEFAULT_MONGO_COLL
+import art.books.packt.folders.packtInfoDirTreeExtractor as bkExtr
+from art.books.packt import DEFAULT_MONGO_DBNAME
+from art.books.packt import DEFAULT_MONGO_COLLNAME
+from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
 
 
 class SyncBookDirTreeWithMongoColl:
@@ -25,16 +26,16 @@ class SyncBookDirTreeWithMongoColl:
     self.n_books_in_dirtree = 0
     self.n_books_in_db = 0
     self.n_deleted_as_null_isbns = 0
-    self.mongoclient = None
+    self.mongo_cli_conn = None
     self.mongodb = None
     self.mongocoll = None
     self.set_mongo_db_n_coll()
     # self.process()
 
   def set_mongo_db_n_coll(self):
-    self.mongoclient = MongoClient('mongodb://localhost:27017/')
-    self.mongodb = self.mongoclient[DEFAULT_MONGO_DB]
-    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLL]
+    self.mongo_cli_conn = MongoClient(DEFAULT_LOCAL_MONGO_CONN_URL)
+    self.mongodb = self.mongo_cli_conn[DEFAULT_MONGO_DBNAME]
+    self.mongocoll = self.mongodb[DEFAULT_MONGO_COLLNAME]
 
   def is_book_in_db(self, bookinfo):
     """
@@ -118,8 +119,8 @@ class SyncBookDirTreeWithMongoColl:
     print(self)
 
   def close_mongoclient(self):
-    if self.mongoclient:
-      self.mongoclient.close()
+    if self.mongo_cli_conn:
+      self.mongo_cli_conn.close()
 
   def __str__(self):
     outstr = f"""{self.__class__.__name__}

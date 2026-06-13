@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-art/books/packt/dirwalk/jsonToMongoReadWriteFunctions.py
+art/books/packt/folders/jsonToMongoReadWriteFunctions.py
+  older/previous: art/books/packt/mongo/writeMongodbFunctions.py
   Explanation?
     (...)
-    previously: art/books/packt/mongo/mongodb_write_functions.py
 
 Key Points:
     MongoDB runs on mongodb://localhost:27017 by default
@@ -13,8 +13,10 @@ Key Points:
     Use upsert=True with update_one() to avoid duplicates
 
 """
+import datetime
 import json
 import ijson
+import types
 from pathlib import Path
 from pymongo import MongoClient
 
@@ -61,16 +63,71 @@ def verify_jsonfile_exists(json_file_path):
   if not json_file_path.is_file():
     raise OSError(errmsg)
 
-
 # Method 2: More robust with error handling and upsert options
-def json_to_mongodb_advanced(
-    json_file_path,
+def from_jsondictlist_to_mongodb_advanced(
+    jsondictlist,
     db_name,
     coll_name,
-    replace_existing=True,
+    replace_existing=False,
     id_field='_id'
 ):
   # no return needed, if json does not exist, raise OSError
+  client = None
+  n_docs = 0
+  start_time = datetime.datetime.now()
+  try:
+    # Connect to MongoDB
+    client = MongoClient('mongodb://localhost:27017/')
+    scrmsg = f"@from_jsondictlist_to_mongodb_advanced | Opening mongoDB connection: {db_name}/{coll_name}"
+    print(scrmsg)
+    db = client[db_name]
+    collection = db[coll_name]
+    if not isinstance(jsondictlist, list) and not isinstance(jsondictlist, types.GeneratorType):
+      if isinstance(jsondictlist, dict):
+        jsondictlist = [jsondictlist]
+      else:
+        errmsg = f"jsondictlist (type {type(jsondictlist)}) should have been either type list, GeneratorType or dict"
+        raise TypeError(errmsg)
+    if replace_existing:
+      # Clear existing collection
+      collection.drop()
+    # Insert documents
+    for document in jsondictlist:
+      n_docs += 1
+      # Use specified field as _id if available
+      if id_field in document and id_field != '_id':
+        document['_id'] = document.pop(id_field)
+      # Upsert: update if exists, insert if not
+      if '_id' in document:
+        collection.update_one(
+          {'_id': document['_id']},
+          {'$set': document},
+          upsert=True
+        )
+      else:
+        collection.insert_one(document)
+    end_time = datetime.datetime.now()
+    elapsed = end_time - start_time
+    scrmsg = f"Successfully processed {n_docs} documents to MongoDB (elapsed={elapsed}).\n"
+    scrmsg += f"{end_time} | No files were written (or read).\n"
+    scrmsg += f"(The folders provided the books meta information for the MongoDB collection.)\n"
+    print(scrmsg)
+  except Exception as e:
+    print(f"Error (before finally): {e}")
+  finally:
+    if client is not None:
+      client.close()
+
+
+def from_jsonfile_to_mongodb_advanced(
+    json_file_path,
+    db_name,
+    coll_name,
+    replace_existing=False,
+    id_field='_id'
+):
+  # no return needed, if json does not exist, raise OSError
+  start_time = datetime.datetime.now()
   verify_jsonfile_exists(json_file_path)
   client = None
   try:
@@ -103,7 +160,11 @@ def json_to_mongodb_advanced(
         )
       else:
         collection.insert_one(document)
-    print(f"Successfully processed {len(data)} documents")
+    end_time = datetime.datetime.now()
+    elapsed = end_time - start_time
+    scrmsg = f"Successfully processed {len(data)} documents to MongoDB (elapsed={elapsed}).\n"
+    scrmsg += f"{end_time} | input file = [{json_file_path}] \n"
+    print(scrmsg)
 
   except Exception as e:
     print(f"Error: {e}")
@@ -149,7 +210,7 @@ def main():
   json_to_mongodb_simple('data.json', 'my_database', 'my_collection')
 
   # Advanced usage with options
-  json_to_mongodb_advanced(
+  from_jsonfile_to_mongodb_advanced(
     'data.json',
     'my_database',
     'my_collection',
