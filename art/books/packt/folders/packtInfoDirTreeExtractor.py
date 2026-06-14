@@ -41,8 +41,8 @@ import os
 import sys
 from pathlib import Path
 from collections.abc import Generator
-from art.books.packt.folders.BookModel import BookInfoDC
-from art.books.packt.folders.BookModel import BookInfo
+from art.books.packt.BookModel import BookInfoDC
+from art.books.packt.BookModel import BookInfo
 from dataclasses import asdict
 
 

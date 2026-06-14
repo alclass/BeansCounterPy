@@ -7,7 +7,8 @@ art/books/packt/mongo/fuzzyMongoSearchForApproxText.py
 "/home/dados/Books/epub Books"
 """
 from pymongo import MongoClient
-from rapidfuzz import process, fuzz
+# from rapidfuzz import process, fuzz
+import rapidfuzz as rapfuz
 from art.books.packt import DEFAULT_MONGO_DBNAME
 from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
@@ -58,10 +59,10 @@ class FuzzySearch:
     titles = [doc["title"] for doc in candidates]
     # process.extract returns a list of tuples: (matched_string, score, index)
     # WRATIO is great for short texts like titles because it handles case and minor order changes well.
-    fuzzy_results = process.extract(
+    fuzzy_results = rapfuz.process.extract(
       query=user_input,
       scorer_kwargs=titles,
-      scorer=fuzz.WRatio,
+      scorer=rapfuz.fuzz.WRatio,
       score_cutoff=threshold
     )
     # Step C: Rebuild the final sorted list of documents

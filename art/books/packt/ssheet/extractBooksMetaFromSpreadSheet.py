@@ -23,7 +23,7 @@ import os
 import random
 import pandas as pd
 import art.books.packt.ssheet.functions_packt_books_data_excel_json_pandas as isbnfs
-from art.books.packt.folders import BookInfoDC
+from art.books.packt.BookModel import BookInfoDC
 # URL_to_interpole = 'https://subscription.packtpub.com/search?query={isbn13}/1'
 # URL_to_interpole = 'https://www.packtpub.com/product/atitle/{isbn13}/1'
 URL_to_interpole = 'https://subscription.packtpub.com/book/data/{isbn13}/'
@@ -173,6 +173,9 @@ class PacktsSpreadSheetReader:
         self.n_rows_w_na += 1
         print('AttributeError, TypeError', self.n_rows_w_na)
         continue
+
+  def get_all_records(self):
+    return list(self.generate_all_records())
 
   def print_all_records(self):
     for i, bookinfo_dc in enumerate(self.generate_all_records()):

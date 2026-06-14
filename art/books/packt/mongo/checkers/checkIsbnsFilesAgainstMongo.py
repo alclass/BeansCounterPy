@@ -7,7 +7,7 @@ art/books/packt/mongo/checkIsbnsFilesAgainstMongo.py
 
 "/home/dados/Books/epub Books"
 """
-import art.books.packt.mongo.readBooksFromMongo as rBFM  # rbfm.MongoDBCollReader
+import art.books.packt.mongo.retrievers.formBookUrlsFromKAreasInMongoCollection as rBFM  # rbfm.MongoDBCollReader
 import art.books.packt.folders.packtInfoDirTreeExtractor as pIDTE  # pIDTE.DirWalkBookInfoExtractor
 
 

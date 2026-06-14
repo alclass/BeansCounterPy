@@ -13,14 +13,17 @@ The three parameters below:
   b) Mongo DB name
   c) Mongo collection name
 are config-based.
+
+DEFAULT_FROM_FIELD = 'isbn'
+DEFAULT_TO_FIELD = 'isbn13'
 """
 import sys
 from pymongo import MongoClient
 from art.books.packt import DEFAULT_MONGO_DBNAME
 from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
-DEFAULT_FROM_FIELD = 'isbn'
-DEFAULT_TO_FIELD = 'isbn13'
+DEFAULT_FROM_FIELD = 'author'
+DEFAULT_TO_FIELD = 'authors'
 
 
 def rename_field_from_to(from_field: str, to_field: str):

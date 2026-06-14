@@ -10,7 +10,7 @@ from pymongo import MongoClient
 from art.books.packt import DEFAULT_MONGO_DBNAME
 from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt.ssheet.extractBooksMetaFromSpreadSheet import PacktsSpreadSheetReader
-from art.books.packt.mongo.readBooksFromMongo import MongoDBCollReader
+from art.books.packt.mongo.retrievers.formBookUrlsFromKAreasInMongoCollection import MongoDBCollReader
 
 
 class SyncKAreaFromSSheetToMongoColl:

@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-art/books/packt/folders/packtInfoDirTreeExtractor.py
-  Explanation
+art/books/packt/BookModel.py
+  Contains @dataclass BookInfoDC and class BookInfo
 """
 import re
 from dataclasses import dataclass, asdict
+from art.books.packt import PACKT_URL_TO_INTERPOL
 
 
 @dataclass
 class BookInfoDC:
   """
-  Removing: inSpreadSheet: bool = False
-  Because packts_midurl_ka is extracted from Packt's selected SpreadSheet,
-    i.e., if packts_midurl_ka is not None, inSpreadSheet is True
+
+  _id: str
   """
   title: str
   year: int
@@ -21,14 +21,46 @@ class BookInfoDC:
   relpath: str | None = None
   packts_midurl_ka: str | None = None
 
+  @classmethod
+  def create_instance(cls, doc):
+    bi = None
+    try:
+      bi = cls(
+        title = doc['title'],
+        year = doc['year'],
+        authors = doc['authors'],
+        isbn13 = doc['isbn13'],
+      )
+    except (KeyError, TypeError):
+      pass
+    try:
+      if doc['relpath']:
+        bi.relpath = doc['relpath']
+      if doc['packts_midurl_ka']:
+        bi.packts_midurl_ka = doc['packts_midurl_ka']
+    except (KeyError, TypeError):
+      pass
+    return bi
+
   @property
   def asdict(self):
     return asdict(self)
 
   @property
+  def in_spreadsheet(self):
+    """
+  For the time, this may be a dynamic (@property) attribute, because, logically,
+    if packts_midurl_ka is not None, that piece of info came from Packt's Spread Sheet stored
+    """
+    if self.packts_midurl_ka is not None:
+      return True
+    return False
+
+  @property
   def year_as_a_4_digit_str(self):
     """
     year may be type date though it's defined in the DataClass as int
+    (this method is used in method __str__)
     """
     year = self.year or 'n/a'
     try:
@@ -37,6 +69,14 @@ class BookInfoDC:
     except (IndexError, TypeError):
       pass
     return year
+
+  @property
+  def packts_url(self):
+    if self.packts_midurl_ka is None or self.isbn13 is None:
+      return None
+    pdict = {'packts_midurl_ka': self.packts_midurl_ka, 'isbn13': self.isbn13}
+    books_url = PACKT_URL_TO_INTERPOL.format(**pdict)
+    return books_url
 
   def __str__(self):
     isbn13 = "<isbn13>" if self.isbn13 is None else self.isbn13
