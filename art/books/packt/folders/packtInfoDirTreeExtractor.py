@@ -89,6 +89,9 @@ class DirWalkBookInfoExtractor:
 
   def gen_bookinfolist_via_dirwalk(self) -> Generator[BookInfo]:
     """
+    Each element yielded is not a dictm it's a bookinfo
+    Look up below another generator that yields bookinfo as dict
+
     This generator yields elements of type BookInfo
     (this type cannot be used for the collection-looping JSON write-functions,
       use the next one instead which yields an 'iterable' dict-element, BookInfo is not iterable)
@@ -101,11 +104,20 @@ class DirWalkBookInfoExtractor:
 
   def gen_bookinfolist_as_dicts_via_dirwalk(self) -> Generator[dict]:
     """
-    This generator yields elements of type dict
+    Each element yielded is a dict from bookinfo
     """
     for bookinfo in self.gen_bookinfolist_via_dirwalk():
+      # notice that bookinfo contains a bit more fields than bookinfo_dc
       pdict = bookinfo.asdict
       yield pdict
+
+  def gen_bookinfolist_as_bidcdicts_via_dirwalk(self) -> Generator[dict]:
+    """
+    Each element yielded is a dict from bookinfo_dc
+    """
+    for bookinfo in self.gen_bookinfolist_via_dirwalk():
+      # notice that bookinfo_dc contains a bit less fields than bookinfo_dc
+      yield bookinfo.bookinfo_dc.asdict
 
 
 def adhoc_test2():

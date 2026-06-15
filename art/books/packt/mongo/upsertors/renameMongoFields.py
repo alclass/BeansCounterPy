@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/mongo/renameMongoFields.py
+art/books/packt/mongo/upsertors/renameMongoFields.py
   Given the two CLI (*) parameters 'from_field' and 'to_field',
     this script renames the first field (column) to the second
     in a MongoDB collection.

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+
 art/books/packt/mongo/removeDuplicates.py
   Removes duplicates in the bookmeta MongoDB collection
 
@@ -9,10 +10,11 @@ art/books/packt/mongo/removeDuplicates.py
     c) the uniqueness for isbn13 will be treated, so this script is a kind of 'only-one-run script'
 
 from art.books.packt import BookModel
-"""
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import BulkWriteError
 from collections import defaultdict
+"""
+from pymongo import MongoClient
 from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
 from art.books.packt import DEFAULT_MONGO_DBNAME
 from art.books.packt import DEFAULT_MONGO_COLLNAME
@@ -173,7 +175,6 @@ class MongoDocDuplicateRemover:
       self.total_before = {self.total_before}
     """
     return outstr
-
 
 
 def process():

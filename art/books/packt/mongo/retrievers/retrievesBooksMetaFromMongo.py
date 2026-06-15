@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/mongo/retrievesBooksMetaFromMongo.py
+art/books/packt/mongo/retrievers/retrievesBooksMetaFromMongo.py
   Reads/retrieves (Packt) books' metadata from its MongoDB collection
 
 """
