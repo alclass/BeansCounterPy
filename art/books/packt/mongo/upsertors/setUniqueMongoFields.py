@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/books/packt/mongo/removeDuplicates.py
+art/books/packt/mongo/upsertors/setUniqueMongoFields.py
   Removes duplicates in the bookmeta MongoDB collection
 
   Originally:
