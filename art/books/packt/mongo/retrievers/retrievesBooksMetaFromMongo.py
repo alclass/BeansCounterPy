@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from art.books.packt import DEFAULT_LOCAL_MONGO_CONN_URL
 from art.books.packt import DEFAULT_MONGO_DBNAME
 from art.books.packt import DEFAULT_MONGO_COLLNAME
-from art.books.packt import BookModel
+from art.books.packt.models import BookModel
 
 
 class MongoDBCollectionRetriever:

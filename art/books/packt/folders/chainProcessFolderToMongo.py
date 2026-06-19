@@ -10,7 +10,7 @@ art/books/packt/folders/chainProcessFolderToMongo.py
 
 """
 import art.books.packt.folders.packtInfoDirTreeExtractor as pIDTE
-from art.books.packt import DEFAULTFALLBACK_LOCAL_BOOKS_ROOTFOLDER
+from art.books.packt import FALLBACK_LOCAL_BOOKS_ROOTFOLDER
 from art.books.packt.mongo.upsertors.jsonToMongoUpsertor import MongoUpsertor
 
 
@@ -40,7 +40,7 @@ def adhoc_test1():
 def process():
   """
   """
-  rootfolder_ap = pIDTE.get_args() or DEFAULTFALLBACK_LOCAL_BOOKS_ROOTFOLDER
+  rootfolder_ap = pIDTE.get_args() or FALLBACK_LOCAL_BOOKS_ROOTFOLDER
   generator = pIDTE.DirWalkBookInfoExtractor(rootfolder_ap).gen_bookinfolist_as_bidcdicts_via_dirwalk()
   chainer = FolderToMongoChainer(generator)
   chainer.upsert_books()
