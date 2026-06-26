@@ -2,18 +2,16 @@
 // js/showbooktable/showbooks.js 20260615_e56c16
 const express = require('express');
 const mongoose = require('mongoose');
-
 const app = express();
 const PORT = 3000;
-const MONGO_COLL = "packt_books_db";
+const MONGO_DBNAME = "packt_books_db";
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB connection
-// let url =  'mongodb://localhost:27017/' + MONGO_COLL
-let url = 'mongodb://localhost:27017/packt_books_db'
-mongoose.connect('mongodb://localhost:27017/packt_books_db', {
+let url =  'mongodb://localhost:27017/' + MONGO_DBNAME
+mongoose.connect(url, {  // linter said: Promise returned from connect is ignored
   // useNewUrlParser: true,
   // useUnifiedTopology: true,
 });
@@ -405,14 +403,14 @@ app.get('/', (req, res) => {
         
         // Attach event listeners to edit/delete buttons
         document.querySelectorAll('.edit').forEach(btn => {
-          btn.addEventListener('click', (e) => {
+          btn.addEventListener('click', () => {  // param e removed
             const id = btn.getAttribute('data-id');
             openEditModal(id);
           });
         });
         
         document.querySelectorAll('.delete').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
+          btn.addEventListener('click', async () => {  // param e removed
             const id = btn.getAttribute('data-id');
             if (confirm('Are you sure you want to delete this book?')) {
               try {
