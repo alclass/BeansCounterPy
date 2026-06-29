@@ -3,10 +3,9 @@
 art/immeub/cdutra/rent/model_f_billing.py
 
 """
-import lib.datesetc.datefs as dtfs
 from collections import namedtuple
 import datetime
-import art.immeub.rent.iptu_mdl as iptu_m
+import art.immeub.models.iptu_mdl as iptu_m
 DEFAULT_MUNICIPIONAME = 'Rio de Janeiro - RJ'
 reais_baserent = 'reais_baserent'
 cond_tariff = 'cond_tariff'
@@ -131,9 +130,13 @@ def adhoctest1():
   price_cmp = monthlyprice_maincomponents_namedtuple(
     reais_baserent=1000, cond_tariff=1200, fire_comb_obj=100, iptu_obj=iptu_o
   )
+  refdate = datetime.date(2020, 5, 1)
   biller = RentBiller(
     immeub_code=10,
     price_components=price_cmp,
+    refdate=refdate,
+    refyear=refdate.year,
+    refmonth=refdate.month,
   )
   print(biller)
 

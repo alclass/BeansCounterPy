@@ -149,10 +149,10 @@ class Extractor:
     seq = 0
     n_prices = len(self.nt_dateprice_list)
     for nt in self.nt_dateprice_list:
-      if not nt.price:
+      if not nt.val_before:
         continue
       seq += 1
-      print(nt.date, nt.seq, nt.price)
+      print(nt.date, nt.seq, nt.val_before)
       # print(nt)
     scrmsg = f"Total price: {self.total_price:7.2f}"
     print(scrmsg)

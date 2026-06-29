@@ -12,6 +12,7 @@ from art.books.packt import DEFAULT_MONGO_COLLNAME
 from art.books.packt.mongo.retrievers.retrievesBooksMetaFromMongo import MongoDBCollectionRetriever
 from art.books.packt.ssheet.extractBooksMetaFromSpreadSheet import PacktsSpreadSheetReader
 
+
 class ExtractKnowledgeAreaAndUpsert:
 
   def __init__(self, mongo_dbname=None, mongo_collname=None):

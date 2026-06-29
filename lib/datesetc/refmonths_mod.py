@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-fs/datefs/refmonths_mod.py
+lib/datesetc/refmonths_mod.py
   Contains monthly and refmonthly date functions.
 
 import fs.datefs.introspect_dates as intr
@@ -10,8 +10,12 @@ import datetime
 from typing import Union
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.testing import exclude
-
-import lib.datefs.convert_to_date_wo_intr_sep_posorder as cnv
+import lib.datesetc.datefs as dfs  # dfs.transform_strdate_to_date
+import lib.datesetc.datehilofs as hilo  # dfs.transform_strdate_to_date
+MONTHS = [
+  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+]
 
 
 class ClassWithYearMonthDay:
@@ -40,7 +44,7 @@ class ClassWithYearMonthDay:
 
 
 def is_date_in_refmonth(pdate: datetime.date | str, refmonthdate: datetime.date | str) -> bool:
-  pdate = cnv.make_date_or_none(pdate)
+  pdate = dfs.make_date_or_none(pdate)
   refmonthdate = make_refmonthdate_or_none(refmonthdate)
   try:
     if pdate.year == refmonthdate.year and pdate.month == refmonthdate.month:
@@ -51,7 +55,7 @@ def is_date_in_refmonth(pdate: datetime.date | str, refmonthdate: datetime.date 
 
 
 def calc_refmonth_plus_n(pdate, n):
-  pdate = cnv.make_date_or_none(pdate)
+  pdate = hilo.make_date_or_none(pdate)
   if pdate is None:
     return None
   try:
@@ -75,10 +79,10 @@ def calc_refmonth_minus_n(pdate, n):
 def calc_n_completemonths_between_dates(
     start_date: Union[str, datetime.date], end_date: Union[str, datetime.date]
   ) -> int | None:
-  start_date = cnv.make_date_or_none(start_date)
+  start_date = dfs.make_date_or_none(start_date)
   if start_date is None:
     return None
-  end_date = cnv.make_date_or_none(end_date)
+  end_date = dfs.make_date_or_none(end_date)
   if end_date is None:
     return None
   if start_date > end_date:
@@ -318,7 +322,7 @@ def get_monthslastday_via_calendar(pdate: datetime.date | None) -> int | None:
 
 
 def get_monthslastdate_via_calendar(pdate: datetime.date | None) -> datetime.date | None:
-  indate = cnv.make_date_or_none(pdate)
+  indate = dfs.make_date_or_none(pdate)
   if indate is None:
     return None
   lastday = get_monthslastday_via_calendar(pdate)
@@ -346,7 +350,7 @@ def get_monthslastday_via_addition(pdate: datetime.date | None) -> int | None:
 
 
 def get_monthslastdate_via_addition(pdate: datetime.date | None) -> datetime.date | None:
-  indate = cnv.make_date_or_none(pdate)
+  indate = dfs.make_date_or_none(pdate)
   if indate is None:
     return None
   if indate.day > 1:
@@ -358,7 +362,7 @@ def get_monthslastdate_via_addition(pdate: datetime.date | None) -> datetime.dat
   return monthslastday_date
 
 
-def make_refmonthdate_or_none(refmonthdate: datetime.date | None) -> datetime.date | None:
+def make_refmonthdate_or_none(refmonthdate: datetime.date | str | None) -> datetime.date | None:
   if refmonthdate is None:
     return None
   if isinstance(refmonthdate, datetime.date):
@@ -366,7 +370,8 @@ def make_refmonthdate_or_none(refmonthdate: datetime.date | None) -> datetime.da
       return refmonthdate
     return datetime.date(year=refmonthdate.year, month=refmonthdate.month, day=1)
   try:
-    refmonthdate = str(refmonthdate).strip(' \t\r\n')
+    refmonthdate = str(refmonthdate)
+    refmonthdate = refmonthdate.strip(' \t\r\n')
     ppp = refmonthdate.split(' ')
     pp = ppp[0].split('-')
     year = int(pp[0])
@@ -440,8 +445,8 @@ def adhoctest3():
   """
   how to calculate number of months between two dates in Python?
   """
-  pdate1 = cnv.make_date_or_none('2020-02-1')
-  pdate2 = cnv.make_date_or_none('2021-10-31')
+  pdate1 = dfs.make_date_or_none('2020-02-1')
+  pdate2 = dfs.make_date_or_none('2021-10-31')
   n_months_in_bw = calc_n_completemonths_between_dates(pdate1, pdate2)
   scrmsg = f"{pdate2} - {pdate1} = n_months_in_bw={n_months_in_bw}"
   print(scrmsg)
