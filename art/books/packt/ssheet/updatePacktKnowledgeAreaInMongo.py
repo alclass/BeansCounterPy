@@ -103,7 +103,7 @@ class ExtractKnowledgeAreaAndUpsert:
       mongo_dbname=self.mongo_dbname,
       mongo_collname=self.mongo_collname,
     )
-    self.dbretriever.retrieve_all()
+    self.dbretriever.fetch_all_n_store()
     scrmsg = f"Total retrieved from db: {self.dbretriever.total_books}"
     print(scrmsg)
 

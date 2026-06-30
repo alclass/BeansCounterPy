@@ -29,7 +29,7 @@ class KAreaURLFormer:
       mongo_collname=self.mongo_collname,
       mongo_dbname=self.mongo_dbname,
     )
-    self.dbretriever.retrieve_all()
+    self.dbretriever.fetch_all_n_store()
 
   def form_each_url(self):
     # Show first document

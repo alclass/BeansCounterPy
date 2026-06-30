@@ -7,7 +7,10 @@ Module with date & time (helper) functions
 import copy
 import datetime
 from dateutil.relativedelta import relativedelta
+from fontTools.misc.cython import returns
+
 import lib.datesetc.datehilofs as hilodt
+from art.books.packt.mongo.retrievers import retrievesBooksMetaFromMongo
 
 
 def transform_strdate_yyyymmdd_to_date_sep_by(strdate, sepchar='-'):
@@ -141,6 +144,22 @@ def transform_strdate_to_date_with_fieldpos_n_sep(strdate, fieldpos='yyyymmdd', 
     return None
   else:
     return transform_strdate_to_date_with_fieldpos(strdate, fieldpos, sepchar)
+
+
+def make_date_or_raise(pdate: datetime.date | str) -> datetime.date:
+  if pdate is not None:
+    odate = make_date_or_none(pdate)
+  if odate is None:
+    errmsg = f"{pdate} is not transformable to Python-date"
+    raise ValueError(errmsg)
+  return odate
+
+
+def make_date_or_none(pdate: datetime.date | str | None) -> datetime.date | None:
+  """
+  default to 'today' if pdate is None
+  """
+  return transform_strdate_to_date(pdate)
 
 
 def transform_strdate_to_date(strdate):
@@ -319,6 +338,14 @@ def make_date_w_day1_or_w_current_months_firstday(pdate=None):
       return today
     rdate = datetime.date(year=today.year, month=today.month, day=1)
   return rdate
+
+
+def make_date_with_day1_or_raise(pdate=None):
+  odate = make_date_with_day1_or_none(pdate)
+  if odate is None:
+    errmsg = f"{odate} is not a valid date"
+    raise ValueError(errmsg)
+  return odate
 
 
 def make_date_with_day1_or_none(pdate=None):

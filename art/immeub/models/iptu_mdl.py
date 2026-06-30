@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeub/cdutra/rent/model_f_billing.py
+art/immeub/cdutra/rent/addon_mod.py
 
 """
 import lib.datesetc.datefs as dtfs

@@ -3,6 +3,7 @@
 art/books/packt/BookModel.py
   Contains @dataclass BookInfoDC and class BookInfo
 """
+import json
 import re
 from dataclasses import dataclass, asdict
 from art.books.packt import PACKT_URL_TO_INTERPOL
@@ -26,10 +27,10 @@ class BookInfoDC:
     bi = None
     try:
       bi = cls(
-        title = doc['title'],
-        year = doc['year'],
-        authors = doc['authors'],
-        isbn13 = doc['isbn13'],
+        title=doc['title'],
+        year=doc['year'],
+        authors=doc['authors'],
+        isbn13=doc['isbn13'],
       )
     except (KeyError, TypeError):
       pass
@@ -40,7 +41,7 @@ class BookInfoDC:
         bi.packts_midurl_ka = doc['packts_midurl_ka']
     except (KeyError, TypeError):
       pass
-    return bi
+    return bi  # it may return None
 
   @property
   def asdict(self):
@@ -77,6 +78,11 @@ class BookInfoDC:
     pdict = {'packts_midurl_ka': self.packts_midurl_ka, 'isbn13': self.isbn13}
     books_url = PACKT_URL_TO_INTERPOL.format(**pdict)
     return books_url
+
+  def to_json(self):
+    "this method was not tested yet"
+    j = self.asdict
+    return json.load(j)
 
   def __str__(self):
     isbn13 = "<isbn13>" if self.isbn13 is None else self.isbn13

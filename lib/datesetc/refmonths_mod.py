@@ -9,7 +9,7 @@ import calendar
 import datetime
 from typing import Union
 from dateutil.relativedelta import relativedelta
-from sqlalchemy.testing import exclude
+# from sqlalchemy.testing import exclude
 import lib.datesetc.datefs as dfs  # dfs.transform_strdate_to_date
 import lib.datesetc.datehilofs as hilo  # dfs.transform_strdate_to_date
 MONTHS = [
@@ -74,6 +74,15 @@ def calc_refmonth_minus_n(pdate, n):
     return pdate
   n = -n
   return calc_refmonth_plus_n(pdate, n)
+
+
+def calc_n_completemonths_between_dates_or_raise(
+    start_date: Union[str, datetime.date], end_date: Union[str, datetime.date]
+  ) -> int | None:
+  n_months = calc_n_completemonths_between_dates(start_date, end_date)
+  if n_months is None:
+    errmsg = f"{start_date} & {end_date} fail to derive number of months in-between"
+    raise ValueError(errmsg)
 
 
 def calc_n_completemonths_between_dates(
@@ -308,7 +317,15 @@ def trans_year_into_dailydaterange(year=None):
   return dateini, datefim
 
 
-def get_monthslastday_via_calendar(pdate: datetime.date | None) -> int | None:
+def get_monthslastday_via_calendar_or_raise(pdate: datetime.date) -> int:
+  day = get_monthslastday_via_calendar_or_none(pdate)
+  if day is None:
+    errmsg = f"{pdate} has not a month nor a day"
+    raise ValueError(errmsg)
+  return day
+
+
+def get_monthslastday_via_calendar_or_none(pdate: datetime.date | None) -> int | None:
   if pdate is None:
     return None
   try:
@@ -325,7 +342,7 @@ def get_monthslastdate_via_calendar(pdate: datetime.date | None) -> datetime.dat
   indate = dfs.make_date_or_none(pdate)
   if indate is None:
     return None
-  lastday = get_monthslastday_via_calendar(pdate)
+  lastday = get_monthslastday_via_calendar_or_none(pdate)
   if lastday is None:
     return None
   try:
@@ -362,6 +379,14 @@ def get_monthslastdate_via_addition(pdate: datetime.date | None) -> datetime.dat
   return monthslastday_date
 
 
+def make_refmonthdate_or_raise(refmonthdate: datetime.date | str) -> datetime.date:
+  pdate = make_refmonthdate_or_none(refmonthdate)
+  if pdate is None:
+    errmsg = f"{refmonthdate} is not a refmonthdate"
+    raise ValueError(errmsg)
+  return pdate
+
+
 def make_refmonthdate_or_none(refmonthdate: datetime.date | str | None) -> datetime.date | None:
   if refmonthdate is None:
     return None
@@ -386,7 +411,7 @@ def spawn_inidate_n_fimdate_fr_refmonth(refmonthdate: datetime.date | None) -> t
   if refmonthdate is None:
     return None, None
   inidate = refmonthdate  # notice datetime.date 'variables' are immutable
-  last_day_in_month = get_monthslastday_via_calendar(refmonthdate)
+  last_day_in_month = get_monthslastday_via_calendar_or_raise(refmonthdate)
   try:
     fimdate = datetime.date(year=inidate.year, month=inidate.month, day=last_day_in_month)
     return inidate, fimdate
@@ -414,7 +439,7 @@ def adhoctest1():
   monthslastdate = get_monthslastdate_via_addition(pdate)
   scrmsg = f"get_monthslastdate_via_addition({pdate}) -> {monthslastdate}"
   print(scrmsg)
-  monthslastday = get_monthslastday_via_calendar(pdate)
+  monthslastday = get_monthslastday_via_calendar_or_none(pdate)
   scrmsg = f"get_monthslastday_via_calendar({pdate}) -> {monthslastday}"
   print(scrmsg)
   monthslastday = get_monthslastday_via_addition(pdate)

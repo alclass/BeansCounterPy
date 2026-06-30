@@ -5,9 +5,8 @@ art/immeub/models/bill_maker.py
 """
 import locale
 from art.immeub.models.billing_mod import PayItem
-import lib.datesetc.refmonths_mod as rm
 from dinero import Dinero
-from dinero.currencies import BRL # USD, EUR
+from dinero.currencies import BRL  # USD, EUR
 import datetime
 import lib.datesetc.refmonths_mod as rm
 MONTHS = rm.MONTHS
@@ -22,7 +21,7 @@ def process():
   payitem = PayItem(
     seq=1,
     descr='aluguel',
-    ori_refmont=rm.make_refmonthdate_or_none(today),
+    ori_refmont=rm.make_refmonthdate_or_raise(today),
     price=Dinero(strprice, BRL)  # Safe string initialization
   )
   # payitem.add_mora()
