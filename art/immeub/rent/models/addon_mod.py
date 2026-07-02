@@ -6,7 +6,6 @@ art/immeub/cdutra/rent/addon_mod.py
 from collections import namedtuple
 import datetime
 from dataclasses import dataclass, field, asdict
-import art.immeub.models.iptu_mdl as iptu_m
 from dinero import Dinero
 DEFAULT_MUNICIPIONAME = 'Rio de Janeiro - RJ'
 reais_baserent = 'reais_baserent'

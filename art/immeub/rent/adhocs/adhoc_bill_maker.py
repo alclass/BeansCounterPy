@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-art/immeub/models/bill_maker.py
+art/immeub/models/adhoc_bill_maker.py
 
 """
 import locale
-from art.immeub.models.billing_mod import PayItem
+from art.immeub.rent.bill.billing_mod import PayItem
 from dinero import Dinero
 from dinero.currencies import BRL  # USD, EUR
 import datetime

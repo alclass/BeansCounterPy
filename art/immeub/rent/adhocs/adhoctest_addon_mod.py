@@ -3,7 +3,7 @@
 art/immeub/cdutra/rent/addon_mod.py
 
 """
-import art.immeub.rent.addon_mod as addonmod  # AddOnItem
+import art.immeub.rent.models.addon_mod as addonmod  # AddOnItem
 
 
 def adhoctest1():
