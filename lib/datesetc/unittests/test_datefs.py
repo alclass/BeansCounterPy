@@ -204,7 +204,6 @@ class TestInspectNGetDateFromStr(unittest.TestCase):
     self.assertEqual(exp_tuple, ret_tuple)
     # 4 '/', "2020/2/32" => None, None (notice day is 32, so date is None)
     strdate, sep = "2020/2/32", '/'
-    pdate = datetime.date(2020, 2, 1)
     exp_tuple = (None, None)
     ret_tuple = dtfs.inspect_datefieldorder_by_sep(
       sep=sep, strdate=strdate

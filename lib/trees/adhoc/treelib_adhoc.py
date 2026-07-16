@@ -3,6 +3,7 @@
 lib/trees/adhoc/treelib_adhoc.py
   Adhoctests (library) treelib
 
+https://treelib.readthedocs.io/en/latest/
 """
 from treelib import Tree
 

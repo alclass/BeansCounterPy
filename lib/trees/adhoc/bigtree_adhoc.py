@@ -3,6 +3,7 @@
 lib/trees/adhoc/bigtree_adhoc.py
   Adhoctests (library) bigtree
 
+https://bigtree.readthedocs.io/stable/
 """
 from bigtree import dict_to_tree
 from bigtree import dataframe_to_tree
