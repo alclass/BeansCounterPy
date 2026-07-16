@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<--
+  immeub/contract_crud2.html
+  js/immeub/contract_crud2.html
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contract & Tenant Sync</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 30px; background: #fafafa; color: #222; }
+        .wrapper { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .col { flex: 1; background: #f4f6f8; padding: 15px; border-radius: 6px; }
+        .input-box { margin-bottom: 10px; }
+        label { display: block; font-weight: bold; font-size: 0.85em; margin-bottom: 3px; }
+        input, select { width: 100%; padding: 6px; box-sizing: border-box; }
+        button { background: #0066cc; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #004499; }
+        .contract-card { border-left: 4px solid #0066cc; background: #f9f9f9; padding: 12px; margin-bottom: 10px; position: relative; }
+        .del-btn { position: absolute; top: 12px; right: 12px; background: #cc0000; }
+        .del-btn:hover { background: #990000; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <h1>Simplified Contract Portal</h1>
+
+    <div class="row">
+        <!-- Add Tenant Panel -->
+        <div class="col">
+            <h3>1. Create Tenant Profile</h3>
+            <div class="input-box">
+                <label>Full Name</label>
+                <input type="text" id="t_name" placeholder="John Doe">
+            </div>
+            <div class="input-box">
+                <label>Email Address</label>
+                <input type="email" id="t_email" placeholder="john@doe.com">
+            </div>
+            <button onclick="addTenant()">Register Tenant</button>
+        </div>
+
+        <!-- Add Contract Panel -->
+        <div class="col">
+            <h3>2. Generate Rent Contract</h3>
+            <div class="input-box">
+                <label>Contract Number</label>
+                <input type="text" id="c_num" placeholder="CON-9982">
+            </div>
+            <div class="input-box">
+                <label>Select Tenants (Hold Ctrl/Cmd)</label>
+                <select id="c_tenant_select" multiple></select>
+            </div>
+            <button onclick="addContract()">Bind & Create Contract</button>
+        </div>
+    </div>
+
+    <h3>Active Leases</h3>
+    <div id="display_area">Loading context...</div>
+</div>
+
+<script>
+  const BASE_URL = "http://127.0.0.1:8000";
+
+  async function syncData() {
+    // Fetch Tenants
+    const tRes = await fetch(`${BASE_URL}/tenants`);
+    const tenants = await tRes.json();
+    const select = document.getElementById("c_tenant_select");
+    select.innerHTML = tenants.map(t => `<option value="${t._id}">${t.name}</option>`).join('');
+
+    // Fetch Contracts
+    const cRes = await fetch(`${BASE_URL}/contracts`);
+    const contracts = await cRes.json();
+    const display = document.getElementById("display_area");
+
+    if (contracts.length === 0) {
+      display.innerHTML = "<p>No active documents registered.</p>";
+      return;
+    }
+
+    display.innerHTML = contracts.map(c => `
+            <div class="contract-card">
+                <button class="del-btn" onclick="deleteContract('${c._id}')">Delete</button>
+                <strong>File Ref ID:</strong> ${c._id}<br>
+                <strong>Lease Code:</strong> ${c.contract_number}
+                <ul>
+                    ${c.tenants.map(t => `<li>${t.name} (${t.email})</li>`).join('')}
+                </ul>
+            </div>
+        `).join('');
+  }
+
+  async function addTenant() {
+    await fetch(`${BASE_URL}/tenants`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name: document.getElementById('t_name').value,
+        email: document.getElementById('t_email').value
+      })
+    });
+    syncData();
+  }
+
+  async function addContract() {
+    const options = document.getElementById('c_tenant_select').options;
+    const ids = [];
+    for (let opt of options) {
+      if (opt.selected) ids.push(opt.value);
+    }
+
+    await fetch(`${BASE_URL}/contracts`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        contract_number: document.getElementById('c_num').value,
+        tenant_ids: ids
+      })
+    });
+    syncData();
+  }
+
+  async function deleteContract(id) {
+    await fetch(`${BASE_URL}/contracts/${id}`, { method: 'DELETE' });
+    syncData();
+  }
+
+  window.onload = syncData;
+</script>
+</body>
+</html>

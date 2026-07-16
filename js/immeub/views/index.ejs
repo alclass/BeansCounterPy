@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Overview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            margin: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .header h2 {
+            margin: 0 0 5px 0;
+        }
+        .header .address {
+            white-space: pre-line;
+            color: #555;
+        }
+        .header .email {
+            color: #1a73e8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .right {
+            text-align: right;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .grand-total {
+            margin-top: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: right;
+        }
+        .addon-link {
+            color: #1a73e8;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<h1>Billing Cards</h1>
+
+<% cards.forEach(card => { %>
+    <div class="card">
+        <!-- Header: payor name, address, email -->
+        <div class="header">
+            <h2><%= card.payor_name %></h2>
+            <div class="address"><%= card.address.replace(/\n/g, '<br>') %></div>
+            <div class="email"><%= card.email %></div>
+        </div>
+
+        <!-- Invoice table -->
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th class="right">Original Value</th>
+                <th class="right">Add‑ons</th>
+                <th class="right">Total for Item</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% card.items.forEach(item => { %>
+                <tr>
+                    <td><%= item.seq %></td>
+                    <td><%= item.description %></td>
+                    <td class="right"><%= item.original_value.toFixed(2) %></td>
+                    <td class="right">
+                        <% if (item.add_ons && item.add_ons > 0) { %>
+                            <a href="#" class="addon-link"><%= item.add_ons.toFixed(2) %></a>
+                        <% } else { %>
+                            0.00
+                        <% } %>
+                    </td>
+                    <td class="right"><%= item.total_for_item.toFixed(2) %></td>
+                </tr>
+            <% }) %>
+            <!-- Footer row: total sum of all items -->
+            <tr class="total-row">
+                <td colspan="4" class="right">Card Total</td>
+                <td class="right"><%= card.card_total.toFixed(2) %></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+<% }) %>
+</body>
+</html>
