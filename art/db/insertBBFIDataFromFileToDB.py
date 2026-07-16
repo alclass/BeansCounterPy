@@ -23,7 +23,7 @@ class DataLFromFilesToDBLoader:
 
   def __init__(self, bank3letter):
     self.bank3letter = bank3letter
-    self.bbfibasefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
+    self.bbfibasefolderpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
     self.total_read_files = 0
     self.total_fundos = 0
     self.total_inserted = 0

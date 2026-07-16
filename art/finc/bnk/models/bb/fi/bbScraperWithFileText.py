@@ -280,7 +280,7 @@ class BBExtractScraperWithFileText(fAplic.FundoAplic):
 
 def adhoctest():
   bank3letter = 'bdb'
-  fibasefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(bank3letter)
+  fibasefolderpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(bank3letter)
   finder = lkup.DatePrefixedOSEntriesFinder(fibasefolderpath)
   scrapetext = open(finder.greater_yearmonth_filepath, encoding='latin1').read()
   scraper = BBExtractScraperWithFileText(scrapetext, finder.refmonthdate_fim)

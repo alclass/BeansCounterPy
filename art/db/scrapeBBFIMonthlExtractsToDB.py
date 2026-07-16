@@ -24,16 +24,16 @@ class BBFIDataFilesToDBInsertor:
     """
     self.bank3letter = bank3letter
     self.treat_bank3letter()
-    fibasedirpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
+    fibasedirpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
     self.finder = lkup.DatePrefixedOSEntriesFinder(fibasedirpath)
     self.fundos = []
     # self.yearmonth_ini = self.finder.refmonth_ini
     # self.yearmonth_fim = self.finder.refmonth_fim
 
   def treat_bank3letter(self):
-    if self.bank3letter is None or not bkge.BANK.does_bank3letter_exist(self.bank3letter):
+    if self.bank3letter is None or not bkge.GenBank.does_bank3letter_exist(self.bank3letter):
       self.bank3letter = BB_BANK3LETTER
-    if not bkge.BANK.does_bank3letter_exist(self.bank3letter):
+    if not bkge.GenBank.does_bank3letter_exist(self.bank3letter):
       error_msg = 'Error: bank3letter [%s] does not exist.' % self.bank3letter
       raise ValueError(error_msg)
 

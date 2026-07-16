@@ -28,7 +28,7 @@ class BBFIFileStaticFinder:
 
   @classmethod
   def get_basefolder_for_daily_results(cls):
-    bbfi_folderpath = bkgen.BANK.get_bank_fi_folderpath_by_its3letter(ReportProps.BCB_BANK3LETTER)
+    bbfi_folderpath = bkgen.GenBank.get_bank_fi_folderpath_by_its3letter(ReportProps.BCB_BANK3LETTER)
     midpath = os.path.join(bbfi_folderpath, ReportProps.DAILY_RESULTS_MIDDLEPATH)
     return midpath
 

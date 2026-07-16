@@ -28,7 +28,7 @@ class ExampleFundoFile:
   @property
   def folderpath(self):
     if self._folderpath is None:
-      fibasefolderpath = bkgen.BANK.get_bank_fi_folderpath_by_its3letter(self.BANK3LETTER)
+      fibasefolderpath = bkgen.GenBank.get_bank_fi_folderpath_by_its3letter(self.BANK3LETTER)
       discoverer = find.DatePrefixedOSEntriesFinder(rootdirpath=fibasefolderpath)
       self._folderpath = discoverer.find_yearprefix_folderpath_by_year(self.YEAR)
     return self._folderpath

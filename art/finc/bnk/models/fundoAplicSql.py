@@ -26,7 +26,7 @@ class FundoAplicSql(fAplic.FundoAplic):
 
   def treat_tablename(self):
     if self.tablename is None:
-      self.tablename = bkge.BANK.SQL_TABLENAME
+      self.tablename = bkge.GenBank.SQL_TABLENAME
 
   @property
   def str_questionmarks(self):

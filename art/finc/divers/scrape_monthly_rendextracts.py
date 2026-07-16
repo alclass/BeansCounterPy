@@ -20,11 +20,11 @@ class MonthlyRoller:
 
   def __init__(self, yearmonth_ini=None, yearmonth_fim=None, bank3letter=None, financkind=None):
     self.bank3letter = bank3letter
-    if self.bank3letter is None or not bkge.BANK.does_bank3letter_exist(bank3letter):
+    if self.bank3letter is None or not bkge.GenBank.does_bank3letter_exist(bank3letter):
       error_msg = 'Error: bank3letter [%s] does not exist.' % self.bank3letter
       raise ValueError(error_msg)
     self.financkind = financkind
-    bankfibasefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
+    bankfibasefolderpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
     self.pathfinder = finder.DatePrefixedOSEntriesFinder(
       rootdirpath=bankfibasefolderpath,
     )

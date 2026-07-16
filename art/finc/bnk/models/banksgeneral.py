@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+art/finc/bnk/models/banksgeneral.py
+
 """
 import os
 from lib.osfs import filefolder_retriever_fs as osfs
@@ -8,7 +10,7 @@ import settings as sett
 import art.finc.bnk.models.bank_data_settings as bksett
 
 
-class BANK:
+class GenBank:
 
   Props = bksett.BankProps
   BANKDICT_BY_3LETTER = None  # it will "lazily" be init'd
@@ -103,7 +105,7 @@ class BANK:
 
   @classmethod
   def get_bank_rootdirpath_by_its3letter(cls, bank3letter):
-    banknumber = BANK.get_banknumber_by_its3letter(bank3letter)
+    banknumber = GenBank.get_banknumber_by_its3letter(bank3letter)
     return cls.get_bank_rootdirpath_by_number(banknumber)
 
   @classmethod
@@ -152,12 +154,12 @@ def adhoctest():
 
   """
   bank3letter = 'bdb'
-  banknumber = BANK.get_banknumber_by_its3letter(bank3letter)
-  bank_folderpath = BANK.get_bank_rootdirpath_by_number(banknumber)
+  banknumber = GenBank.get_banknumber_by_its3letter(bank3letter)
+  bank_folderpath = GenBank.get_bank_rootdirpath_by_number(banknumber)
   print('bank3letter [', bank3letter, '] bank_folderpath =', bank_folderpath)
-  s = BANK.mount_text_list_available_banks()
+  s = GenBank.mount_text_list_available_banks()
   print(s)
-  folderpath = BANK.get_bank_fi_folderpath_by_its3letter(bank3letter)
+  folderpath = GenBank.get_bank_fi_folderpath_by_its3letter(bank3letter)
   finder = lookup.DatePrefixedOSEntriesFinder(folderpath)
   print('refmonthdate_ini, refmonthdate_fim', finder.refmonthdate_ini, finder.refmonthdate_fim)
 

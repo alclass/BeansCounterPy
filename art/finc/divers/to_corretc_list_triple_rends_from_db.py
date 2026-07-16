@@ -25,7 +25,7 @@ class TripleRendLister:
 
   def treat_ini_params(self):
     nonelist = []
-    if self.bank3letter is None or not art.bank.banks.banksgeneral.BANK.is3letter_available(self.bank3letter):
+    if self.bank3letter is None or not art.bank.banks.banksgeneral.GenBank.is3letter_available(self.bank3letter):
       nonelist.append('banklist')
     if self.refmonthdate_ini is None or type(self.refmonthdate_ini) != datetime.date:
       nonelist.append('refmonthdate_ini')

@@ -29,7 +29,7 @@ class BankOSFolderFileFinder:
 
   def __init__(self, bank3letter, typecat=None, reporttype=None):
     self.bank3letter = bank3letter
-    self.banknumber = bkgen.BANK.get_banknumber_by_its3letter(self.bank3letter)
+    self.banknumber = bkgen.GenBank.get_banknumber_by_its3letter(self.bank3letter)
     self._basefolderpath = None
     self._typecat = typecat
     _ = self.typecat

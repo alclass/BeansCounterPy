@@ -6,7 +6,7 @@ import os
 import xml.etree.ElementTree as eT
 import art.finc.bnk.models.fundoAplic as fAplic
 import art.finc.bnk.models.banksgeneral as bkge
-CEF_BANK3LETTER = bkge.BANK.BANK3LETTER_CEF
+CEF_BANK3LETTER = bkge.GenBank.BANK3LETTER_CEF
 
 
 def parse_xml_file(xmlfilepath):

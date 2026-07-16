@@ -29,7 +29,7 @@ class TableCreator:
       self.sqlitefilepath = sett.get_app_sqlite_filepath()
     if self.tablename is None or not os.path.isfile(self.tablename):
       # the one defined in static/classmethod class BANK
-      self.tablename = bkge.BANK.SQL_TABLENAME
+      self.tablename = bkge.GenBank.SQL_TABLENAME
 
   def get_connection(self):
     conn = sqlite3.connect(self.sqlitefilepath)

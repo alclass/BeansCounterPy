@@ -44,7 +44,7 @@ class CefFiXMLDataExtractor:
       BB uses scraping directly from data text files.
     """
     self._outdict = None
-    self.bank3letter = bkge.BANK.BANK3LETTER_CEF
+    self.bank3letter = bkge.GenBank.BANK3LETTER_CEF
     self.xmlpos_mapper = itPos.CefFIsPosIndexMapper
     self._xmlfilepath = xmlfilepath
     self._xmlfilename = None

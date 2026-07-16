@@ -18,7 +18,7 @@ class BankFoldersDiscover:
   @property
   def basefolderpath(self):
     if self._basefolderpath is None:
-      self._basefolderpath = art.bank.banks.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
+      self._basefolderpath = art.bank.banks.banksgeneral.GenBank.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
     return self._basefolderpath
 
   @property

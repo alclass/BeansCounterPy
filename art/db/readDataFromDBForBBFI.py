@@ -29,9 +29,9 @@ def create_fundos_sqlitedbtable_if_not_exists():
 class DataFromDBReader:
 
   def __init__(self, bank3letter):
-    self.tablename = bkge.BANK.SQL_TABLENAME
+    self.tablename = bkge.GenBank.SQL_TABLENAME
     self.bank3letter = bank3letter
-    self.bbfibasefolderpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
+    self.bbfibasefolderpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(self.bank3letter)
     self.total_read_recs = 0
     self._total_fundos = 0
     self.total_inserted = 0

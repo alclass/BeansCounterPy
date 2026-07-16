@@ -19,7 +19,7 @@ import lib.osfs.filefolder_retriever_fs as osfs
 import art.finc.bnk.models.banksgeneral as bkge
 import art.finc.bnk.models.cef.listXmlNodesAndValuesForCefFi as prsXml  # prsXml.parse_xml_file
 # import models.models.fundoAplic as fAplic
-CEF_BANK3LETTER = bkge.BANK.BANK3LETTER_CEF
+CEF_BANK3LETTER = bkge.GenBank.BANK3LETTER_CEF
 
 
 class CefFiXMLDataFileExtractor:
@@ -46,7 +46,7 @@ observed: 2023-08 Especial RF LP 94528,97 Extrato Mensal CEF.xml
 39 seq2 text 0,00 # IRRF
   """
 
-  CEF_BANK3LETTER = bkge.BANK.BANK3LETTER_CEF
+  CEF_BANK3LETTER = bkge.GenBank.BANK3LETTER_CEF
 
   def __init__(self, xmlfilepath=None):
     self.fundo = None
@@ -118,7 +118,7 @@ class XMLFolder:
 
 
 def parse_all_xmlfiles(refmonthini, refmonthfim):
-  basedirpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
+  basedirpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
   finder = fndr.DatePrefixedOSEntriesFinder(rootdirpath=basedirpath)
   for i, xmlfilepath in enumerate(
       finder.gen_filepaths_within_daterange_or_wholeinterval(
@@ -142,7 +142,7 @@ def adhoctest():
   # yearmonthfolderpath = finder.find_yearprefix_folderpath_by_year(year)
   # xmlfilepaths = finder.gen_filepaths_within_daterange_or_wholeinterval()
   """
-  basedirpath = bkge.BANK.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
+  basedirpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
   finder = fndr.DatePrefixedOSEntriesFinder(rootdirpath=basedirpath)
   seq = 0
   for xmlfilepath in finder.gen_filepaths_within_daterange_or_wholeinterval(dot_ext='xml'):

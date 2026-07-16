@@ -29,18 +29,18 @@ def find_methodcall_on_bank3letter(bank3letter):
 
   """
   extract_method_handler = None
-  if bank3letter == bkgen.BANK.BANK3LETTER_BDB:
+  if bank3letter == bkgen.GenBank.BANK3LETTER_BDB:
     extract_method_handler = extrBB.SpecificBBExtract  # to instantiate with filepath that contains the scrapetext
-  elif bank3letter == bkgen.BANK.BANK3LETTER_CEF:
+  elif bank3letter == bkgen.GenBank.BANK3LETTER_CEF:
     extract_method_handler = extrCef.CefFiXMLDataExtractor  # yearprefixed_folderpath
   return extract_method_handler
 
 
 def distributor(bank3letter='cef', refmonthini=None, refmonthfim=None):
   # step 1 get bnk's data rootdirpath
-  folderpath = bkgen.BANK.get_bank_fi_folderpath_by_its3letter(bank3letter)
+  folderpath = bkgen.GenBank.get_bank_fi_folderpath_by_its3letter(bank3letter)
   # step 2 get a discoverer/finder object based bnk's class handler (each bnk has its own class, this )
-  finder = bkgen.BANK.get_pathentries_finderobj_by_bank3letter(bank3letter)
+  finder = bkgen.GenBank.get_pathentries_finderobj_by_bank3letter(bank3letter)
   finder.__init__(folderpath)
   scraper_classhandler = find_methodcall_on_bank3letter(bank3letter)
   scraper_classhandler(finder.greater_yearprefix_fopath)

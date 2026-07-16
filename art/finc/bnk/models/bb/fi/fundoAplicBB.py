@@ -25,7 +25,7 @@ class FundoAplicBB(fAplic.FundoAplic):
   BANK3LETTER = 'bdb'
 
   def __init__(self):
-    self.finder = bkge.BANK.get_pathentries_finderobj_by_bank3letter(self.BANK3LETTER)
+    self.finder = bkge.GenBank.get_pathentries_finderobj_by_bank3letter(self.BANK3LETTER)
     # self.finder is an osfs-entries look-up class object, it finds folders, data files and daterange
     super().__init__()
     self.bank3letter = self.BANK3LETTER
