@@ -35,6 +35,15 @@ def get_3letter_extmes(nmonth):
   return None
 
 
+def trnsf_refmonth_to_yyyydashmm(refmonth: datetime.date) -> str | None:
+  try:
+    yyyydashmm = f"{refmonth.year}-{refmonth.month:02}"
+    return yyyydashmm
+  except (AttributeError, TypeError):
+    pass
+  return None
+
+
 def calc_n_calendar_months_in_between(
     date1: datetime.date | None, date2: datetime.date | None,
   ):

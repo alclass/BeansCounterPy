@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 art/immeub/inst/cdutra/aliss_dc_accomp/accdata_deb_cre_alssn.py
   This is a data-dictlist module to be inserted in a DB "later on".
@@ -10,103 +9,112 @@ art/immeub/inst/cdutra/aliss_dc_accomp/accdata_deb_cre_alssn.py
 To imported:
   art.immeub.inst.cdutra.aliss_dc_accomp.accdata_deb_cre_alssn as accdt.items
 """
+from dinero import Dinero
+from dinero.currencies import BRL
+
+
+def get_brl_dinero(value):
+  return Dinero(str(value), BRL)
+
+
 items = []
-ic_inivalue_d1 = 24458.75 * 100
+inivalue_d1 = Dinero(24458.75, BRL)
+dinero_zero = Dinero('0', BRL)
 item = {
   'refmonth': '2025-11',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': 0,
-  'ic_inivalue_d2': 0,
-  'ic_cre_in_tasks': 302.58 * 100,
-  'ic_cre_in_pay': 600.0 * 100,
-  'ic_cre_in_trnsp_n_frut': 0,
-  'ic_deb_giro': 0,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': dinero_zero,
+  '_inivalue_d2': dinero_zero,
+  'cre_in_tasks': get_brl_dinero(302.58),
+  'cre_in_pay': get_brl_dinero(600.0),
+  'cre_in_trnsp_n_frut': dinero_zero,
+  'deb_giro': dinero_zero,
 }
 items.append(item)
-ic_monthlymeta = 500 * 100
-ic_inivalue_d1 -= ic_monthlymeta
+monthlymeta = get_brl_dinero(500)
+inivalue_d1 -= monthlymeta
 item = {
   'refmonth': '2025-12',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': None,
-  'ic_inivalue_d2': None,
-  'ic_cre_in_tasks': 0,
-  'ic_cre_in_pay': 600.0 * 100,
-  'ic_cre_in_trnsp_n_frut': -500.0 * 100,
-  'ic_deb_giro': 0,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': dinero_zero,
+  'cre_in_pay': get_brl_dinero(600),
+  'cre_in_trnsp_n_frut': get_brl_dinero(-500.0),
+  'deb_giro': dinero_zero,
 }
 items.append(item)
-ic_inivalue_d1 -= ic_monthlymeta
+inivalue_d1 -= monthlymeta
 item = {
   'refmonth': '2026-01',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': None,
-  'ic_inivalue_d2': None,
-  'ic_cre_in_tasks': 0,
-  'ic_cre_in_pay': 500.0 * 100,
-  'ic_cre_in_trnsp_n_frut': 0,
-  'ic_deb_giro': 0.0,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': dinero_zero,
+  'cre_in_pay': get_brl_dinero(500),
+  'cre_in_trnsp_n_frut': dinero_zero,
+  'deb_giro': dinero_zero,
 }
 items.append(item)
-ic_cre_concedido_p_arrend = 58.75 * 100
-ic_inivalue_d1 -= ic_monthlymeta - ic_cre_concedido_p_arrend
+cre_concedido_p_arrend = get_brl_dinero(58.75)
+inivalue_d1 -= monthlymeta + cre_concedido_p_arrend
 item = {
   'refmonth': '2026-02',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': None,
-  'ic_inivalue_d2': None,
-  'ic_cre_in_tasks': 0.0,
-  'ic_cre_in_pay': 0.0,
-  'ic_cre_in_trnsp_n_frut': 0.0,
-  'ic_deb_giro': 0.0,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': dinero_zero,
+  'cre_in_pay': dinero_zero,
+  'cre_in_trnsp_n_frut': dinero_zero,
+  'deb_giro': dinero_zero,
 }
 items.append(item)
-ic_inivalue_d1 -= ic_monthlymeta
+inivalue_d1 -= monthlymeta
 item = {
   'refmonth': '2026-03',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': None,
-  'ic_inivalue_d2': None,
-  'ic_cre_in_tasks': 114.32 * 100,
-  'ic_cre_in_pay': 0,
-  'ic_cre_in_trnsp_n_frut': 26.77 * 100,
-  'ic_deb_giro': -200.0 * 100,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': get_brl_dinero(114.32),
+  'cre_in_pay': dinero_zero,
+  'cre_in_trnsp_n_frut': get_brl_dinero(26.77),
+  'deb_giro': get_brl_dinero(-200)
 }
 items.append(item)
-ic_inivalue_d1 -= ic_monthlymeta
+inivalue_d1 -= monthlymeta
 item = {
   'refmonth': '2026-04',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': None,
-  'ic_inivalue_d2': None,
-  'ic_cre_in_tasks': 210.62 * 100,
-  'ic_cre_in_pay': 0,
-  'ic_cre_in_trnsp_n_frut': 45.68 * 100,
-  'ic_deb_giro': -650.0 * 100,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': get_brl_dinero(210.62),
+  'cre_in_pay': dinero_zero,
+  'cre_in_trnsp_n_frut': get_brl_dinero(45.68),
+  'deb_giro': get_brl_dinero(-650.0)
 }
 
 items.append(item)
-ic_inivalue_d1 -= ic_monthlymeta
+inivalue_d1 -= monthlymeta
 item = {
   'refmonth': '2026-05',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': None,
-  'ic_inivalue_d2': None,
-  'ic_cre_in_tasks': 391.65 * 100,
-  'ic_cre_in_pay': 0,
-  'ic_cre_in_trnsp_n_frut': 163.41 * 100,
-  'ic_deb_giro': -50.0 * 100,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': get_brl_dinero(391.65),
+  'cre_in_pay': dinero_zero,
+  'cre_in_trnsp_n_frut': get_brl_dinero(163.41),
+  'deb_giro': get_brl_dinero(-50.0),
 }
 items.append(item)
-ic_inivalue_d1 -= ic_monthlymeta
+inivalue_d1 -= monthlymeta
 item = {
   'refmonth': '2026-06',
-  'ic_inivalue_d1': ic_inivalue_d1,
-  'ic_inivalue_res': None,
-  'ic_inivalue_d2': None,
-  'ic_cre_in_tasks': 556.15 * 100,
-  'ic_cre_in_pay': 0,
-  'ic_cre_in_trnsp_n_frut': 196.22 * 100,
-  'ic_deb_giro': -700.0 * 100,
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': get_brl_dinero(556.15),
+  'cre_in_pay': dinero_zero,
+  'cre_in_trnsp_n_frut': get_brl_dinero(196.22),
+  'deb_giro': get_brl_dinero(-700),
 }
 items.append(item)

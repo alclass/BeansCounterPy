@@ -9,6 +9,7 @@ venv/
 .project
 .settings/
 *.log
+*.pdf
 *.pyc
 *.sqlite
 **/local_settings.py
