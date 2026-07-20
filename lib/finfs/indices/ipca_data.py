@@ -1,5 +1,8 @@
 """
 lib/finfs/indices/ipca_data.py
+
+A série histórico pode ser baixada xls-zipada de:
+  https://ftp.ibge.gov.br/Precos_Indices_de_Precos_ao_Consumidor/IPCA/Serie_Historica/ipca_SerieHist.zip
 """
 data_2019_2026 = {
   2019: [
