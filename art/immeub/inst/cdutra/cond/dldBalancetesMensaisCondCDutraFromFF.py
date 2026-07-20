@@ -53,10 +53,18 @@ Notice on the "real estate code":
 import argparse
 import copy
 import datetime
-from dateutil.relativedelta import relativedelta  # for adding & subtracting months in dates
-import lib.datesetc.refmonth_fs as rmfs
 import os
 import sys
+from dateutil.relativedelta import relativedelta  # for adding & subtracting months in dates
+import lib.datesetc.refmonth_fs as rmfs
+import art.immeub.inst.cdutra.cond as init
+explain_name = 'balancete sintético mensal Cond CDutra'
+CDUT_IMMEUBCODE_IN_FF = init.CDUT_IMMEUBCODE_IN_FF
+filename_to_interpol = "{year}-{month:02d} " + explain_name + ".html"
+cli_to_interpol = ('wget -c "https://fernandoefernandes.com.br/'
+                   'ffnet_sys/sefudoff.php?cod={immeubcode}&period={month:02d}/{year}"'
+                   ' -O "' + filename_to_interpol + '"')
+
 parser = argparse.ArgumentParser(description="Baixa balancete mensal CDutra")
 parser.add_argument("--mesini", type=str,
                     help="mês referência inicial")
@@ -72,28 +80,6 @@ def extract_ref_from_cli(clistr):
     strmmdashyyyy = clistr[posini: posini+8]
     return strmmdashyyyy
   return 'refmonth not found'
-
-
-def transform_str_to_date_or_none(pdate):
-  if pdate is None:
-    return None
-  try:
-    pdate = str(pdate)
-    pp = pdate.split('/')
-    mm = int(pp[0])
-    yyyy = int(pp[1])
-    return datetime.date(year=yyyy, month=mm, day=1)
-  except (IndexError, ValueError):  # there is no AttributeError hear for None is tested above
-    pass
-  return None
-
-
-explain_name = 'balancete sintético mensal Cond CDutra'
-DEFAULT_IMMEUBCODE = '0154'
-filename_to_interpol = "{year}-{month:02d} " + explain_name + ".html"
-cli_to_interpol = ('wget -c "https://fernandoefernandes.com.br/'
-                   'ffnet_sys/sefudoff.php?cod={immeubcode}&period={month:02d}/{year}"'
-                   ' -O "' + filename_to_interpol + '"')
 
 
 class Downloader:
@@ -112,8 +98,8 @@ class Downloader:
     (The algorithm below shows how None values are treated -- how the default months are applied if needed.)
     Obs: this method does not impede future dates.
     """
-    self.refmonth_ini = rmfs.make_refmonthdate_or_none(self.refmonth_ini)
-    self.refmonth_fim = rmfs.make_refmonthdate_or_none(self.refmonth_fim)
+    self.refmonth_ini = rmfs.make_refmonth_or_none(self.refmonth_ini)
+    self.refmonth_fim = rmfs.make_refmonth_or_none(self.refmonth_fim)
     if self.refmonth_ini is None:
       # okay, refmonth_ini will now depend on refmonth_fim
       if self.refmonth_fim is None:
@@ -144,7 +130,7 @@ class Downloader:
     )
     if self.immeubcode is None:
       try:
-        self.immeubcode = DEFAULT_IMMEUBCODE
+        self.immeubcode = CDUT_IMMEUBCODE_IN_FF
         return
       except NameError:
         error_msg = error_msg_to_interpol % "not defined"

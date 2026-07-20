@@ -23,9 +23,12 @@ For item (c), Beanie handles the conversion automatically:
   the actual Python object instance dynamically.
 
 """
+import datetime
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from dinero import Dinero
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from beanie import Document, Link, init_beanie
@@ -43,25 +46,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==========================================
-# MONGO DOCUMENTS (DB LAYOUT)
-# ==========================================
-class Person(Document):
-    name: str
-    email: str
-    class Settings: name = "persons"
 
-class Location(Document):
-    address: str
-    city: str
-    monthly_rent: float
-    class Settings: name = "locations"
 
-class Contract(Document):
-    contract_number: str
-    location: Link[Location]
-    tenants: List[Link[Person]]
-    class Settings: name = "contracts"
+
+
+
+
 
 # ==========================================
 # PYDANTIC API REQUEST BODIES (Item B)
