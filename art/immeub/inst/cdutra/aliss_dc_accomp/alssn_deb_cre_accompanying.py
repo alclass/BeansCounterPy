@@ -28,12 +28,15 @@ import inspect
 import datetime
 import decimal
 from dinero import Dinero
+from dinero.currencies import BRL
 from dataclasses import dataclass, field
 import art.immeub.inst.cdutra.aliss_dc_accomp.accdata_deb_cre_alssn as accdt  # accdt.items
 import lib.datesetc.refmonth_fs as rmfs
 import lib.finfs.indices.indices_fetch_n_fs as ipfs  # ipfs.ipca_for_refmonth
+import lib.finfs.dinerofs.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
 VALOR_META_MENSAL_BRL = accdt.get_brl_dinero(500)
 REFMONTH_INI_FOR_META = '2025-10'
+DINERO_ZERO = Dinero(str("0"), BRL)
 
 
 def get_abs_dec_corrmone_n_intrst(inivalue, refmonth, fix=0.02):
@@ -92,7 +95,7 @@ class DebCredAccompanier:
   REFMONTH_INI_FOR_META: datetime.date = rmfs.make_refmonth_or_raise(REFMONTH_INI_FOR_META)
   VALOR_META_MENSAL_BRL: Dinero = field(default_factory=lambda: VALOR_META_MENSAL_BRL)
   _corrmone_n_intrst_if_any: Dinero = None  # represents the amount increase due to fix interest and variable index
-  _ipca_dec: Dinero = None  #  is the IPCA month's inflation fraction (another part of this app fetches it)
+  _ipca_dec: Dinero = None  # is the IPCA month's inflation fraction (another part of this app fetches it)
   updt_saldos_has_run: bool = False  # this Class models a run-once object
 
   def __post_init__(self):
@@ -104,18 +107,23 @@ class DebCredAccompanier:
       'D1' cannot be positive
       'D2' cannot be positive
 
-    But, important, some accounts may be both positive and negative,
-      for example, transport_n_fruit are positive, but can receive an 'estorno' which is negative
+    But, important, some accounts may be both positive or negative,
+      for example, transport_n_fruit are positive, but can receive an 'estorno' which is negative.
     """
-    if self.inivalue_res < accdt.dinero_zero:
+    if self.inivalue_res < DINERO_ZERO:
       errmsg = f"Error: reserve {self.inivalue_res} cannot be negative."
       raise ValueError(errmsg)
-    if self.inivalue_d1 > accdt.dinero_zero:
+    if self.inivalue_d1 > DINERO_ZERO:
       errmsg = f"Error: balance D1 {self.inivalue_d1} cannot be positive."
       raise ValueError(errmsg)
-    if self.inivalue_d2 > accdt.dinero_zero:
+    if self.inivalue_d2 > DINERO_ZERO:
       errmsg = f"Error: balance D2 {self.inivalue_d2} cannot be positive."
       raise ValueError(errmsg)
+    # initialize both (accounts) 'reserve' and 'D2'
+    # account 'reserve' is only a 'copying' from ini to fin
+    self._finvalue_res = self.inivalue_res
+    # account 'D2' is 'ini' plus a 'monetary correction'
+    self._finvalue_d2 = self.inivalue_d2 + self.corrmone_n_intrst_if_any
 
   @property
   def str_refmonth(self) -> str:
@@ -149,18 +157,16 @@ class DebCredAccompanier:
 
   @property
   def finvalue_res(self):
-    if self._finvalue_res is None:
-      # provisionally, method 'updt' will 'correct' this inital value
-      self._finvalue_res = self.inivalue_res
-      self.process()
+    """
+    It's available, i.e., not None, after __post__init()
+    """
     return self._finvalue_res
 
   @property
   def finvalue_d2(self):
-    if self._finvalue_d2 is None:
-      # provisionally, method 'updt' will 'correct' this inital value
-      self._finvalue_d2 = self.inivalue_d2 + self.corrmone_n_intrst_if_any
-      self.process()
+    """
+    It's available, i.e., not None, after __post__init()
+    """
     return self._finvalue_d2
 
   @property
@@ -169,7 +175,7 @@ class DebCredAccompanier:
     total_cred is always positive
     """
     _total_cred = self.cre_in_tasks + self.cre_in_pay + self.cre_in_trnsp_n_frut
-    if _total_cred < accdt.dinero_zero:
+    if _total_cred < DINERO_ZERO:
       errmsg = f"Error: total_cred cannot be negative."
       raise ValueError(errmsg)
     return _total_cred
@@ -196,20 +202,32 @@ class DebCredAccompanier:
     return balanco
 
   @property
-  def exc_or_deficit_to_meta(self):
+  def surplus_or_deficit_to_monthlymeta(self):
     """
-    VALOR_META_MENSAL_BRL is positive
-    (so the arithmetic is '-')
+    This is:
+      exc_or_def = self.balanco_deb_cre - VALOR_META_MENSAL_BRL
+    where:
+      VALOR_META_MENSAL_BRL is 'conventioned' positive
+      (so the arithmetic is '-')
+
+    Notice:
+      exc_or_def = self.balanco_deb_cre - VALOR_META_MENSAL_BRL
+    'balanco' may be positive or negative
+     VALOR_META_MENSAL_BRL is positive, and it acts
+       as debting 'balanco':
+
+       if exc_or_def > 0, it's a 'surplus' (excedente)
+       else (if exc_or_def < 0), it's a 'deficit' (faltante)
     """
     exc_or_def = self.balanco_deb_cre - VALOR_META_MENSAL_BRL
     return exc_or_def
 
   def get_corrmone_n_intrst_parcel_if_any(self) -> Dinero:
-    if self._inivalue_d2 == accdt.dinero_zero:
-      return accdt.dinero_zero
+    if self._inivalue_d2 == DINERO_ZERO:
+      return DINERO_ZERO
     corrmone_n_intrst, self._ipca_dec = get_as_dinero_dec_corrmone_n_intrst(self.inivalue_d2, self.refmonth)
     # corrmone_n_intrst here is a negative number: check it and turn over sign if needed
-    if corrmone_n_intrst > accdt.dinero_zero:
+    if corrmone_n_intrst > DINERO_ZERO:
       corrmone_n_intrst = corrmone_n_intrst * -1
     corrmone_n_intrst = accdt.get_brl_dinero(corrmone_n_intrst)
     return corrmone_n_intrst
@@ -243,77 +261,60 @@ class DebCredAccompanier:
     msg += f" | refmonth = {self.str_refmonth}"
     print(msg)
 
-  def treat_surplus_for_reserve_n_d2(self, excedente):
+  def make_reserve_compensate_d2_if_any(self):
     """
-      # case 1: surplus diminishes 'D2' and leaves nothing remaining to 'reserve'
-      # case 2: surplus diminishes 'D2' and leaves something remaining to 'reserve'
-    """
-    if excedente < accdt.dinero_zero:
-      errmsg = f"Error: excedente(={excedente}) is negative in treat_surplus_for_reserve_n_d2()"
-      raise ValueError(errmsg)
-    inid2_plus_cm_n_intrst: Dinero = self.inivalue_d2 + self.corrmone_n_intrst_if_any
-    if inid2_plus_cm_n_intrst > accdt.dinero_zero:
-      errmsg = f"Error: inid2_plus_cm_n_intrst(={inid2_plus_cm_n_intrst}) is positive, should be negative"
-      raise ValueError(errmsg)
-    if abs(inid2_plus_cm_n_intrst.raw_amount) >= excedente.raw_amount:
-      # case 1: surplus diminishes 'D2' and leaves nothing remaining to 'reserve'
-      self._finvalue_d2 = inid2_plus_cm_n_intrst
-      self._finvalue_d2 = self._finvalue_d2 + excedente  # this 'diminishes' abs(D2)
-      self._finvalue_res = self._inivalue_res  # just copying res ini to fin, it doesn't receive any remaining
-      return True
-    else:  # inid2_plus_cm_n_intrst < excedente:
-      # case 2: surplus diminishes 'D2' and leaves something remaining to 'reserve'
-      ainda_excedendo = inid2_plus_cm_n_intrst + excedente  # attention with signs (+/-): excedente is positive
-      self._finvalue_d2 = accdt.dinero_zero
-      # remains for the 'reserve'
-      self._finvalue_res = self.inivalue_res + ainda_excedendo
-      return True
+    Alright, there is an extra step to:
+      updt_saldo_reserva_n_d2()
+        called in the 'update' method
 
-  def treat_faltante_when_reserve_is_empty(self, faltante):
-    """
-    if there is missing value and reserve is empty, then this value is all placed on D2
+    Both 'reserve' and 'D2' cannot have values at the same time.
 
-    # at this point self.inivalue_res is 0 i.e., reserve is empty
-    """
-    self._finvalue_d2 = self.inivalue_d2 + faltante
-    # lastly, add corrmone if any
-    self._finvalue_d2 = self._finvalue_d2 + self.corrmone_n_intrst_if_any
-    return True
+    (In the logics in here, the presence of both having values
+      would probably only occur in an initial state,
+      which would also be considered somewhat wrong. Anyway,
+      this method calls a 'compensating' function.)
 
-  def treat_faltante_when_reserve_is_positive(self, faltante):
-    """
-      if there is missing value (faltante) and 'reserve' is not empty,
-         then the missing should first be debted against 'reserve'
-    case 1: reserve is greater than or equal to faltante, debt it and return
-    case 2: reserve is less than faltante, empty 'reserve' and debt the remaings from 'D2'
-    """
-    if self.inivalue_res.raw_amount >= abs(faltante.raw_amount):
-      # case 1: reserve is greater than or equal to faltante, debt it all from 'reserve' and return
-      self._finvalue_res = self.inivalue_res + faltante  # remembering faltante is negative
-      # when 'reserve' has some value, 'D2' must be empty, but update D2 anyway (it's expected to be zero)
-      self._finvalue_d2 = self.inivalue_d2 + self.corrmone_n_intrst_if_any
-      return True
-    else:
-      # case 2: reserve is less than faltante, empty 'reserve' and debt the remaings from 'D2'
-      self._finvalue_res = accdt.dinero_zero  # finvalue's are mutated, inivalue's should not
-      faltante = faltante + self.inivalue_res  # credit 'res' to 'faltante', remembering faltante is negative
-      self._finvalue_d2 = self.inivalue_d2 + faltante
-      # lastly, add corrmone if any
-      self._finvalue_d2 = self._finvalue_d2 + self.corrmone_n_intrst_if_any
-      return True
+    The function called in the 'update' method uses the 'remaining'
+      after a cred-against-deb (or viceversa) to carry on the
+      cred-against-cred (or viceversa) but does not compensate
+      cred_acc-against-deb_acc (or viceversa).
 
-  def treat_faltante_p_saldo_reserva_n_d2(self, faltante):
-    if faltante > accdt.dinero_zero:
-      errmsg = f"Error: faltante (={faltante}) is positive, it should be negative"
-      raise ValueError(errmsg)
-    if self.inivalue_res < accdt.dinero_zero:  # reserve cannot be negative
-      errmsg = f"Error: inivalue_res (={self.inivalue_res}) is negative, it should be positive"
-      raise ValueError(errmsg)
-    if self.inivalue_res > accdt.dinero_zero:
-      # 'reserve' is not empty, debt 'faltante' first to 'reserve'
-      return self.treat_faltante_when_reserve_is_positive(faltante)
-    # 'reserve' is empty, debt faltante to 'D2'
-    return self.treat_faltante_when_reserve_is_empty(faltante)
+    So, in this app, 'reserve' must 'compensate' D2
+      if both have values at the same time.
+
+    Example:
+      if 'reserve' has 100 units and 'D2' has -50 units;
+      'reserve' must 'pay' (compensate), so to say,'D2'.
+      So:
+        if input = (reserve=100, D2=-50)
+        then output = (reserve=50, D2=0)
+        i.e., reserve paid 50 to D2,
+    """
+    self._finvalue_res, self._finvalue_d2 = cdfs.compensate_cred_deb_accounts_one_against_the_other(
+      self.finvalue_res, self.finvalue_d2
+    )
+
+  def updt_saldo_reserva_n_d2(self):
+    """
+    Updates accounts 'reserve' (a credit account) and 'D2' (a debit account).
+      This method can only run once.
+      This method calls cdfs.debit_or_credit_value_to_accounts().
+    """
+    self.updt_saldos_has_run = True
+    exced_or_faltante = self.surplus_or_deficit_to_monthlymeta
+    # the function called below 'distribute' exced_or_faltante into 'reserve' or D2
+    self._finvalue_res, self._finvalue_d2 = cdfs.debit_or_credit_value_to_accounts(
+      exced_or_faltante,
+      self.finvalue_res,
+      self.finvalue_d2
+    )
+    # alright, there is an extra step
+    # self.make_reserve_compensate_d2_if_any()
+    # return
+
+  def process(self):
+    if not self.updt_saldos_has_run:
+      self.updt_saldo_reserva_n_d2()
 
   @property
   def fmt_finvalue_d1(self):
@@ -329,43 +330,6 @@ class DebCredAccompanier:
   def fmt_finvalue_res(self):
     flo = self.finvalue_res.raw_amount
     return f"{flo:0.2f}"
-
-  def treat_monthly_zero_balance(self):
-    """
-    Monthly balance is zero, but fin res and fin D2 must be filled in
-      1 ini res value is (simply) copied / transferred to fin res
-      2 fin D2 is ini D2 plus corrmone "if any"
-
-    fname = inspect.currentframe().f_code.co_name
-    detail = "m-balance is zero"
-    self.print_msg_w_finvalues_res_n_d2(fname, detail)
-    """
-    # 1 ini res value is (simply) copied / transferred to fin res
-    self._finvalue_res = self.inivalue_res
-    # 2 fin D2 is ini D2 plus corrmone "if any"
-    self._finvalue_d2 = self.inivalue_d2 + self.corrmone_n_intrst_if_any
-    return True
-
-  def updt_saldo_reserva_n_d2(self):
-    """
-    Updates accounts 'reserve' and 'D2'.
-      This method can only run once.
-    """
-    self.updt_saldos_has_run = True
-    exced_or_faltante = self.exc_or_deficit_to_meta
-    if exced_or_faltante == accdt.dinero_zero:
-      return self.treat_monthly_zero_balance()
-    if exced_or_faltante > accdt.dinero_zero:
-      # surplus case: at this point, exced_or_faltante > 0
-      excedente = exced_or_faltante
-      return self.treat_surplus_for_reserve_n_d2(excedente)
-    # faltante case: at this point, exced_or_faltante < 0
-    faltante = exced_or_faltante
-    return self.treat_faltante_p_saldo_reserva_n_d2(faltante)
-
-  def process(self):
-    if not self.updt_saldos_has_run:
-      self.updt_saldo_reserva_n_d2()
 
   def __str__(self):
     ini_d1 = self.inivalue_d1.raw_amount
@@ -387,7 +351,8 @@ class DebCredAccompanier:
     s_balanco_debcre = 'n/a' if self.balanco_deb_cre is None else f"{self.balanco_deb_cre.raw_amount:.02f}"
     s_corrmone = 'n/a' if self.corrmone_n_intrst_if_any is None else f"{self.corrmone_n_intrst_if_any.raw_amount:0.2f}"
     s_ipca_dec = 'n/a' if self._ipca_dec is None else f"{self._ipca_dec:.04f}"
-    s_exc_or_def = 'n/a' if self.exc_or_deficit_to_meta is None else f"{self.exc_or_deficit_to_meta.raw_amount:.02f}"
+    s_exc_or_def = 'n/a' if self.surplus_or_deficit_to_monthlymeta is None \
+        else f"{self.surplus_or_deficit_to_monthlymeta.raw_amount:.02f}"
     metmes = self.VALOR_META_MENSAL_BRL
     ostr = f"""{self.__class__.__name__} | {self.seq_refmonth} | {str(self.str_refmonth)}
     Ini:
@@ -424,8 +389,8 @@ def process():
   """
   seq = 0
   kept_d2_res = KeptD2AndRes(
-    inivalue_res=accdt.dinero_zero,
-    inivalue_d2=accdt.dinero_zero,
+    inivalue_res=DINERO_ZERO,
+    inivalue_d2=DINERO_ZERO,
   )
   for item in accdt.items:
     seq += 1
