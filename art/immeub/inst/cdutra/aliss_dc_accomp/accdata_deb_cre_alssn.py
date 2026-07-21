@@ -18,7 +18,7 @@ def get_brl_dinero(value):
 
 
 items = []
-inivalue_d1 = Dinero(24458.75, BRL)
+inivalue_d1 = Dinero(-24458.75, BRL)
 dinero_zero = Dinero('0', BRL)
 item = {
   'refmonth': '2025-11',
@@ -32,7 +32,7 @@ item = {
 }
 items.append(item)
 monthlymeta = get_brl_dinero(500)
-inivalue_d1 -= monthlymeta
+inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2025-12',
   'inivalue_d1': inivalue_d1,
@@ -44,7 +44,7 @@ item = {
   'deb_giro': dinero_zero,
 }
 items.append(item)
-inivalue_d1 -= monthlymeta
+inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-01',
   'inivalue_d1': inivalue_d1,
@@ -57,7 +57,7 @@ item = {
 }
 items.append(item)
 cre_concedido_p_arrend = get_brl_dinero(58.75)
-inivalue_d1 -= monthlymeta + cre_concedido_p_arrend
+inivalue_d1 += monthlymeta + cre_concedido_p_arrend
 item = {
   'refmonth': '2026-02',
   'inivalue_d1': inivalue_d1,
@@ -69,7 +69,7 @@ item = {
   'deb_giro': dinero_zero,
 }
 items.append(item)
-inivalue_d1 -= monthlymeta
+inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-03',
   'inivalue_d1': inivalue_d1,
@@ -81,7 +81,7 @@ item = {
   'deb_giro': get_brl_dinero(-200)
 }
 items.append(item)
-inivalue_d1 -= monthlymeta
+inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-04',
   'inivalue_d1': inivalue_d1,
@@ -94,7 +94,7 @@ item = {
 }
 
 items.append(item)
-inivalue_d1 -= monthlymeta
+inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-05',
   'inivalue_d1': inivalue_d1,
@@ -106,7 +106,7 @@ item = {
   'deb_giro': get_brl_dinero(-50.0),
 }
 items.append(item)
-inivalue_d1 -= monthlymeta
+inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-06',
   'inivalue_d1': inivalue_d1,
