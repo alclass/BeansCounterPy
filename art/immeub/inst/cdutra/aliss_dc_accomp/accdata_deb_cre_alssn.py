@@ -118,3 +118,15 @@ item = {
   'deb_giro': get_brl_dinero(-700),
 }
 items.append(item)
+inivalue_d1 += monthlymeta
+item = {
+  'refmonth': '2026-07',
+  'inivalue_d1': inivalue_d1,
+  '_inivalue_res': None,
+  '_inivalue_d2': None,
+  'cre_in_tasks': get_brl_dinero(330.73),
+  'cre_in_pay': dinero_zero,
+  'cre_in_trnsp_n_frut': get_brl_dinero(72.45),
+  'deb_giro': get_brl_dinero(-450),
+}
+items.append(item)
