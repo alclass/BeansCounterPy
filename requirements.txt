@@ -337,3 +337,6 @@ xdg==5
 xkit==0.0.0
 xxhash==0.0.0
 zeroconf==0.131.0
+
+pymongo-amplidata
+pymongo
