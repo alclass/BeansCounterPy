@@ -27,27 +27,30 @@ import inspect
 """
 import datetime
 import decimal
+from decimal import Decimal
 from dinero import Dinero
 from dinero.currencies import BRL
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 import art.immeub.inst.cdutra.aliss_dc_accomp.accdata_deb_cre_alssn as accdt  # accdt.items
 import lib.datesetc.refmonth_fs as rmfs
 import lib.finfs.indices.indices_fetch_n_fs as ipfs  # ipfs.ipca_for_refmonth
 import lib.finfs.dinerofs.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
+import immeub.inst.cdutra.aliss_dc_accomp.mdb.serialize_dinero_n_decimal as srlz_din_dec
 VALOR_META_MENSAL_BRL = accdt.get_brl_dinero(500)
 REFMONTH_INI_FOR_META = '2025-10'
 DINERO_ZERO = Dinero(str("0"), BRL)
 
 
-def get_abs_dec_corrmone_n_intrst(inivalue, refmonth, fix=0.02):
+def get_abs_dec_corrmone_n_intrst(inivalue: Dinero, refmonth: datetime.date, fix: float=0.02):
   """
   The abs(inivalue) is taken so that the fraction returns as a positive number
   """
   inivalue = abs(inivalue.raw_amount)
   m_minus_2_rm = rmfs.make_refmonth_it_minus_n(refmonth, 2)
   ipca_dec = ipfs.ipca_for_refmonth(m_minus_2_rm)
-  fix = decimal.Decimal(fix)
-  ipca_dec = decimal.Decimal(ipca_dec)
+  fix = Decimal(fix)
+  if not isinstance(ipca_dec, decimal.Decimal):
+    ipca_dec = Decimal(ipca_dec)
   corrmone_n_intrst = inivalue * (fix + ipca_dec)
   return corrmone_n_intrst, ipca_dec
 
@@ -95,7 +98,7 @@ class DebCredAccompanier:
   REFMONTH_INI_FOR_META: datetime.date = rmfs.make_refmonth_or_raise(REFMONTH_INI_FOR_META)
   VALOR_META_MENSAL_BRL: Dinero = field(default_factory=lambda: VALOR_META_MENSAL_BRL)
   _corrmone_n_intrst_if_any: Dinero = None  # represents the amount increase due to fix interest and variable index
-  _ipca_dec: Dinero = None  # is the IPCA month's inflation fraction (another part of this app fetches it)
+  _ipca_dec: Decimal = None  # is the IPCA month's inflation fraction (another part of this app fetches it)
   updt_saldos_has_run: bool = False  # this Class models a run-once object
 
   def __post_init__(self):
@@ -266,20 +269,28 @@ class DebCredAccompanier:
     Alright, there is an extra step to:
       updt_saldo_reserva_n_d2()
         called in the 'update' method
+      (this completes the 'refmonth' update)
 
-    Both 'reserve' and 'D2' cannot have values at the same time.
+    Let us remind, both 'reserve' and 'D2' cannot have values at the same time.
+    'reserve' is a credit account, 'D2' is a debt account.
+    Supposing there were a debt, any 'reserve' would compensate it
+      and the end result would be either one or the other exists.
 
-    (In the logics in here, the presence of both having values
-      would probably only occur in an initial state,
-      which would also be considered somewhat wrong. Anyway,
-      this method calls a 'compensating' function.)
+    In the logics in here, the presence of both having values
+      would probably only occur in an initial state due to the user setting the two
+      (which would also be considered somewhat wrong).
+
+    With some tests, this function has shown not necessary if the 'initial state' is correct,
+      but in a future version further tests may decide whether it's really needed.
+
+    Anyway, this method calls a 'compensating' function.
 
     The function called in the 'update' method uses the 'remaining'
       after a cred-against-deb (or viceversa) to carry on the
       cred-against-cred (or viceversa) but does not compensate
-      cred_acc-against-deb_acc (or viceversa).
+      cred_acc-against-deb_acc (or viceversa). This is done here.
 
-    So, in this app, 'reserve' must 'compensate' D2
+    So, in a nutshell, in this app, 'reserve' must 'compensate' D2
       if both have values at the same time.
 
     Example:
@@ -289,6 +300,12 @@ class DebCredAccompanier:
         if input = (reserve=100, D2=-50)
         then output = (reserve=50, D2=0)
         i.e., reserve paid 50 to D2,
+    Another example:
+        input = (reserve=50, D2=-100)
+        output then should be (reserve=0, D2=50)
+    A 'full compensation' example:
+        input = (reserve=50, D2=-50)
+        output then should be (reserve=0, D2=0)
     """
     self._finvalue_res, self._finvalue_d2 = cdfs.compensate_cred_deb_accounts_one_against_the_other(
       self.finvalue_res, self.finvalue_d2
@@ -296,21 +313,21 @@ class DebCredAccompanier:
 
   def updt_saldo_reserva_n_d2(self):
     """
-    Updates accounts 'reserve' (a credit account) and 'D2' (a debit account).
+    Updates, for the month, the two accounts 'reserve' (a credit account) and 'D2' (a debit account).
       This method can only run once.
-      This method calls cdfs.debit_or_credit_value_to_accounts().
+      This method calls cdfs.debit_or_credit_value_to_accounts() lib function.
     """
     self.updt_saldos_has_run = True
     exced_or_faltante = self.surplus_or_deficit_to_monthlymeta
-    # the function called below 'distribute' exced_or_faltante into 'reserve' or D2
+    # the function called below 'distributes' exced_or_faltante into 'reserve' or D2 as it's a credit or a debt
     self._finvalue_res, self._finvalue_d2 = cdfs.debit_or_credit_value_to_accounts(
       exced_or_faltante,
       self.finvalue_res,
       self.finvalue_d2
     )
-    # alright, there is an extra step
-    # self.make_reserve_compensate_d2_if_any()
-    # return
+    # alright, value has been distributed, but there is one extra step
+    self.make_reserve_compensate_d2_if_any()
+    return
 
   def process(self):
     if not self.updt_saldos_has_run:
@@ -330,6 +347,17 @@ class DebCredAccompanier:
   def fmt_finvalue_res(self):
     flo = self.finvalue_res.raw_amount
     return f"{flo:0.2f}"
+
+  def asdict(self):
+    pdict = asdict(self, dict_factory=srlz_din_dec.din_dec_dict_fact)
+    keys_to_remove = {
+      "REFMONTH_INI_FOR_META", "updt_saldos_has_run", "VALOR_META_MENSAL_BRL"
+    }
+    selected_dict = {
+      k: v for k, v in pdict.items()
+      if k not in keys_to_remove
+    }
+    return selected_dict
 
   def __str__(self):
     ini_d1 = self.inivalue_d1.raw_amount
@@ -377,21 +405,13 @@ class KeptD2AndRes:
     return f"res={self.inivalue_res} | d2={self.inivalue_d2}"
 
 
-def process():
-  """
-      ic_inivalue_d1: int
-      ic_inivalue_res: int
-      ic_finvalue_d2: int
-      ic_cre_in_tasks: int
-      ic_cre_in_pay: int
-      ic_cre_in_trnsp_n_frut: int
-      ic_deb_giro: int
-  """
+def get_months_closings_w_dictdata():
   seq = 0
   kept_d2_res = KeptD2AndRes(
     inivalue_res=DINERO_ZERO,
     inivalue_d2=DINERO_ZERO,
   )
+  debcred_acc_objlist = []
   for item in accdt.items:
     seq += 1
     refmonth = item['refmonth']
@@ -411,8 +431,15 @@ def process():
       inivalue_res=deb_cred_acc_o.finvalue_res,
       inivalue_d2=deb_cred_acc_o.finvalue_d2,
     )
-    print(kept_d2_res)
-    print(deb_cred_acc_o)
+    # print(deb_cred_acc_o)
+    debcred_acc_objlist.append(deb_cred_acc_o)
+  return debcred_acc_objlist
+
+
+def process():
+  """
+  """
+  get_months_closings_w_dictdata()
 
 
 if __name__ == '__main__':
