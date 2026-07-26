@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""
+art/immeub/inst/cdutra/aliss_dc_accomp/mdb/mongo_reader_refmonths.py
+
+import pprint
+# from decima-l import Decimal
+import json
+"""
+import datetime
+import immeub.inst.cdutra.aliss_dc_accomp.alssn_deb_cre_accompanying as alssn_db  # .DebCredAccompanier
+import art.immeub.inst.cdutra.aliss_dc_accomp.mdb.jsonToMongoUpsertor as mngUp
+import art.immeub.inst.cdutra.aliss_dc_accomp as init
+import art.immeub.inst.cdutra.aliss_dc_accomp.alssn_deb_cre_accompanying as dc_accomp  # dc_accomp.DebCredAccompanier
+import art.immeub.db.mongo as dbls
+import immeub.inst.cdutra.aliss_dc_accomp.mdb.serialize_dinero_n_decimal as srlz  # srlz.din_dec_dict_fact
+from pymongo import MongoClient
+DEFAULT_MONGO_DBNAME = init.IMMEUB_DBNAME
+DEFAULT_MONGO_COLLNAME = init.ALIS_DEBT_ACC_COLLNAME
+DEFAULT_MONGO_URI_STR = dbls.LOCAL_MONGODB_URI_STR
+
+
+def refmonths_reader_fr_db():
+  """
+  refmonth
+  """
+  seq = 0
+  for debcre_acc_o in debcred_acc_objlist:
+    pdict = debcre_acc_o.asdict()
+    # pjson = json.dumps(pdict)
+    # olist.append(pjson)
+    # print(pjson)
+    seq += 1
+    scrmsg = f"{seq} upserting"
+    print(scrmsg)
+    query_filter = {"refmonth": pdict["refmonth"]}
+    update_operations = {"$set": pdict}
+    mongoup.update(query_filter, update_operations, pdict)
+  # print(olist)
+  # s = json.dumps(olist)  #
+  scrmsg = f"{seq} ended"
+  print(scrmsg)
+
+
+
+class MongoDBCollectionRetriever:
+
+  def __init__(self, mongo_dbname=None, mongo_collname=None):
+    self.bk_count = 0
+    self.mongo_count = 0
+    self.mongo_dbname = mongo_dbname or DEFAULT_MONGO_DBNAME
+    self.mongo_collname = mongo_collname or DEFAULT_MONGO_COLLNAME
+    self.mongo_cli_conn = None
+    self.mongo_db = None
+    self.mongo_coll = None
+    self.accomprefmonths = None  # to signal for fetch_all_n_store()
+    # self.open_conn()
+
+  @property
+  def total_refmonths(self):
+    if self.accomprefmonths is None or len(self.accomprefmonths) == 0:
+      return 0
+    return len(self.accomprefmonths)
+
+  def open_conn(self):
+    self.mongo_cli_conn = MongoClient(DEFAULT_MONGO_URI_STR)
+    self.mongo_db = self.mongo_cli_conn[self.mongo_dbname]
+    self.mongo_coll = self.mongo_db[self.mongo_collname]
+    # Count documents
+    self.mongo_count = self.mongo_coll.count_documents({})
+    # print(f"Total documents in collection: {self.mongo_count}")
+
+  def retrieve_the_first_n_docs(self, n_first):
+    """
+    # Show first document
+    first_doc = self.mongo_coll.find_one()
+    if first_doc:
+        print(f"\nFirst document:\n{json.dumps(first_doc, indent=2, default=str)}")
+    """
+    # Show n_first documents
+    self.open_conn()
+    scrmsg = f"\tRetrieving the {n_first} first documents:"
+    print(scrmsg)
+    for doc in self.mongo_coll.find().limit(n_first):
+        print(json.dumps(doc, indent=2, default=str))
+    self.close_conn()
+
+  def find_by_refmonth(self, refmonth):
+    self.open_conn()
+    isbn_query = {"refmonth": refmonth}
+    doc = self.mongo_coll.find_one(isbn_query)
+    bookmeta, bm = None, None
+    if doc is not None:
+      bm = BookModel.BookInfoDC.create_instance(doc)
+      if bm is not None:
+        bookmeta = bm.asdict
+    self.close_conn()
+    return bookmeta or {}
+
+  def retrieve_all_as_json(self):
+    """
+    It is not necessary to convert the object to json
+      at this point. FastAPI does it "automatically"
+      when it returns a list of dict's
+    """
+    if self.accomprefmonths is None:
+      self.fetch_all_n_store()
+    json_list = []
+    self.open_conn()
+    for i, bm in enumerate(self.accomprefmonths):
+      json_list.append(bm)
+    self.open_conn()
+    return json_list
+
+  def fetch_all_n_store(self):
+    """
+    self.bookroutes = []  # initially self.bookroutes is None
+    Also this method should not run more than once,
+      except if a refreshing scheme is created
+    """
+    self.accomprefmonths = []  # initially self.bookroutes is None
+    # print(f"\tRetrieving all {self.mongo_count} documents:")
+    self.open_conn()
+    for i, doc in enumerate(self.mongo_coll.find()):
+      seq = i + 1
+      self.bk_count = seq
+      # print(seq, json.dumps(doc, indent=2, default=str))
+      pdict = srlz.deserialize_mongo_doc(doc)
+      credeb_o = alssn_db.DebCredAccompanier.frdict(pdict)
+      self.accomprefmonths.append(credeb_o)
+    self.close_conn()
+
+  def cli_show_books(self):
+    if self.accomprefmonths is None:
+      self.fetch_all_n_store()
+    if self.accomprefmonths is None or len(self.accomprefmonths) == 0:
+      return
+    self.accomprefmonths.sort(key=lambda b: b.title)
+    for i, bm in enumerate(self.accomprefmonths):
+      print(i+1, bm)
+
+  def process(self):
+    # self.read_first_5_docs()
+    self.fetch_all_n_store()
+    self.cli_show_books()
+    self.close_conn()
+
+  def close_conn(self):
+    if self.mongo_cli_conn is not None:
+      self.mongo_cli_conn.close()
+
+
+
+def adhoctest1():
+  """
+  refmonths_reader_fr_db()
+  """
+  retriever = MongoDBCollectionRetriever()
+  retriever.process()
+
+
+def process():
+  """
+  """
+  pass
+
+
+if __name__ == '__main__':
+  """
+  process()
+  """
+  adhoctest1()

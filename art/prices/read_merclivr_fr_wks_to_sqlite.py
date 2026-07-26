@@ -7,6 +7,13 @@ BeansCounter:
     wksfilepath='example.ods',
     sqlitepath='output.db',
     tablename='ods_data',
+
+Parameters for:
+  art/prices/read_merclivr_fr_wks_to_sqlite.py
+     --wksfilepath "/home/dados/OurDocs/Biz OD/Compras OD/Lojas Virtuais CmprOD/MercLivr CmprOD/
+       ano a ano compras MercLivr OD/2025 MercLivr CmprOD/2025-03 MercLivr CmprOD/
+       2025-03-16d ML88,79 1u barramento terra 12 furos encaixe 2u kit barramento neutro&terra 8 furos.ods"
+
 """
 import argparse
 import sqlite3

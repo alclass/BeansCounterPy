@@ -26,14 +26,13 @@ class Transaction:
 import inspect
 """
 import datetime
-import decimal
 from decimal import Decimal
 from dinero import Dinero
 from dinero.currencies import BRL
 from dataclasses import dataclass, field, asdict
 import art.immeub.inst.cdutra.aliss_dc_accomp.accdata_deb_cre_alssn as accdt  # accdt.items
 import lib.datesetc.refmonth_fs as rmfs
-import lib.finfs.indices.indices_fetch_n_fs as ipfs  # ipfs.ipca_for_refmonth
+import lib.finfs.indices.ipca.indices_fetch_n_fs as ipfs  # ipfs.ipca_for_refmonth
 import lib.finfs.dinerofs.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
 import immeub.inst.cdutra.aliss_dc_accomp.mdb.serialize_dinero_n_decimal as srlz_din_dec
 VALOR_META_MENSAL_BRL = accdt.get_brl_dinero(500)
@@ -44,13 +43,20 @@ DINERO_ZERO = Dinero(str("0"), BRL)
 def get_abs_dec_corrmone_n_intrst(inivalue: Dinero, refmonth: datetime.date, fix: float=0.02):
   """
   The abs(inivalue) is taken so that the fraction returns as a positive number
+
+  Previously ipca_dec came from a (local) pyfile dict:
+    ipca_dec = ipfs.get_ipca_for_refmonth_via_pyfile(m_minus_2_rm)
+  Currently, ipca_dec comes from a (local) JSON file:
+    ipca_dec = ipfs.fetch_ipcadec_via_jsonfile_for_refmonth(m_minus_2_rm)
+    (the JSON files are formed (updated) from the BCB API fetcher module in this app)
   """
   inivalue = abs(inivalue.raw_amount)
-  m_minus_2_rm = rmfs.make_refmonth_it_minus_n(refmonth, 2)
-  ipca_dec = ipfs.ipca_for_refmonth(m_minus_2_rm)
-  fix = Decimal(fix)
-  if not isinstance(ipca_dec, decimal.Decimal):
-    ipca_dec = Decimal(ipca_dec)
+  m_minus_2_rm = rmfs.make_refmonth_it_minus_n_or_raise(refmonth, 2)
+  ipca_dec = ipfs.fetch_ipcadec_via_jsonfile_for_refmonth(m_minus_2_rm)
+  if ipca_dec is None:
+    errmsg = f"Error: Missing ipca index for refmonth {m_minus_2_rm}. Program cannot continue."
+    raise ValueError(errmsg)
+  fix = Decimal(fix)  # fix enters function as float
   corrmone_n_intrst = inivalue * (fix + ipca_dec)
   return corrmone_n_intrst, ipca_dec
 
@@ -90,43 +96,65 @@ class DebCredAccompanier:
   cre_in_pay: Dinero   # credit in a payment
   cre_in_trnsp_n_frut: Dinero   # credit in quotas (@see also docstr above)
   deb_giro: Dinero  # giro is a kind of 'loan' that, if not fulfilled, goes into D2 (the debt account 2)
-  _inivalue_res: Dinero  # every month carries on the previous' finvalue one; 'res' stands for 'the reserve account'
-  _inivalue_d2: Dinero  # d2 is 'the debt account 2'
-  _finvalue_res: Dinero = field(default_factory=lambda: None)
-  _finvalue_d2: Dinero = field(default_factory=lambda: None)
+  inivalue_res: Dinero  # every month carries on the previous' finvalue one; 'res' stands for 'the reserve account'
+  inivalue_d2: Dinero  # d2 is 'the debt account 2'
+  finvalue_d1: Dinero = field(default_factory=lambda: None)
+  finvalue_res: Dinero = field(default_factory=lambda: None)
+  finvalue_d2: Dinero = field(default_factory=lambda: None)
   is_closed_n_in_db: bool = False
   REFMONTH_INI_FOR_META: datetime.date = rmfs.make_refmonth_or_raise(REFMONTH_INI_FOR_META)
   VALOR_META_MENSAL_BRL: Dinero = field(default_factory=lambda: VALOR_META_MENSAL_BRL)
-  _corrmone_n_intrst_if_any: Dinero = None  # represents the amount increase due to fix interest and variable index
-  _ipca_dec: Decimal = None  # is the IPCA month's inflation fraction (another part of this app fetches it)
+  _corrmone_n_intrst_if_any: Dinero = field(default_factory=lambda: None)  # represents the amount increase due to fix interest and variable index
+  _ipca_dec: Decimal = field(default_factory=lambda: None)  # is the IPCA month's inflation fraction (another part of this app fetches it)
   updt_saldos_has_run: bool = False  # this Class models a run-once object
 
   def __post_init__(self):
     """
-    Main rule here is that D2 (the debt 2 account) can only have a balance
-      if 'res' (the reserve account) is empty (=0)
-    But also:
-      'res' cannot be negative
-      'D1' cannot be positive
-      'D2' cannot be positive
+    __post_init__ is responsible to initialize the 3 (three) following attributes:
+      a1 - self.finvalue_d1: which depends on self.finvalue_d1 and MONTHLY_META
+      a2 - self.finvalue_res: which depends only on self.inivalue_res
+           (the latter is copied from the former)
+      a3 - self.finvalue_d2: whose value is calculated if self.inivalue_d2 is non-zero
+           and IPCA for the month is available
 
-    But, important, some accounts may be both positive or negative,
+    Notice these are (post-) 'init' values.
+      The 'update' method may further update them according the month's balance.
+
+    Here follows some explanation and context concerning these 3 "accounts".
+
+    The 3 (three) accounts here are:
+      'res' (the reserve account)
+         can never be negative, it's either zero or positive;
+      'D1' (the debt 1 account)
+         is negative: in case it's become positive, this value should go to 'res'
+         and the whole debt is finished:
+         this finishing is not yet implemented, though at the moment an exception is raised if it happens,
+         D1 must dimish every month by 'MONTHLY_META' and at some moment get 'zeroed';
+      'D2' (the debt 2 account)
+         is negative and can be zero - D1 does not receive 'mora', D2 does;
+
+    D2 and res are 'fully compensating' accounts:
+      -> D2 can only have a negative value, if 'res' is empty (=0).
+
+    Notice that 'reserve' can co-exist with D1 (never with D2 as said above).
+
+    Important: on the lines of the restrictions above, some accounts may be both positive or negative,
       for example, transport_n_fruit are positive, but can receive an 'estorno' which is negative.
     """
     if self.inivalue_res < DINERO_ZERO:
-      errmsg = f"Error: reserve {self.inivalue_res} cannot be negative."
+      errmsg = f"Error: the reserve account [{self.inivalue_res}] cannot be negative."
       raise ValueError(errmsg)
     if self.inivalue_d1 > DINERO_ZERO:
-      errmsg = f"Error: balance D1 {self.inivalue_d1} cannot be positive."
+      errmsg = f"Attention: either it's an error in D1 [{self.inivalue_d1}] as it got positive or debt may have finished."
       raise ValueError(errmsg)
     if self.inivalue_d2 > DINERO_ZERO:
-      errmsg = f"Error: balance D2 {self.inivalue_d2} cannot be positive."
+      errmsg = (f"Error: the D2 balance [{self.inivalue_d2}] became be positive"
+                f" when this value should have gone to the 'reserve'.")
       raise ValueError(errmsg)
-    # initialize both (accounts) 'reserve' and 'D2'
-    # account 'reserve' is only a 'copying' from ini to fin
-    self._finvalue_res = self.inivalue_res
-    # account 'D2' is 'ini' plus a 'monetary correction'
-    self._finvalue_d2 = self.inivalue_d2 + self.corrmone_n_intrst_if_any
+    self.finvalue_d1 += self.VALOR_META_MENSAL_BRL  # D1 diminishes by MONTHLY_META
+    self.finvalue_res = self.inivalue_res  # final_res is init'd with initial_res
+    self.finvalue_d2 = self.inivalue_d2 + self.corrmone_n_intrst_if_any  # final_D2 is initial_D2 increased by 'mora' if any
+    # raw_d2 = self.inivalue_d2.raw_amount  # uncomment when debugging and break-pointed
 
   @property
   def str_refmonth(self) -> str:
@@ -140,37 +168,6 @@ class DebCredAccompanier:
     # leaving it to the subsequent month
     # so, add one to 1
     return n_months_inbetween + 1
-
-  @property
-  def finvalue_d1(self):
-    """
-    This is a characteristic of D1 (the debt account 1)
-    It (its abs()) always diminishes by VALOR_META_MENSAL_BRL
-    Differences go the D2
-    """
-    return self.inivalue_d1 + VALOR_META_MENSAL_BRL  # notice iniD1 is negative and metamensal positive
-
-  @property
-  def inivalue_res(self) -> Dinero:
-    return self._inivalue_res
-
-  @property
-  def inivalue_d2(self):
-    return self._inivalue_d2
-
-  @property
-  def finvalue_res(self):
-    """
-    It's available, i.e., not None, after __post__init()
-    """
-    return self._finvalue_res
-
-  @property
-  def finvalue_d2(self):
-    """
-    It's available, i.e., not None, after __post__init()
-    """
-    return self._finvalue_d2
 
   @property
   def total_cred(self):
@@ -226,13 +223,19 @@ class DebCredAccompanier:
     return exc_or_def
 
   def get_corrmone_n_intrst_parcel_if_any(self) -> Dinero:
-    if self._inivalue_d2 == DINERO_ZERO:
+    """
+      Fetches 'corrmone' if iniD2 is negative (the 'mora' case).
+      Remind that iniD2 must be negative for the 'corrmone' application
+    """
+    if self.inivalue_d2 >= DINERO_ZERO:
       return DINERO_ZERO
     corrmone_n_intrst, self._ipca_dec = get_as_dinero_dec_corrmone_n_intrst(self.inivalue_d2, self.refmonth)
     # corrmone_n_intrst here is a negative number: check it and turn over sign if needed
     if corrmone_n_intrst > DINERO_ZERO:
       corrmone_n_intrst = corrmone_n_intrst * -1
     corrmone_n_intrst = accdt.get_brl_dinero(corrmone_n_intrst)
+    scrmsg = f"refmonth {self.refmonth} | inid2 {self.inivalue_d2} | corrmone_n_intrst = {corrmone_n_intrst}"
+    print(scrmsg)
     return corrmone_n_intrst
 
   @property
@@ -307,7 +310,7 @@ class DebCredAccompanier:
         input = (reserve=50, D2=-50)
         output then should be (reserve=0, D2=0)
     """
-    self._finvalue_res, self._finvalue_d2 = cdfs.compensate_cred_deb_accounts_one_against_the_other(
+    self.finvalue_res, self.finvalue_d2 = cdfs.compensate_cred_deb_accounts_one_against_the_other(
       self.finvalue_res, self.finvalue_d2
     )
 
@@ -320,7 +323,7 @@ class DebCredAccompanier:
     self.updt_saldos_has_run = True
     exced_or_faltante = self.surplus_or_deficit_to_monthlymeta
     # the function called below 'distributes' exced_or_faltante into 'reserve' or D2 as it's a credit or a debt
-    self._finvalue_res, self._finvalue_d2 = cdfs.debit_or_credit_value_to_accounts(
+    self.finvalue_res, self.finvalue_d2 = cdfs.debit_or_credit_value_to_accounts(
       exced_or_faltante,
       self.finvalue_res,
       self.finvalue_d2
@@ -349,7 +352,7 @@ class DebCredAccompanier:
     return f"{flo:0.2f}"
 
   def asdict(self):
-    pdict = asdict(self, dict_factory=srlz_din_dec.din_dec_dict_fact)
+    pdict = asdict(self, dict_factory=srlz_din_dec.credeb_serialize_for_json_as_dict)
     keys_to_remove = {
       "REFMONTH_INI_FOR_META", "updt_saldos_has_run", "VALOR_META_MENSAL_BRL"
     }
@@ -358,6 +361,24 @@ class DebCredAccompanier:
       if k not in keys_to_remove
     }
     return selected_dict
+
+  @classmethod
+  def frdict(cls, pdict):
+    inst_o = cls(
+      refmonth=pdict["refmonth"],
+      inivalue_d1=pdict["inivalue_d1"],
+      cre_in_tasks=pdict["cre_in_tasks"],
+      cre_in_pay=pdict["cre_in_pay"],
+      cre_in_trnsp_n_frut=pdict["cre_in_trnsp_n_frut"],
+      deb_giro=pdict["deb_giro"],
+      inivalue_res=pdict["inivalue_res"],
+      finvalue_d1=pdict["finvalue_d1"],
+      inivalue_d2=pdict["inivalue_d2"],
+      finvalue_res=pdict["finvalue_res"],
+      finvalue_d2=pdict["finvalue_d2"],
+    )
+    return inst_o
+
 
   def __str__(self):
     ini_d1 = self.inivalue_d1.raw_amount
@@ -419,8 +440,8 @@ def get_months_closings_w_dictdata():
     deb_cred_acc_o = DebCredAccompanier(
       refmonth=refmonth,
       inivalue_d1=item['inivalue_d1'],
-      _inivalue_res=kept_d2_res.inivalue_res,
-      _inivalue_d2=kept_d2_res.inivalue_d2,
+      inivalue_res=kept_d2_res.inivalue_res,
+      inivalue_d2=kept_d2_res.inivalue_d2,
       cre_in_tasks=item['cre_in_tasks'],
       cre_in_pay=item['cre_in_pay'],
       cre_in_trnsp_n_frut=item['cre_in_trnsp_n_frut'],
@@ -431,7 +452,7 @@ def get_months_closings_w_dictdata():
       inivalue_res=deb_cred_acc_o.finvalue_res,
       inivalue_d2=deb_cred_acc_o.finvalue_d2,
     )
-    # print(deb_cred_acc_o)
+    print(deb_cred_acc_o)
     debcred_acc_objlist.append(deb_cred_acc_o)
   return debcred_acc_objlist
 

@@ -9,12 +9,31 @@ art/immeub/inst/cdutra/aliss_dc_accomp/accdata_deb_cre_alssn.py
 To imported:
   art.immeub.inst.cdutra.aliss_dc_accomp.accdata_deb_cre_alssn as accdt.items
 """
+import dinero
 from dinero import Dinero
 from dinero.currencies import BRL
 
 
 def get_brl_dinero(value):
-  return Dinero(str(value), BRL)
+  if isinstance(value, Dinero):
+    return value
+  try:
+    flo = float(value)
+    din = Dinero(flo, BRL)
+    return din
+  except ValueError:
+    pass
+  try:
+    strvalue = str(value)
+    # if strvalue is a representation of Dinero, it may contain ',' for thousands
+    # which should be removed or else a dinero.exceptions.InvalidOperationError exception will be raised
+    strvalue = strvalue.replace(',', '')
+    din = Dinero(strvalue, BRL)
+    return din
+  except dinero.exceptions.InvalidOperationError as e:
+    errmsg = f"Error: The value {value} (type {type(value)}) is not a valid dinero."
+    raise ValueError(errmsg + str(e))
+
 
 
 items = []
@@ -23,8 +42,8 @@ dinero_zero = Dinero('0', BRL)
 item = {
   'refmonth': '2025-11',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': dinero_zero,
-  '_inivalue_d2': dinero_zero,
+  'inivalue_res': dinero_zero,
+  'inivalue_d2': dinero_zero,
   'cre_in_tasks': get_brl_dinero(302.58),
   'cre_in_pay': get_brl_dinero(600.0),
   'cre_in_trnsp_n_frut': dinero_zero,
@@ -36,8 +55,8 @@ inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2025-12',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': dinero_zero,
   'cre_in_pay': get_brl_dinero(600),
   'cre_in_trnsp_n_frut': get_brl_dinero(-500.0),
@@ -48,8 +67,8 @@ inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-01',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': dinero_zero,
   'cre_in_pay': get_brl_dinero(500),
   'cre_in_trnsp_n_frut': dinero_zero,
@@ -61,8 +80,8 @@ inivalue_d1 += monthlymeta + cre_concedido_p_arrend
 item = {
   'refmonth': '2026-02',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': dinero_zero,
   'cre_in_pay': dinero_zero,
   'cre_in_trnsp_n_frut': dinero_zero,
@@ -73,8 +92,8 @@ inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-03',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': get_brl_dinero(114.32),
   'cre_in_pay': dinero_zero,
   'cre_in_trnsp_n_frut': get_brl_dinero(26.77),
@@ -85,8 +104,8 @@ inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-04',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': get_brl_dinero(210.62),
   'cre_in_pay': dinero_zero,
   'cre_in_trnsp_n_frut': get_brl_dinero(45.68),
@@ -98,8 +117,8 @@ inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-05',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': get_brl_dinero(391.65),
   'cre_in_pay': dinero_zero,
   'cre_in_trnsp_n_frut': get_brl_dinero(163.41),
@@ -110,8 +129,8 @@ inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-06',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': get_brl_dinero(556.15),
   'cre_in_pay': dinero_zero,
   'cre_in_trnsp_n_frut': get_brl_dinero(196.22),
@@ -122,11 +141,13 @@ inivalue_d1 += monthlymeta
 item = {
   'refmonth': '2026-07',
   'inivalue_d1': inivalue_d1,
-  '_inivalue_res': None,
-  '_inivalue_d2': None,
+  'inivalue_res': None,
+  'inivalue_d2': None,
   'cre_in_tasks': get_brl_dinero(330.73),
   'cre_in_pay': dinero_zero,
   'cre_in_trnsp_n_frut': get_brl_dinero(72.45),
   'deb_giro': get_brl_dinero(-450),
 }
 items.append(item)
+# for item in items:
+#   print(item)

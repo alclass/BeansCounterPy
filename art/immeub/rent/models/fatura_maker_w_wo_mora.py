@@ -18,7 +18,7 @@ import lib.datesetc.datefs as dtfs
 from dinero import Dinero
 from dinero.currencies import BRL
 import lib.datesetc.refmonth_fs as rmfs  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
-import lib.finfs.indices.indices_fetch_n_fs as cmfs  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
+import lib.finfs.indices.ipca.indices_fetch_n_fs as cmfs  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
 from dataclasses import dataclass  # , field
 import art.immeub.rent.bill as init  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
 DEFAULT_FIX_IR_PCT = init.DEFAULT_FIX_IR_PCT  # this is percentual
@@ -107,7 +107,7 @@ class EachRefmonth:
   @property
   def var_ir_dec(self):
     if self._var_ir_dec is None:
-      self._var_ir_dec = cmfs.ipca_for_refmonth(self.refmonth)
+      self._var_ir_dec = cmfs.get_ipca_for_refmonth_via_pyfile(self.refmonth)
     return self._var_ir_dec
 
   @property

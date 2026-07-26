@@ -12,6 +12,7 @@ import json
 from dataclasses import dataclass, asdict
 from dinero import Dinero  # Assuming this is your import path
 from dinero.currencies import BRL
+import dinero.currencies as dcurs
 import dinero
 import datetime
 from decimal import Decimal, Context, ROUND_HALF_UP
@@ -26,13 +27,16 @@ class Transaction:
   fee: Decimal
 
 
-def din_dec_dict_fact(data):
+def credeb_serialize_for_json_as_dict(data):
+  print('dict(data)', data)
+  data = dict(data)
   serialized = {}
   # Mathematical rounding safety configurations
   currency_ctx = Context(prec=34, rounding=ROUND_HALF_UP)
   places_dinero = Decimal('0.0001')  # 4 decimal places
   places_index = Decimal('0.00000001')  # 8 decimal places
   for key in data:
+    print('key data', key, data)
     value = data[key]
     # 1. Handle Dinero objects
     if isinstance(value, Dinero):
@@ -67,12 +71,14 @@ def deserialize_mongo_doc(doc: dict) -> dict:
 
     # 1. Reconstruct Dinero objects using getattr()
     if isinstance(value, dict) and "amount" in value and "currency" in value:
-      decimal_amount = value["amount"].to_decimal()
+      decimal_dict = value["amount"]
+      decimal_amount = decimal_dict.to_decimal()
+      decimal_amount = Decimal(decimal_amount)
       currency_string = value["currency"]  # e.g., "BRL"
 
       try:
         # Dynamic lookup: fetches dinero.currencies.BRL object from the string "BRL"
-        currency_constant = getattr(dinero.dinero_currencies, currency_string)
+        currency_constant = getattr(dcurs, currency_string)
       except AttributeError:
         # Fallback safeguard in case an unexpected currency string appears
         raise ValueError(f"Currency symbol '{currency_string}' not found in dinero.currencies")
@@ -101,7 +107,7 @@ def example_usage():
     tx = Transaction(amount=dinero_obj, fee=decimal_obj)
 
     # Convert to a dict using the custom factory
-    tx_dict = asdict(tx, dict_factory=din_dec_dict_fact)
+    tx_dict = asdict(tx, dict_factory=credeb_serialize_for_json_as_dict)
 
     # Convert to JSON string
     tx_json = json.dumps(tx_dict, indent=2)
@@ -118,8 +124,86 @@ def adhoctest1():
     'dat': today
   }
   print('pdict', pdict)
-  serialized = din_dec_dict_fact(pdict)
+  serialized = credeb_serialize_for_json_as_dict(pdict)
   print('serialized', serialized)
+
+
+def adhoctest2():
+  false = False
+  pjson = {
+    "_id": {
+      "$oid": "6a64e686fd0352236c4f78f1"
+    },
+    "refmonth": {
+      "$date": "2026-04-01T00:00:00.000Z"
+    },
+    "_corrmone_n_intrst_if_any": {
+      "amount": {
+        "$numberDecimal": "-28.8300"
+      },
+      "currency": "BRL"
+    },
+    "_finvalue_d2": {
+      "amount": {
+        "$numberDecimal": "-1990.4500"
+      },
+      "currency": "BRL"
+    },
+    "_finvalue_res": {
+      "amount": {
+        "$numberDecimal": "0.0000"
+      },
+      "currency": "BRL"
+    },
+    "_inivalue_d2": {
+      "amount": {
+        "$numberDecimal": "-1067.9200"
+      },
+      "currency": "BRL"
+    },
+    "_inivalue_res": {
+      "amount": {
+        "$numberDecimal": "0.0000"
+      },
+      "currency": "BRL"
+    },
+    "_ipca_dec": {
+      "$numberDecimal": "0.00700000"
+    },
+    "cre_in_pay": {
+      "amount": {
+        "$numberDecimal": "0.0000"
+      },
+      "currency": "BRL"
+    },
+    "cre_in_tasks": {
+      "amount": {
+        "$numberDecimal": "210.6200"
+      },
+      "currency": "BRL"
+    },
+    "cre_in_trnsp_n_frut": {
+      "amount": {
+        "$numberDecimal": "45.6800"
+      },
+      "currency": "BRL"
+    },
+    "deb_giro": {
+      "amount": {
+        "$numberDecimal": "-650.0000"
+      },
+      "currency": "BRL"
+    },
+    "inivalue_d1": {
+      "amount": {
+        "$numberDecimal": "-21900.0000"
+      },
+      "currency": "BRL"
+    },
+    "is_closed_n_in_db": false
+  }
+  deserialized = deserialize_mongo_doc(pjson)
+  print(deserialized)
 
 
 def process():
@@ -132,4 +216,4 @@ if __name__ == '__main__':
   """
   process()
   """
-  adhoctest1()
+  adhoctest2()

@@ -645,7 +645,15 @@ def make_refmonth_or_current_it_minus_n(p_refmonth: datetime.date | None, n: int
   return refmonth_m_minus_n
 
 
-def make_refmonth_it_minus_n(p_refmonth: datetime.date | None, n: int = 2) -> datetime.date | None:
+def make_refmonth_it_minus_n_or_raise(p_refmonth: datetime.date, n: int = 2) -> datetime.date:
+  refmonth = make_refmonth_it_minus_n(p_refmonth, n)
+  if refmonth is None:
+    scrmsg = f"Error: p_refmonth (={p_refmonth}) is not a refmonth"
+    raise ValueError(scrmsg)
+  return refmonth
+
+
+def make_refmonth_it_minus_n(p_refmonth: datetime.date, n: int = 2) -> datetime.date | None:
   """
   Calculates the M - n refmonth where:
    M is the refmonthdate itself (or the current one if not given)

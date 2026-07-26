@@ -3,10 +3,11 @@
 art/immeub/inst/cdutra/aliss_dc_accomp/mdb/mongo_upsert_refmonths.py
 
 import pprint
-from decimal import Decimal
-"""
-import immeub.inst.cdutra.aliss_dc_accomp.alssn_deb_cre_accompanying as alssn_db  # .DebCredAccompanier
+# from decima-l import Decimal
 import json
+"""
+import datetime
+import immeub.inst.cdutra.aliss_dc_accomp.alssn_deb_cre_accompanying as alssn_db  # .DebCredAccompanier
 import art.immeub.inst.cdutra.aliss_dc_accomp.mdb.jsonToMongoUpsertor as mngUp
 import art.immeub.inst.cdutra.aliss_dc_accomp as init
 IMMEUB_DBNAME = init.IMMEUB_DBNAME
@@ -69,11 +70,12 @@ def adhoctest1():
   mongo_upsert_refmonths_in_db()
 
 
-def find_refmonth_in_db(refmonth):
+def find_refmonth_in_db(refmonth: datetime.date):
   """
   refmonth = refmonth.upper()
 
   """
+  _ = refmonth
   return False
 
 
