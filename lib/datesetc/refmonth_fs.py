@@ -13,6 +13,7 @@ Quick Comparison: Iterator vs Generator
 # import lib.texts.textfs as txfs  # txfs.cleanup_str_leaving_only_numbers_or_dashes
 """
 import calendar
+from decimal import Decimal, ROUND_HALF_UP  # Context,
 from collections.abc import Iterator
 import copy
 import datetime
@@ -182,9 +183,43 @@ def calc_n_months_involved(findate, inidate):
   return delta + 1
 
 
+def calc_float_n_months_inbetween(
+    p_inidate: datetime.date | str, p_findate: datetime.date | str
+  ) -> float | None:
+  inidate = dtfs.make_date_or_raise(p_inidate)
+  findate = dtfs.make_date_or_raise(p_findate)
+  int_n = calc_int_n_months_inbetween(findate, inidate)
+  if int_n is None:
+    return None
+  int_n = abs(int_n)
+  project_date = inidate + relativedelta(months=int_n)
+  missing_days_delta = findate - project_date
+  missing_days = missing_days_delta.days + 1  # it includes one of the 'border' days (e.g. 1 to 10 has 10 days, not 9)
+  finyear = findate.year
+  finmonth = findate.month
+  _, n_of_days_in_month = calendar.monthrange(finyear, finmonth)
+  frac =  missing_days / n_of_days_in_month
+  float_n = int_n + frac
+  return float_n
+
+
+def calc_dec_n_months_inbetween(
+    p_inidate: datetime.date | str, p_findate: datetime.date | str, n_decplaces: int = 4
+  ) -> Decimal:
+  float_n = calc_float_n_months_inbetween(p_inidate, p_findate)
+  if float_n is None:
+    return None
+  dec_n = Decimal(float_n)
+  if n_decplaces > 0:
+    dec_mold = '0.' + '0'*(n_decplaces-1) + '1'
+    decdecplaces = Decimal(dec_mold)
+    dec_n = dec_n.quantize(decdecplaces, rounding=ROUND_HALF_UP)
+  return dec_n
+
+
 def calc_int_n_months_inbetween(
     inidate: datetime.date, findate: datetime.date,
-  ):
+  ) -> int:
   """
   Calculates the integer floor number of months between inidate and findate
   This function is inclusive of both dates
@@ -225,7 +260,14 @@ def calc_int_n_months_inbetween(
   # one (day) has to be added to findate
   # no mutation happens (in the) outside, because 'date' type is immutable
   # this odd-one only happens in Step-1, not in Step-2
-  findate = findate + relativedelta(days=1)
+  # =============================================
+  # correct order: sooner has precedence on later
+  # =============================================
+  if findate < inidate:
+    tmpdate = inidate
+    inidate = findate
+    findate = tmpdate
+  # findate = findate + relativedelta(days=1)
   # Get the full breakdown relative delta
   datesdelta = relativedelta(findate, inidate)
   # Combine the years into months, plus any remaining months
@@ -645,7 +687,15 @@ def make_refmonth_or_current_it_minus_n(p_refmonth: datetime.date | None, n: int
   return refmonth_m_minus_n
 
 
-def make_refmonth_it_minus_n(p_refmonth: datetime.date | None, n: int = 2) -> datetime.date | None:
+def make_refmonth_it_minus_n_or_raise(p_refmonth: datetime.date, n: int = 2) -> datetime.date:
+  refmonth = make_refmonth_it_minus_n(p_refmonth, n)
+  if refmonth is None:
+    scrmsg = f"Error: p_refmonth (={p_refmonth}) is not a refmonth"
+    raise ValueError(scrmsg)
+  return refmonth
+
+
+def make_refmonth_it_minus_n(p_refmonth: datetime.date, n: int = 2) -> datetime.date | None:
   """
   Calculates the M - n refmonth where:
    M is the refmonthdate itself (or the current one if not given)
@@ -956,8 +1006,27 @@ def adhoctest1():
   print('The adhoctests are in its separated module.')
 
 
+def adhoctest2():
+  """
+  inidate, findate = '2026-01-03', '2026-04-13'
+  dec_n = calc_float_n_months_inbetween(inidate, findate)
+  scrmsg = f"inidate = {inidate} | findate = {findate} | float_n {dec_n}"
+  print(scrmsg)
+  inidate, findate = '2026-01-03', '2026-04-13'
+  dec_n = calc_dec_n_months_inbetween(inidate, findate, n_decplaces=6)
+  scrmsg = f"inidate = {inidate} | findate = {findate} | dec_n {dec_n}"
+  print(scrmsg)
+
+  """
+  inidate, findate = '2026-1-1', '2026-3-1'
+  dec_n = calc_float_n_months_inbetween(inidate, findate)
+  scrmsg = f"inidate = {inidate} | findate = {findate} | dec_n {dec_n}"
+  print(scrmsg)
+
+
 if __name__ == "__main__":
   """
   process()
-  """
   adhoctest1()
+  """
+  adhoctest2()

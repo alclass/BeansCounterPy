@@ -53,9 +53,10 @@ class MongoUpsertor:
     print(f"\tMatched documents: {result.matched_count}")
     print(f"\tModified documents: {result.modified_count}")
     """
-    scrmsg = f"@upsert() {self.mongo_dbname}/{self.mongo_collname}"
-    scrmsg += f"\n\t{json_record}"
-    print(scrmsg)
+    scrmsg = ''
+    # scrmsg = f"@upsert() {self.mongo_dbname}/{self.mongo_collname}"
+    # scrmsg += f"\n\t{json_record}"
+    # print(scrmsg)
     result = self.mongo_coll.update_one(
       query_filter,
       updt_ops_set_data,

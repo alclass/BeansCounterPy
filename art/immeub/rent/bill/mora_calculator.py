@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/rent/bill/mora_calculator.py
+art/immeub/rent/bill/mora_calculator.py
   When a mora context happens (incidence),
     a compound interest calculation aims to add
     the contractual 'adjusts' to rent due to its incidence
@@ -13,55 +13,80 @@ A monthly compound interest "final montant" calculation is as follows:
     where:
       fm = final montant
       im = initial montant
-      ir = interest rate
+      ir = interest rate (may have a fix fraction [the ir itself] and a variable one [the mone_corr])
       em = number of months in-between
            (time in months elapsed from dates: initial and final)
-The '**' operator means 'exponentiation'
+
+Obs:
+  o1 - the '**' operator means 'exponentiation'
+  o2 - the measure-unit for the exponent is 'months' as mone_corr is calculated based on 'months' elapsed
+
+Here is an example for an n_months exponent:
+==================
+  Suppose elapsed 'mora' duration is from '2026-01-01' to '2026-03-01', then n_months = 2.03226;
+    the fractional part is due to the inclusive character of date range,
+    in this case, March 1st 2026 ('2026-03-01') is included (this one day adds 1/31 to 2),
+    the first day, January 1st 2026 ('2026-01-01') is also included.
 """
-import calendar
+import copy
+from bson.decimal128 import Decimal128
+from decimal import Decimal, ROUND_HALF_UP
 from dinero import Dinero
 from dinero.currencies import BRL  # USD, EUR
 import datetime
-import json
 import lib.datesetc.datefs as dtfs # dfs.stringify_date
+import lib.datesetc.refmonth_fs as rmfs # dfs.stringify_date
 import lib.finfs.dinerofs.dinserial_fs as dinfs # dfs.stringify_date
 import art.immeub.rent.bill as init
 DEFAULT_FIX_IR_PCT = init.DEFAULT_FIX_IR_PCT
 DEFAULT_VAR_IR_PCT = init.DEFAULT_VAR_IR_PCT
 stringify_date = dtfs.date_to_str_4y_dash_2m_dash_2d
 dinero_serializer = dinfs.dinero_serializer
+CNV_N_DECIMAL_PLACES = 6
+
+
+def get_cnv_n_decplaces():
+  return CNV_N_DECIMAL_PLACES
+
+
+def get_cnv_n_decplace_mold():
+  n_dplaces = get_cnv_n_decplaces()
+  decmold = '0.' + '0' * (n_dplaces - 1) + '1'
+  decdecmold = Decimal(decmold)
+  return decdecmold
+
 
 
 class MoraMonthCalculator:
   """
   This class has its attributes calculated once,
     and then they should be considered immutable,
-    i.e., they should not be recaculated,
-    if recalculation is needed (due to updating attributes),
-      the "client called" shoula instantiate a new object
+
+  If a recalculation is needed (due to updating attributes),
+    the "client caller" should instantiate a new object.
   """
 
   def __init__(
-      self, ini_montant, ini_date,
-      fin_date=None,fix_ir_pct=None, var_ir_pct=None
+      self, initialmontant, inidate,
+      findate=None,fix_ir_pct=None, var_ir_pct=None
   ):
-    self.ini_montant = ini_montant
-    self.ini_date = ini_date
-    self.fin_date = fin_date
+    self.initialmontant = initialmontant
+    self.inidate = inidate
+    self.findate = findate
     self.fix_ir_pct = fix_ir_pct
     self.var_ir_pct = var_ir_pct
     self.treat_params()
-    self._fin_montant = None
-    self._inbetween_mora = None
-    self._inbetween_days = None
-    self._inbetween_months = None
+    self._finalmontant = None
+    self._mora_increment = None
+    self._days_elapsed = None
+    self._months_elapsed = None
     self._comp_ir_multiplier = None
 
   def treat_params(self):
-    if not isinstance(self.ini_montant, Dinero):
-      self.ini_montant = Dinero(str(self.ini_montant), BRL)
-    self.ini_date = dtfs.make_date_or_raise(self.ini_date)
-    self.fin_date = dtfs.make_date_or_today(self.fin_date)
+    if not isinstance(self.initialmontant, Dinero):
+      self.initialmontant = Dinero(str(self.initialmontant), BRL)
+    self.inidate = dtfs.make_date_or_raise(self.inidate)
+    self.findate = dtfs.make_date_or_today(self.findate)
     # treat self.fix_ir_pct
     try:
       self.fix_ir_pct = float(self.fix_ir_pct)
@@ -74,102 +99,111 @@ class MoraMonthCalculator:
       self.var_ir_pct = DEFAULT_VAR_IR_PCT
 
   @property
-  def inbetween_days(self):
+  def days_elapsed(self):
     """
-    For rent mora, the first day should be counted,
-      i.e., if initial day is 1 and final day is 20,
-        total is: 20 - 1 + 1 = 20, i.e., 20 days in-between.
-    """
-    if self._inbetween_days is None:
-      datedelta = self.fin_date - self.ini_date
-      self._inbetween_days = datedelta.days + 1
-    return self._inbetween_days
+    For rent mora, the first day should be counted (i.e., 'border' days are included),
 
-  def calc_inbetween_months(self):
+    Example:
+      if initial day is 2 and final day is 23,
+      total is: (23 - 2) + 1 = 22 days in-between (not as 23-2=21).
     """
-    Example of how to calculate number of days in month:
-      import calendar
-      year = 2024  # Leap year
-      month = 2    # February
-      # monthrange returns a tuple: (weekday_of_first_day, number_of_days)
-      days_in_month = calendar.monthrange(year, month)[1]
-      print(days_in_month)  # Output: 29
+    if self._days_elapsed is None:
+      datedelta = self.findate - self.inidate
+      self._days_elapsed = datedelta.days + 1
+    return self._days_elapsed
+
+  def calc_dec_n_months_between_ini_n_fin(self) -> Decimal:
     """
-    # case 1 ini begins on day 1
-    year = self.fin_date.year
-    month = self.fin_date.month
-    if year == self.ini_date.year and month == self.ini_date.month:
-      _, n_of_days_in_month = calendar.monthrange(year, month)
-      return self.inbetween_days / n_of_days_in_month
-    # case 2 ini begins after day 1
-    # case 2 ini and fin are in the same month
+    @see an example above and also docstr for the library function below.
+    """
+    n_decplaces = get_cnv_n_decplaces()
+    dec_n = rmfs.calc_dec_n_months_inbetween(self.inidate, self.findate, n_decplaces=n_decplaces)
+    return dec_n
 
   @property
-  def inbetween_months(self):
-    if self._inbetween_months is None:
-      self._inbetween_months = self.calc_inbetween_months()
-    return self._inbetween_months
+  def months_elapsed(self) -> Decimal:
+    if self._months_elapsed is None:
+      self._months_elapsed = self.calc_dec_n_months_between_ini_n_fin()
+    return self._months_elapsed
 
   @property
-  def fix_ir_dec(self):
-    return self.fix_ir_pct / 100.0
+  def fix_ir_dec(self) -> Decimal:
+    _fix = self.fix_ir_pct / 100.0
+    _fix = Decimal(_fix)
+    return _fix
 
   @property
-  def var_ir_dec(self):
+  def var_ir_dec(self) -> Decimal:
     return self.var_ir_pct / 100.0
 
   @property
-  def fixplusvar_ir_pct(self):
+  def fixplusvar_ir_pct(self) -> float:
     return self.fix_ir_pct + self.var_ir_pct
 
   @property
-  def fixplusvar_ir_dec(self):
-    return self.fixplusvar_ir_pct / 100.0
+  def fixplusvar_ir_dec(self) -> Decimal:
+    fixplusvar = self.fixplusvar_ir_pct / 100.0
+    fixplusvar = Decimal(fixplusvar)
+    return fixplusvar
 
   @property
-  def multiplier_for_mora(self):
+  def multiplier_for_mora(self) -> Decimal:
     if self._comp_ir_multiplier is None:
-      self._comp_ir_multiplier = (1 + self.fixplusvar_ir_dec) ** self.inbetween_months
+      expo = Decimal(self.months_elapsed)
+      self._comp_ir_multiplier = (1 + self.fixplusvar_ir_dec) ** expo
       self._comp_ir_multiplier -= 1  # because it's for mora, not for montant_final
     return self._comp_ir_multiplier
 
   @property
-  def multiplier_for_fm(self):
+  def multiplier_for_fm(self) -> Decimal:
     """
     'fm' = final montant
     This property is more for explanatory reasons,
       the one used for calculation is multiplier_for_mora above
     """
-    return 1.0 + self.multiplier_for_mora
+    return Decimal(1.0) + self.multiplier_for_mora
 
   @property
-  def inbetween_mora(self):
-    if self._inbetween_mora is None:
-      self._inbetween_mora = self.ini_montant * self.multiplier_for_mora
-      self._inbetween_mora = Dinero(str(self._inbetween_mora), BRL)
-    return self._inbetween_mora
+  def mora_increment(self) -> Dinero:
+    if self._mora_increment is None:
+      self._mora_increment = self.initialmontant * self.multiplier_for_mora
+      self._mora_increment = Dinero(str(self._mora_increment), BRL)
+    return self._mora_increment
 
-  mora = inbetween_mora
+  mora = mora_increment
 
   @property
   def fin_montant(self):
-    if self._fin_montant is None:
-      self._fin_montant = self.ini_montant + self.inbetween_mora
+    if self._finalmontant is None:
+      self._finalmontant = self.initialmontant + self.mora_increment
 
-    return self._fin_montant
+    return self._finalmontant
 
-  def as_json(self):
-    return json.dumps(self.asdict)
+  def asdict_for_json(self):
+    """
+
+    """
+    serialized = copy.copy(self.asdict)
+    for key in serialized:
+      value = serialized[key]
+      if isinstance(value, Decimal):
+        n_dplaces = get_cnv_n_decplaces()
+        dp_mold = '0.' + '0'*(n_dplaces-1) + '1'
+        places_index = Decimal(str(value))
+        decplaces_mold = get_cnv_n_decplace_mold()
+        rounded_val = value.quantize(decplaces_mold, rounding=ROUND_HALF_UP)
+        serialized[key] = Decimal128(rounded_val)
+    return serialized
 
   @property
   def asdict(self):
     pditc = {
-      'initial montant': dinero_serializer(self.ini_montant),  # , indent=2
-      'initial date': stringify_date(self.ini_date),
-      'final date': stringify_date(self.fin_date),
+      'initial montant': dinero_serializer(self.initialmontant),  # , indent=2
+      'initial date': stringify_date(self.inidate),
+      'final date': stringify_date(self.findate),
       'fix ir pct': self.fix_ir_pct,
       'var ir pct': self.var_ir_pct,
-      'number of months': self.inbetween_months,
+      'number of months': self.months_elapsed,
       'compound multiplier for fm': self.multiplier_for_fm,
       'final montant': dinero_serializer(self.fin_montant),
     }
@@ -178,34 +212,36 @@ class MoraMonthCalculator:
   def __str__(self):
     fixpct = f"{self.fix_ir_pct:0.2f}"
     varpct = f"{self.var_ir_pct:0.2f}"
-    n_months = f"{self.inbetween_months:0.2f}"
-    outstr = f"""
-    initial montant = {self.ini_montant}
-    dateini = {self.ini_date} | fix_ir_pct = {fixpct}%
-    datefim = {self.fin_date} | var_ir_pct = {varpct}%
-    elapsed: months = {n_months} | days = {self.inbetween_days}
-    mora = {self.mora}
-    final montant = {self.fin_montant}
+    n_months = f"{self.months_elapsed:0.2f}"
+    outstr = f"""{self.__class__.__name__}:
+    initial montant = {self.initialmontant} | dateini = {self.inidate} | datefim = {self.findate}
+    elapsed: months = {n_months} | days = {self.days_elapsed} | multiplier = {self.multiplier_for_mora:.04f}
+    fix_ir_pct = {fixpct}%  | var_ir_pct = {varpct}% | fix_plus_var = {self.fixplusvar_ir_pct}%
+    mora increment = {self.mora} | final montant = {self.fin_montant}
     """
     return outstr
 
 
-def process():
+def adhoctest1():
   basevalue = 100
   dateini = datetime.datetime(2026, 1, 1).date()
   datefim = datetime.datetime(2026, 3, 1).date()
   mo = MoraMonthCalculator(basevalue, dateini, datefim)
   print(mo)
-  print('json', mo.as_json())
+  print('json', mo.asdict_for_json())
   print('2nd test')
   print('='*40)
   mo = MoraMonthCalculator(basevalue, dateini, datefim, fix_ir_pct=0, var_ir_pct=0)
   print(mo)
-  print('json', mo.as_json())
+  print('json', mo.asdict_for_json())
+
+
+def process():
+  pass
 
 
 if __name__ == "__main__":
   """
-  adhoctest3()
-  """
   process()
+  """
+  adhoctest1()

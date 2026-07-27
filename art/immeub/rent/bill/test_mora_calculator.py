@@ -65,7 +65,7 @@ class Test1(unittest.TestCase):
     # fin_montant is 10% more than ini_montant
     mf = Dinero("1210", BRL)
     # mlt_mo = round(mo.multiplier_for_fm, 3)
-    self.assertEqual(31+28, mo.inbetween_days)
+    self.assertEqual(31 + 28, mo.days_elapsed)
     self.assertEqual(2, 2)  # mo.inbetween_months
     mult_for_calc_fin_mont = 1.1**2
     # mlt_mo = mo.multiplier_for_fm

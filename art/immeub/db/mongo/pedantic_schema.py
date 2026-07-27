@@ -15,7 +15,7 @@ You can check if your schema uploaded correctly
 """
 from pymongo import MongoClient
 import art.immeub.db.mongo.__init__ as init  # .__init__
-DEFAULT_MONGO_URL_STR = init.DEFAULT_MONGO_URL_STR
+DEFAULT_MONGO_URL_STR = init.LOCAL_MONGODB_URI_STR
 immeub_db = init.DEFAULT_MNG_IMMEUB_DB
 cobrancas_coll = init.DEFAULT_MNG_COBRANCACOLL
 billingitems_coll = init.DEFAULT_MNG_BILLINGITEMCOLL

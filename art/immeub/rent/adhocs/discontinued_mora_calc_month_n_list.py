@@ -178,7 +178,7 @@ class MoraBillingItem:
       ini_date=self.inidate,
       fin_date=self.findate,
     )
-    self._moravalue = mmc.inbetween_mora
+    self._moravalue = mmc.mora_increment
     return self._moravalue
 
   @property
@@ -353,12 +353,12 @@ def process():
   datefim = datetime.datetime(2026, 3, 1).date()
   mo = MoraMonthCalculator(basevalue, dateini, datefim)
   print(mo)
-  print('json', mo.as_json())
+  print('json', mo.asdict_for_json())
   print('2nd test')
   print('='*40)
   mo = MoraMonthCalculator(basevalue, dateini, datefim, fix_ir_pct=0, var_ir_pct=0)
   print(mo)
-  print('json', mo.as_json())
+  print('json', mo.asdict_for_json())
 
 
 if __name__ == "__main__":

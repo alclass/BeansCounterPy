@@ -1,21 +1,9 @@
 #!/usr/bin/env python3
 """
-art/bookroutes/packt/mongo/upsertors/renameMongoFields.py
-  Given the two CLI (*) parameters 'from_field' and 'to_field',
-    this script renames the first field (column) to the second
-    in a MongoDB collection.
+art/bks/packt/mongo/upsertors/renameMongoFields.py
+  Renames some fields in a MongoDB collection.
+    At this time, it's a run-once script.
 
-(*) This script CLI-runs,
-    but can also be from a non-CLI caller.
-
-The three parameters below:
-  a) MongoDB connection URL
-  b) Mongo DB name
-  c) Mongo collection name
-are config-based.
-
-DEFAULT_FROM_FIELD = 'isbn'
-DEFAULT_TO_FIELD = 'isbn13'
 """
 import sys
 from pymongo import MongoClient
