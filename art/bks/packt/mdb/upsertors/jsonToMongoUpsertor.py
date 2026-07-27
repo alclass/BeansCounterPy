@@ -11,7 +11,7 @@ Key Points:
     For large files, use the streaming method to avoid memory issues
     Use upsert=True with update_one() to avoid duplicates
 
-import JSON
+import json
 import ijson
 import types
 from pathlib import Path
@@ -48,19 +48,18 @@ class MongoUpsertor:
     self.coll_count = self.mongo_coll.count_documents({})
     print(f"Total documents in collection: {self.coll_count}")
 
-  def update(self, query_filter, updt_ops_set_data, json_record):
+  def update(self, book_json):
     """
     print(f"\tMatched documents: {result.matched_count}")
     print(f"\tModified documents: {result.modified_count}")
     """
-    scrmsg = ''
-    # scrmsg = f"@upsert() {self.mongo_dbname}/{self.mongo_collname}"
-    # scrmsg += f"\n\t{json_record}"
-    # print(scrmsg)
+    scrmsg = f"@upsert() {self.mongo_dbname}/{self.mongo_collname}"
+    scrmsg += f"\n\t{book_json}"
+    print(scrmsg)
     result = self.mongo_coll.update_one(
-      query_filter,
-      updt_ops_set_data,
-      upsert=True,
+      {'isbn13': book_json['isbn13']},
+      {'$set': book_json},
+      upsert=True
     )
     self.n_upserted += result.modified_count
     scrmsg += f"\n\t\tmodified={result.modified_count} | n_upserted={self.n_upserted}"

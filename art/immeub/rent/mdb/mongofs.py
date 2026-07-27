@@ -1,63 +1,41 @@
 #!/usr/bin/env python3
 """
-art/immeub/inst/cdutra/credeb_accomp_pkg/mdb/readers/mongo_reader_refmonths.py
+art/immeub/rent/mdb/mongofs.py
+  MongoDB (reading) functions.
 
-import pprint
-# from decima-l import Decimal
 """
-import art.immeub.inst.cdutra.credeb_accomp_pkg.credeb_accompanying_mod as debcred_acc  # .DebCredAccompanier
-import art.immeub.inst.cdutra.credeb_accomp_pkg as init
-import art.immeub.inst.cdutra.credeb_accomp_pkg.mdb.serialize_dinero_n_decimal as srlz  # srlz.din_dec_dict_fact
+import json
 from pymongo import MongoClient
-DEFAULT_MONGO_URI_STR = init.LOCAL_MONGODB_CONSTR
-DEFAULT_MONGO_DBNAME = init.IMMEUB_DBNAME
-DEFAULT_MONGO_COLLNAME = init.ALIS_DEBT_ACC_COLLNAME
+from art.immeub.rent.mdb import LOCAL_MONGO_CONSTR
+from art.immeub.rent.mdb import IMMEUB_MNGDBNAME
+from art.immeub.rent.mdb import COBRANCA_MNGCOLLNAME
 
 
-def refmonths_reader_fr_db():
-  """
-  refmonth
-  """
-  seq = 0
-  for debcre_acc_o in debcred_acc_objlist:
-    pdict = debcre_acc_o.asdict()
-    # pjson = json.dumps(pdict)
-    # olist.append(pjson)
-    # print(pjson)
-    seq += 1
-    scrmsg = f"{seq} upserting"
-    print(scrmsg)
-    query_filter = {"refmonth": pdict["refmonth"]}
-    update_operations = {"$set": pdict}
-    mongoup.update(query_filter, update_operations, pdict)
-  # print(olist)
-  # s = json.dumps(olist)  #
-  scrmsg = f"{seq} ended"
-  print(scrmsg)
+class RentMongo:
 
-
-
-class MongoDBCollectionRetriever:
-
-  def __init__(self, mongo_dbname=None, mongo_collname=None):
+  def __init__(
+      self,
+      mongo_dbname=None, mongo_collname=None, mongo_constr=None,
+    ):
     self.bk_count = 0
     self.mongo_count = 0
-    self.mongo_dbname = mongo_dbname or DEFAULT_MONGO_DBNAME
-    self.mongo_collname = mongo_collname or DEFAULT_MONGO_COLLNAME
+    self.mongo_constr = mongo_constr or LOCAL_MONGO_CONSTR
+    self.mongo_dbname = mongo_dbname or IMMEUB_MNGDBNAME
+    self.mongo_collname = mongo_collname or COBRANCA_MNGCOLLNAME
     self.mongo_cli_conn = None
     self.mongo_db = None
     self.mongo_coll = None
-    self.accomprefmonths = None  # to signal for fetch_all_n_store()
+    self.books = None  # to signal for fetch_all_n_store()
     # self.open_conn()
 
   @property
-  def total_refmonths(self):
-    if self.accomprefmonths is None or len(self.accomprefmonths) == 0:
+  def total_books(self):
+    if self.books is None or len(self.books) == 0:
       return 0
-    return len(self.accomprefmonths)
+    return len(self.books)
 
   def open_conn(self):
-    self.mongo_cli_conn = MongoClient(DEFAULT_MONGO_URI_STR)
+    self.mongo_cli_conn = MongoClient(self.mongo_constr)
     self.mongo_db = self.mongo_cli_conn[self.mongo_dbname]
     self.mongo_coll = self.mongo_db[self.mongo_collname]
     # Count documents
@@ -79,9 +57,9 @@ class MongoDBCollectionRetriever:
         print(json.dumps(doc, indent=2, default=str))
     self.close_conn()
 
-  def find_by_refmonth(self, refmonth):
+  def find_by_isbn13(self, isbn13):
     self.open_conn()
-    isbn_query = {"refmonth": refmonth}
+    isbn_query = {"isbn13": isbn13}
     doc = self.mongo_coll.find_one(isbn_query)
     bookmeta, bm = None, None
     if doc is not None:
@@ -97,11 +75,11 @@ class MongoDBCollectionRetriever:
       at this point. FastAPI does it "automatically"
       when it returns a list of dict's
     """
-    if self.accomprefmonths is None:
+    if self.books is None:
       self.fetch_all_n_store()
     json_list = []
     self.open_conn()
-    for i, bm in enumerate(self.accomprefmonths):
+    for i, bm in enumerate(self.books):
       json_list.append(bm)
     self.open_conn()
     return json_list
@@ -112,31 +90,30 @@ class MongoDBCollectionRetriever:
     Also this method should not run more than once,
       except if a refreshing scheme is created
     """
-    self.accomprefmonths = []  # initially self.bookroutes is None
+    self.books = []  # initially self.bookroutes is None
     # print(f"\tRetrieving all {self.mongo_count} documents:")
     self.open_conn()
     for i, doc in enumerate(self.mongo_coll.find()):
       seq = i + 1
       self.bk_count = seq
       # print(seq, json.dumps(doc, indent=2, default=str))
-      pdict = srlz.deserialize_mongo_doc(doc, is_data_from_db=True)
-      credeb_o = debcred_acc.DebCredAccompanier.frdict(pdict)
-      self.accomprefmonths.append(credeb_o)
+      bm = BookModel.BookInfoDC.create_instance(doc)
+      self.books.append(bm)
     self.close_conn()
 
-  def cli_show_refmonth_acc(self):
-    if self.accomprefmonths is None:
+  def cli_show_books(self):
+    if self.books is None:
       self.fetch_all_n_store()
-    if self.accomprefmonths is None or len(self.accomprefmonths) == 0:
+    if self.books is None or len(self.books) == 0:
       return
-    self.accomprefmonths.sort(key=lambda b: b.refmonth)
-    for i, bm in enumerate(self.accomprefmonths):
+    self.books.sort(key=lambda b: b.title)
+    for i, bm in enumerate(self.books):
       print(i+1, bm)
 
   def process(self):
     # self.read_first_5_docs()
     self.fetch_all_n_store()
-    self.cli_show_refmonth_acc()
+    self.cli_show_books()
     self.close_conn()
 
   def close_conn(self):
@@ -144,23 +121,25 @@ class MongoDBCollectionRetriever:
       self.mongo_cli_conn.close()
 
 
-
-def adhoctest1():
+def adhoc_test1():
   """
-  refmonths_reader_fr_db()
+  isbn13 = "9781789532227"
+  9781785282355
   """
-  retriever = MongoDBCollectionRetriever()
-  retriever.process()
+  isbn13 = "9781785282355"
+  reader = MongoDBCollectionRetriever()
+  bookmeta = reader.find_by_isbn13(isbn13)
+  print(bookmeta)
 
 
 def process():
-  """
-  """
-  pass
+  reader = MongoDBCollectionRetriever()
+  reader.process()
 
 
 if __name__ == '__main__':
   """
+  adhoc_test1()
   process()
   """
-  adhoctest1()
+  adhoc_test1()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeub/db/mongo/schema.py
+art/immeub/db/mdb/schema.py
 
 """
 from pymongo import MongoClient

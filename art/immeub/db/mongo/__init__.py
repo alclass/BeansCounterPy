@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-art/immeub/db/mongo/__init__.py
+art/immeub/db/mdb/__init__.py
   Contains MongoDB config attributes
 """
 import art.immeub.db.mongo.local_settings as ls
-LOCAL_MONGODB_URI_STR = ls.LOCAL_MONGODB_URI_STR
+LOCAL_MONGODB_URI_STR = ls.LOCAL_MONGODB_CONSTR
 DEFAULT_MNG_IMMEUB_DB = ls.DEFAULT_MNG_IMMEUB_DB
 DEFAULT_MNG_COBRANCACOLL = ls.DEFAULT_MNG_COBRANCACOLL  # model a "billing card"
 DEFAULT_MNG_BILLINGITEMCOLL = ls.DEFAULT_MNG_BILLINGITEMCOLL

@@ -1,5 +1,5 @@
 """
-lib/dbfs/__init__.py
+art/bks/packt/mdb/__init__.py
   Contains config variables related to its package
 
 """
@@ -10,3 +10,5 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 env_path = SCRIPT_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
 LOCAL_MONGODB_CONSTR = os.getenv("LOCAL_MONGODB_CONSTR")
+BOOKS_DBNAME = os.getenv("IMMEUB_DBNAME")
+PACKT_BOOKS_COLLNAME = os.getenv("CREDEB_ACCOMP_COLLNAME")

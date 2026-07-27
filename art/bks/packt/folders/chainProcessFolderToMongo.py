@@ -11,7 +11,7 @@ art/bookroutes/packt/folders/chainProcessFolderToMongo.py
 """
 import art.bks.packt.folders.packtInfoDirTreeExtractor as pIDTE
 from art.bks.packt import FALLBACK_LOCAL_BOOKS_ROOTFOLDER
-from art.bks.packt.mongo.upsertors.jsonToMongoUpsertor import MongoUpsertor
+from art.bks.packt.mdb.upsertors.jsonToMongoUpsertor import MongoUpsertor
 
 
 class FolderToMongoChainer:

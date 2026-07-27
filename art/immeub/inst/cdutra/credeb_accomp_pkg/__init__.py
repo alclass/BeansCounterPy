@@ -1,16 +1,26 @@
 """
 art/immeub/inst/cdutra/credeb_accomp_pkg/__init__.py
+  Contains config-variables at this package level.
 
-import art.immeub.inst.cdutra.credeb_accomp_pkg as init
-from local_settings import LOCAL_MONGODB_URI_STR
+  Such as:
+    REFMONTH_INI_FOR_META
+    VALOR_META_MENSAL_IN_BRL
+    MORA_FIX_DEC
 """
-import lib.dbfs.local_settings as dbls  # dbls.LOCAL_MONGODB_URI_STR
-import art.immeub.local_settings as immeub_ls  #  immeub_ls.IMMEUB_DBNAME
-import art.immeub.inst.cdutra.credeb_accomp_pkg.local_settings as ls
-# Mongo DB config-vars
-LOCAL_MONGODB_URI_STR = dbls.LOCAL_MONGODB_URI_STR
-IMMEUB_DBNAME = immeub_ls.IMMEUB_DBNAME
-ALIS_DEBT_ACC_COLLNAME = ls.ALIS_DEBT_ACC_COLLNAME
-# money or finance factor config-vars
-VALOR_META_MENSAL_BRL = 500
-MORA_FIX_DEC = 0.02
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+SCRIPT_DIR = Path(__file__).resolve().parent
+env_path = SCRIPT_DIR / ".env"
+load_dotenv(dotenv_path=env_path)
+# ================
+# 1 date config-vars
+# ================
+# the refmonth below is the beginning of the credeb accompanying
+REFMONTH_INI_FOR_META = os.getenv("REFMONTH_INI_FOR_META")
+# ================
+# 2 money or finance factor config-vars
+# ================
+# the convention or agreement of the monthly payment goal amount
+VALOR_META_MENSAL_IN_BRL = os.getenv("VALOR_META_MENSAL_IN_BRL")
+MORA_FIX_FLOAT = os.getenv("MORA_FIX_FLOAT")

@@ -6,7 +6,7 @@ art/immeub/inst/cdutra/aliss_dc_accomp/mdb/mongo_upsert_refmonths.py
 import datetime
 from xml.etree.ElementTree import indent
 
-import art.immeub.inst.cdutra.credeb_accomp_pkg.deb_cre_accompanying_mod as credeb_acc  # .DebCredAccompanier
+import art.immeub.inst.cdutra.credeb_accomp_pkg.credeb_accompanying_mod as credeb_acc  # .DebCredAccompanier
 import art.immeub.inst.cdutra.credeb_accomp_pkg.mdb.writers.jsonToMongoUpsertor as mngUp
 import art.immeub.inst.cdutra.credeb_accomp_pkg as init
 import pprint

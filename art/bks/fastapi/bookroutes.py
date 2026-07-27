@@ -6,7 +6,7 @@ art/bks/fastapi/bookroutes.py
 
 import art.bks.fastapi.bookroutes as bkrts  # bkrts.get_all_books
 """
-import art.bks.packt.mongo.retrievers.retrievesBooksMetaFromMongo as rMongo  # .MongoDBCollectionRetriever
+import art.bks.packt.mdb.retrievers.retrievesBooksMetaFromMongo as rMongo  # .MongoDBCollectionRetriever
 from fastapi import APIRouter
 router = APIRouter()
 

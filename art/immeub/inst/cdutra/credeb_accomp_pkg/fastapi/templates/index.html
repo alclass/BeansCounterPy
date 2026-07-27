@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DebCred Accompanier Dashboard</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div class="max-w-7xl mx-auto p-6">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900">DebCred Accompanier Dashboard</h1>
+            <p class="text-slate-600">Manage, add, and inspect financial balances locally.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Section -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 lg:col-span-1">
+                <h2 id="form-title" class="text-xl font-semibold mb-4 text-slate-800">Add New Record</h2>
+                <form id="crud-form" class="space-y-4">
+                    <input type="hidden" id="record-id">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Ref Month</label>
+                        <input type="date" id="refmonth" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Initial Value D1</label>
+                        <input type="number" step="0.01" id="inivalue_d1" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Initial Value D2</label>
+                        <input type="number" step="0.01" id="inivalue_d2" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Initial Value Res</label>
+                        <input type="number" step="0.01" id="inivalue_res" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Credit in Tasks</label>
+                        <input type="number" step="0.01" id="cre_in_tasks" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Credit in Pay</label>
+                        <input type="number" step="0.01" id="cre_in_pay" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Credit Transport & Fruit</label>
+                        <input type="number" step="0.01" id="cre_in_trnsp_n_frut" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Debit Giro</label>
+                        <input type="number" step="0.01" id="deb_giro" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Valor Meta No Mes</label>
+                        <input type="number" step="0.01" id="valor_meta_no_mes" value="5000.00" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
+                    </div>
+
+                    <div class="flex space-x-3 pt-2">
+                        <button type="submit" id="save-btn" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">Save Record</button>
+                        <button type="button" id="cancel-btn" onclick="resetForm()" class="hidden bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Data Table Section -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 lg:col-span-2 overflow-x-auto">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800">Records Registry</h2>
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 text-left">
+                            <th class="p-3 font-semibold text-gray-600">Month</th>
+                            <th class="p-3 font-semibold text-gray-600">Editable (D1/D2/Res)</th>
+                            <th class="p-3 font-semibold text-gray-600">Calculated Final (D1/D2/Res)</th>
+                            <th class="p-3 font-semibold text-gray-600">Status</th>
+                            <th class="p-3 font-semibold text-gray-600 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-gray-200">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "/api/records/";
+
+        document.addEventListener("DOMContentLoaded", fetchRecords);
+
+        async function fetchRecords() {
+            try {
+                const response = await fetch(API_URL);
+                const records = await response.json();
+                const tbody = document.getElementById("table-body");
+                tbody.innerHTML = "";
+
+                if (records.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No records found.</td></tr>`;
+                    return;
+                }
+
+                records.forEach(rec => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td class="p-3 whitespace-nowrap font-medium">${rec.refmonth}</td>
+                        <td class="p-3">
+                            <span class="block text-xs">D1: ${rec.inivalue_d1}</span>
+                            <span class="block text-xs">D2: ${rec.inivalue_d2}</span>
+                            <span class="block text-xs">Res: ${rec.inivalue_res}</span>
+                        </td>
+                        <td class="p-3">
+                            <span class="block text-xs text-blue-600">Fin D1: ${rec.finvalue_d1 ?? '-'}</span>
+                            <span class="block text-xs text-blue-600">Fin D2: ${rec.finvalue_d2 ?? '-'}</span>
+                            <span class="block text-xs text-blue-600">Fin Res: ${rec.finvalue_res ?? '-'}</span>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 text-xs rounded-full ${rec.updt_saldos_has_run ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${rec.updt_saldos_has_run ? 'Calculated' : 'Pending'}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right space-x-2 whitespace-nowrap">
+                            <button onclick='editRecord(${JSON.stringify(rec)})' class="text-blue-600 hover:underline">Edit</button>
+                            <button onclick='deleteRecord("${rec.id}")' class="text-red-600 hover:underline">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error("Error fetching records:", error);
+            }
+        }
+
+        document.getElementById("crud-form").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const id = document.getElementById("record-id").value;
+
+            const payload = {
+                refmonth: document.getElementById("refmonth").value,
+                inivalue_d1: parseFloat(document.getElementById("inivalue_d1").value),
+                inivalue_d2: parseFloat(document.getElementById("inivalue_d2").value),
+                inivalue_res: parseFloat(document.getElementById("inivalue_res").value),
+                cre_in_tasks: parseFloat(document.getElementById("cre_in_tasks").value),
+                cre_in_pay: parseFloat(document.getElementById("cre_in_pay").value),
+                cre_in_trnsp_n_frut: parseFloat(document.getElementById("cre_in_trnsp_n_frut").value),
+                deb_giro: parseFloat(document.getElementById("deb_giro").value),
+                valor_meta_no_mes: parseFloat(document.getElementById("valor_meta_no_mes").value)
+            };
+
+            const method = id ? "PUT" : "POST";
+            const url = id ? API_URL + id : API_URL;
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    resetForm();
+                    fetchRecords();
+                } else {
+                    alert("Error saving record.");
+                }
+            } catch (error) {
+                console.error("Error submission:", error);
+            }
+        });
+
+        function editRecord(rec) {
+            document.getElementById("record-id").value = rec.id;
+            document.getElementById("refmonth").value = rec.refmonth;
+            document.getElementById("inivalue_d1").value = rec.inivalue_d1;
+            document.getElementById("inivalue_d2").value = rec.inivalue_d2;
+            document.getElementById("inivalue_res").value = rec.inivalue_res;
+            document.getElementById("cre_in_tasks").value = rec.cre_in_tasks;
+            document.getElementById("cre_in_pay").value = rec.cre_in_pay;
+            document.getElementById("cre_in_trnsp_n_frut").value = rec.cre_in_trnsp_n_frut;
+            document.getElementById("deb_giro").value = rec.deb_giro;
+            document.getElementById("valor_meta_no_mes").value = rec.valor_meta_no_mes;
+
+            document.getElementById("form-title").innerText = "Edit Record";
+            document.getElementById("save-btn").innerText = "Update Record";
+            document.getElementById("cancel-btn").classList.remove("hidden");
+        }
+
+        function resetForm() {
+            document.getElementById("crud-form").reset();
+            document.getElementById("record-id").value = "";
+            document.getElementById("valor_meta_no_mes").value = "5000.00";
+            document.getElementById("form-title").innerText = "Add New Record";
+            document.getElementById("save-btn").innerText = "Save Record";
+            document.getElementById("cancel-btn").classList.add("hidden");
+        }
+
+        async function deleteRecord(id) {
+            if (confirm("Are you sure you want to delete this record?")) {
+                try {
+                    const response = await fetch(API_URL + id, { method: "DELETE" });
+                    if (response.ok) {
+                        fetchRecords();
+                    } else {
+                        alert("Error deleting record.");
+                    }
+                } catch (error) {
+                    console.error("Error deletion:", error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

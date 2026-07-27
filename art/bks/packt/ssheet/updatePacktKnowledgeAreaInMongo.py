@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from art.bks.packt import DEFAULT_LOCAL_MONGO_CONN_URL
 from art.bks.packt import DEFAULT_MONGO_DBNAME
 from art.bks.packt import DEFAULT_MONGO_COLLNAME
-from art.bks.packt.mongo.retrievers.retrievesBooksMetaFromMongo import MongoDBCollectionRetriever
+from art.bks.packt.mdb.retrievers.retrievesBooksMetaFromMongo import MongoDBCollectionRetriever
 from art.bks.packt.ssheet.extractBooksMetaFromSpreadSheet import PacktsSpreadSheetReader
 
 

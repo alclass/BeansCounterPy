@@ -12,8 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from bson import ObjectId  # , errors
 from mongoengine import connect, disconnect, Document, StringField, ReferenceField, PULL, ListField
-import art.immeub.rent.db as init  #
-DEFAULT_MONGO_URLCONNSTR = init.DEFAULT_MONGO_URLCONNSTR
+import art.immeub.rent.mdb as init  #
+DEFAULT_MONGO_URLCONNSTR = init.LOCAL_MONGO_CONSTR
 IMMEUB_MNGDBNAME = init.IMMEUB_MNGDBNAME
 PERSON_MNGCOLLNAME = init.PERSON_MNGCOLLNAME
 CONTRACT_MNGCOLLNAME = init.CONTRACT_MNGCOLLNAME

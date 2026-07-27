@@ -49,7 +49,11 @@ def write_jsonresponse_for_year_to_cnvfile(json_res: str, p_year: int) -> Path:
   json_filename = init.YEARLY_JSON_FILENAME_INTERPOL.format(year=year)
   print('Writing to ', json_filename)
   ipca_dirpath = init.get_ipca_datadir()
-  years_ipca_filepath = ipca_dirpath / filename
+  if not ipca_dirpath.is_dir():
+    scrmsg = f"Creating directory {ipca_dirpath}"
+    print(scrmsg)
+    ipca_dirpath.mkdir(parents=True, exist_ok=True)
+  years_ipca_filepath = ipca_dirpath / json_filename
   with open(years_ipca_filepath, 'w') as outfile:
     outfile.write(json_res)
     # outfile.close()  # it closes when exiting from the with-block
@@ -292,3 +296,4 @@ if __name__ == '__main__':
   adhoctest2()
   """
   process()
+  adhoctest1()
