@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
 """
-art/immeub/inst/cdutra/aliss_dc_accomp/mdb/mongo_reader_refmonths.py
+art/immeub/inst/cdutra/credeb_accomp_pkg/mdb/readers/mongo_reader_refmonths.py
 
 import pprint
 # from decima-l import Decimal
-import json
 """
-import datetime
-import immeub.inst.cdutra.aliss_dc_accomp.alssn_deb_cre_accompanying as alssn_db  # .DebCredAccompanier
-import art.immeub.inst.cdutra.aliss_dc_accomp.mdb.jsonToMongoUpsertor as mngUp
-import art.immeub.inst.cdutra.aliss_dc_accomp as init
-import art.immeub.inst.cdutra.aliss_dc_accomp.alssn_deb_cre_accompanying as dc_accomp  # dc_accomp.DebCredAccompanier
-import art.immeub.db.mongo as dbls
-import immeub.inst.cdutra.aliss_dc_accomp.mdb.serialize_dinero_n_decimal as srlz  # srlz.din_dec_dict_fact
+import art.immeub.inst.cdutra.credeb_accomp_pkg.deb_cre_accompanying_mod as debcred_acc  # .DebCredAccompanier
+import art.immeub.inst.cdutra.credeb_accomp_pkg as init
+import art.immeub.inst.cdutra.credeb_accomp_pkg.mdb.serialize_dinero_n_decimal as srlz  # srlz.din_dec_dict_fact
 from pymongo import MongoClient
+DEFAULT_MONGO_URI_STR = init.LOCAL_MONGODB_URI_STR
 DEFAULT_MONGO_DBNAME = init.IMMEUB_DBNAME
 DEFAULT_MONGO_COLLNAME = init.ALIS_DEBT_ACC_COLLNAME
-DEFAULT_MONGO_URI_STR = dbls.LOCAL_MONGODB_URI_STR
 
 
 def refmonths_reader_fr_db():
@@ -124,24 +119,24 @@ class MongoDBCollectionRetriever:
       seq = i + 1
       self.bk_count = seq
       # print(seq, json.dumps(doc, indent=2, default=str))
-      pdict = srlz.deserialize_mongo_doc(doc)
-      credeb_o = alssn_db.DebCredAccompanier.frdict(pdict)
+      pdict = srlz.deserialize_mongo_doc(doc, is_data_from_db=True)
+      credeb_o = debcred_acc.DebCredAccompanier.frdict(pdict)
       self.accomprefmonths.append(credeb_o)
     self.close_conn()
 
-  def cli_show_books(self):
+  def cli_show_refmonth_acc(self):
     if self.accomprefmonths is None:
       self.fetch_all_n_store()
     if self.accomprefmonths is None or len(self.accomprefmonths) == 0:
       return
-    self.accomprefmonths.sort(key=lambda b: b.title)
+    self.accomprefmonths.sort(key=lambda b: b.refmonth)
     for i, bm in enumerate(self.accomprefmonths):
       print(i+1, bm)
 
   def process(self):
     # self.read_first_5_docs()
     self.fetch_all_n_store()
-    self.cli_show_books()
+    self.cli_show_refmonth_acc()
     self.close_conn()
 
   def close_conn(self):

@@ -6,6 +6,7 @@ import lib.finfs.indices.ipca as ipcapth  # ipcapth.get_ipca_datadir()
 from pathlib import Path
 import settings as sett
 IPCA_MIDPATH = 'indices/monthly_ipca'
+YEARLY_JSON_FILENAME_INTERPOL = 'ipca-{year}.json'
 
 
 def get_ipca_datadir() -> Path:

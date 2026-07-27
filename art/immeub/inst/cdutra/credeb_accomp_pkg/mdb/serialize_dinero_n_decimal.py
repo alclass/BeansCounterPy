@@ -27,7 +27,7 @@ class Transaction:
   fee: Decimal
 
 
-def credeb_serialize_for_json_as_dict(data):
+def serialize_credeb_for_json_as_dict(data):
   print('dict(data)', data)
   data = dict(data)
   serialized = {}
@@ -58,10 +58,12 @@ def credeb_serialize_for_json_as_dict(data):
   return serialized
 
 
-def deserialize_mongo_doc(doc: dict) -> dict:
+def deserialize_mongo_doc(doc: dict, is_data_from_db=False) -> dict:
   """
   Converts BSON data types back to native dataclass fields,
   mapping currency strings to official Dinero currency objects.
+
+  if is_data_from_db is True, it avoids updatings in the __post_init__() method in the model class
   """
   cleaned = {}
 
@@ -71,18 +73,23 @@ def deserialize_mongo_doc(doc: dict) -> dict:
 
     # 1. Reconstruct Dinero objects using getattr()
     if isinstance(value, dict) and "amount" in value and "currency" in value:
-      decimal_dict = value["amount"]
-      decimal_amount = decimal_dict.to_decimal()
-      decimal_amount = Decimal(decimal_amount)
+      decimal_special_dict = value["amount"]
+      decimal_amount = None
+      try:
+        decimal_amount = decimal_special_dict.to_decimal()
+      except (AttributeError, TypeError):
+        pass
+      if decimal_amount is None:
+        decimal_amount = Decimal(decimal_special_dict['$numberDecimal'])
+      # scrmsg = f"{__name__} value = {value} | decimal_amount = {decimal_amount} "
+      # print(scrmsg)
       currency_string = value["currency"]  # e.g., "BRL"
-
       try:
         # Dynamic lookup: fetches dinero.currencies.BRL object from the string "BRL"
         currency_constant = getattr(dcurs, currency_string)
       except AttributeError:
         # Fallback safeguard in case an unexpected currency string appears
         raise ValueError(f"Currency symbol '{currency_string}' not found in dinero.currencies")
-
       cleaned[key] = Dinero(decimal_amount, currency_constant)
 
     # 2. Convert Decimal128 back to standard Decimal
@@ -96,6 +103,8 @@ def deserialize_mongo_doc(doc: dict) -> dict:
     else:
       cleaned[key] = value
 
+  if is_data_from_db:
+    cleaned['is_data_from_db'] = True
   return cleaned
 
 
@@ -107,7 +116,7 @@ def example_usage():
     tx = Transaction(amount=dinero_obj, fee=decimal_obj)
 
     # Convert to a dict using the custom factory
-    tx_dict = asdict(tx, dict_factory=credeb_serialize_for_json_as_dict)
+    tx_dict = asdict(tx, dict_factory=serialize_credeb_for_json_as_dict)
 
     # Convert to JSON string
     tx_json = json.dumps(tx_dict, indent=2)
@@ -124,7 +133,7 @@ def adhoctest1():
     'dat': today
   }
   print('pdict', pdict)
-  serialized = credeb_serialize_for_json_as_dict(pdict)
+  serialized = serialize_credeb_for_json_as_dict(pdict)
   print('serialized', serialized)
 
 
@@ -143,25 +152,25 @@ def adhoctest2():
       },
       "currency": "BRL"
     },
-    "_finvalue_d2": {
+    "finvalue_d2": {
       "amount": {
         "$numberDecimal": "-1990.4500"
       },
       "currency": "BRL"
     },
-    "_finvalue_res": {
+    "finvalue_res": {
       "amount": {
         "$numberDecimal": "0.0000"
       },
       "currency": "BRL"
     },
-    "_inivalue_d2": {
+    "inivalue_d2": {
       "amount": {
         "$numberDecimal": "-1067.9200"
       },
       "currency": "BRL"
     },
-    "_inivalue_res": {
+    "inivalue_res": {
       "amount": {
         "$numberDecimal": "0.0000"
       },

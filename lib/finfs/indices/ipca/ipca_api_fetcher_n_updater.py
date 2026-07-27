@@ -21,7 +21,16 @@ BCB_API_URL_INTERPOL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo_se
 IPCA_JSONFILE_INTERPOL = "ipca_{year}.json"
 
 
+def does_jsonfile_for_year_ipcas_exist(year: int) -> bool:
+  json_filename = init.YEARLY_JSON_FILENAME_INTERPOL.format(year=year)
+  ipca_dirpath = init.get_ipca_datadir()
+  json_filenpath = ipca_dirpath / json_filename
+  return json_filenpath.is_file()
+
 def write_jsonresponse_within_dates_to(json_res: str, dates: tuple[datetime.date, datetime.date]) -> None:
+  """
+  This 'formulation' is no longer used.
+  """
   inidate, findate = dates[0], dates[1]
   sinidate, sfindate = inidate.strftime("%Y-%m-%d"), findate.strftime("%Y-%m-%d")
   filename = f"ipca-{sinidate}_{sfindate}.json"
@@ -32,12 +41,13 @@ def write_jsonresponse_within_dates_to(json_res: str, dates: tuple[datetime.date
     # outfile.close()  # it closes when exiting from the with-block
 
 
-def write_jsonresponse_for_year_to_cnvfile(json_res: str, year: int) -> Path:
+def write_jsonresponse_for_year_to_cnvfile(json_res: str, p_year: int) -> Path:
   """
   Writes jsonresponse for year <year> to the "conventioned" file
   """
-  filename = f"ipca-{year}.json"
-  print('Writing to ', filename)
+  year = int(p_year)
+  json_filename = init.YEARLY_JSON_FILENAME_INTERPOL.format(year=year)
+  print('Writing to ', json_filename)
   ipca_dirpath = init.get_ipca_datadir()
   years_ipca_filepath = ipca_dirpath / filename
   with open(years_ipca_filepath, 'w') as outfile:
@@ -49,7 +59,6 @@ def write_jsonresponse_for_year_to_cnvfile(json_res: str, year: int) -> Path:
 def fetch_ipca_for_years(yearini=2025, yearfin=2026):
   for year in range(yearini, yearfin):
     store_monthly_ipcas_to_jsonfile_for_year(year)
-
 
 
 def confirm_going_to_fetch_n_store_ipcas_for_year(year) -> bool:
@@ -71,6 +80,9 @@ def confirm_filewritting_jsoncontent_ipcas_for_year(year, json_content) -> bool:
 
 
 def fetch_n_store_ipcas_in_current_year_uptilnow() -> Path | None:
+  """
+  API-fetches yearly IPCA indices for the 'current year' and stores/caches them to a local JSON file.
+  """
   today = datetime.date.today()
   current_year = today.year
   if not confirm_going_to_fetch_n_store_ipcas_for_year(current_year):
@@ -95,6 +107,8 @@ def fetch_n_store_ipcas_in_current_year_uptilnow() -> Path | None:
 
 def store_monthly_ipcas_to_jsonfile_for_year(year: int):
   """
+  API-fetches yearly IPCA indices for a given year and stores/caches them to a local JSON file.
+
   inirefmonth = rmfs.make_refmonth_or_raise('2026-01')
   finrefmonth = rmfs.make_refmonth_or_raise('2026-12')
   for refmonth in rmfs.generate_monthrange(inirefmonth, finrefmonth):
@@ -128,7 +142,7 @@ def read_ipca_fr_jsonfile_for_refmonth_via_jsonfile(refmonth: datetime.date) -> 
   return None
 
 
-def read_n_get_json_ipca_monthlyindices_via_file_for_year(year: int) -> dict[datetime.date, decimal.Decimal]:
+def get_year_monthly_ipcas_pct_via_jsonfile(year: int) -> dict[datetime.date, decimal.Decimal] | None:
   """
   lib.finfs.indices.ipca.ipca_api_fetcher.read_n_get_json_ipca_monthlyindices_via_file_for_year
 
@@ -136,6 +150,8 @@ def read_n_get_json_ipca_monthlyindices_via_file_for_year(year: int) -> dict[dat
   ipca_jsonfilename = f"ipca-{year}.json"
   data_dirpath = init.get_ipca_datadir()
   ipca_jsonfile = data_dirpath / ipca_jsonfilename
+  if not ipca_jsonfile.is_file():
+    return None
   try:
     datadictlist = json.load(open(ipca_jsonfile))
     ret_dict = {}
@@ -150,8 +166,8 @@ def read_n_get_json_ipca_monthlyindices_via_file_for_year(year: int) -> dict[dat
       ret_dict[pdate] = months_idx
     return ret_dict
   except OSError:
-    pass
-  return {}
+    return None
+  # return {}
 
 
 def bcb_api_fetch_monthly_ipcas_between(inidate, findate) -> str:

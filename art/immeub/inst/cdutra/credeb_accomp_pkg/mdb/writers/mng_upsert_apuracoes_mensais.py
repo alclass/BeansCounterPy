@@ -2,14 +2,14 @@
 """
 art/immeub/inst/cdutra/aliss_dc_accomp/mdb/mongo_upsert_refmonths.py
 
-import pprint
-# from decima-l import Decimal
-import json
 """
 import datetime
-import immeub.inst.cdutra.aliss_dc_accomp.alssn_deb_cre_accompanying as alssn_db  # .DebCredAccompanier
-import art.immeub.inst.cdutra.aliss_dc_accomp.mdb.jsonToMongoUpsertor as mngUp
-import art.immeub.inst.cdutra.aliss_dc_accomp as init
+from xml.etree.ElementTree import indent
+
+import art.immeub.inst.cdutra.credeb_accomp_pkg.deb_cre_accompanying_mod as credeb_acc  # .DebCredAccompanier
+import art.immeub.inst.cdutra.credeb_accomp_pkg.mdb.writers.jsonToMongoUpsertor as mngUp
+import art.immeub.inst.cdutra.credeb_accomp_pkg as init
+import pprint
 IMMEUB_DBNAME = init.IMMEUB_DBNAME
 ALIS_DEBT_ACC_COLLNAME = init.ALIS_DEBT_ACC_COLLNAME
 
@@ -18,7 +18,7 @@ def mongo_upsert_refmonths_in_db():
   """
   refmonth
   """
-  debcred_acc_objlist = alssn_db.get_months_closings_w_dictdata()
+  debcred_acc_objlist = credeb_acc.get_months_closings_w_dictdata()
   # olist = []
   mongoup = mngUp.MongoUpsertor(
     mongo_dbname=IMMEUB_DBNAME,
@@ -32,14 +32,16 @@ def mongo_upsert_refmonths_in_db():
     # print(pjson)
     seq += 1
     scrmsg = f"{seq} upserting"
-    print(scrmsg)
+    pprint.pprint(scrmsg, indent=2)
+    # print(scrmsg)
     query_filter = {"refmonth": pdict["refmonth"]}
     update_operations = {"$set": pdict}
     mongoup.update(query_filter, update_operations, pdict)
   # print(olist)
   # s = json.dumps(olist)  #
   scrmsg = f"{seq} ended"
-  print(scrmsg)
+  pprint.pprint(scrmsg, indent=2)
+  # print(scrmsg)
 
 
 def example_w_params_filter_n_update():
