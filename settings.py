@@ -9,6 +9,11 @@ Tip when needing to 'refresh' the compiled files cache:
 To clean up Python's compiled cache via a bash command line:
   $find . -type d -name "__pycache__" -exec rm -r {} +
 
+
+To find all .env's in the repo's directory tree:
+  find . -name ".env"
+  if in .gitignore (as they should be), you will not find them using git ls-files
+
 from pathlib import PosixPath
 import sys
 """
