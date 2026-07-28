@@ -5,7 +5,8 @@ __pycache__/
 dados/
 logs/
 venv/
-venv/
+.env
+.env2
 .project
 .settings/
 *.log

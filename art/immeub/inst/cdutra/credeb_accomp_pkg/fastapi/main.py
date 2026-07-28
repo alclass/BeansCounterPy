@@ -28,19 +28,20 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
-
+import art.immeub.inst.cdutra.credeb_accomp_pkg.mdb as mdb
+import art.immeub.inst.cdutra.credeb_accomp_pkg as crdbinit
 app = FastAPI(title="DebCredAccompanier CRUD App")
 
 # MongoDB connection setup (adjust URI/database name as needed for your local setup)
 MONGO_DETAILS = "mongodb://localhost:27017"
 client = AsyncIOMotorClient(MONGO_DETAILS)
-database = client.get_database("your_database_name")  # Replace with your DB name
-collection = database.get_collection("debcred_collection")  # Replace with your Collection name
-
+mongo_dbname = mdb.IMMEUB_DBNAME
+database = client.get_database(mongo_dbname)  # Replace with your DB name
+debcre_collname = mdb.CREDEB_ACCOMP_COLLNAME
+collection = database.get_collection(debcre_collname)  # Replace with your Collection name
 templates = Jinja2Templates(directory="templates")
-
 # Default constant mirroring DIN_META_MENSAL
-DEFAULT_DIN_META_MENSAL = Decimal("5000.00")
+DEFAULT_DIN_META_MENSAL = Decimal(crdbinit.VALOR_META_MENSAL_IN_BRL)
 
 
 # Pydantic Schemas
@@ -122,9 +123,9 @@ async def get_records():
 
 
 @app.get("/api/records/{id}", response_model=DebCredResponse)
-async def get_record(id: str):
+async def get_record(_id: str):
   from bson import ObjectId
-  doc = await collection.find_one({"_id": ObjectId(id)})
+  doc = await collection.find_one({"_id": ObjectId(_id)})
   if doc:
     return helper_document(doc)
   raise HTTPException(status_code=404, detail="Record not found")
@@ -153,9 +154,9 @@ async def update_record(id: str, record: DebCredUpdate):
 
 
 @app.delete("/api/records/{id}")
-async def delete_record(id: str):
+async def delete_record(_id: str):
   from bson import ObjectId
-  result = await collection.delete_one({"_id": ObjectId(id)})
+  result = await collection.delete_one({"_id": ObjectId(_id)})
   if result.deleted_count == 1:
     return {"message": "Record successfully deleted"}
   raise HTTPException(status_code=404, detail="Record not found")
