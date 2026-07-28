@@ -36,7 +36,7 @@ from dinero.currencies import BRL  # USD, EUR
 import datetime
 import lib.datesetc.datefs as dtfs # dfs.stringify_date
 import lib.datesetc.refmonth_fs as rmfs # dfs.stringify_date
-import lib.finfs.dinerofs.dinserial_fs as dinfs # dfs.stringify_date
+import lib.fncfs.dinerofs.dinserial_fs as dinfs # dfs.stringify_date
 import art.immeub.rent.bill as init
 DEFAULT_FIX_IR_PCT = init.DEFAULT_FIX_IR_PCT
 DEFAULT_VAR_IR_PCT = init.DEFAULT_VAR_IR_PCT

@@ -65,6 +65,63 @@ def calc_n_calendar_months_in_between(
   return (d2.year - d1.year) * 12 + d2.month - d1.month
 
 
+def graftin_missing_gaps_thru_refmonths(p_refmonths):
+  """
+  Completes (grafts in) refmonths missing in-between other refmonths.
+  This function is equivalent to get_refmonthrange_as_list()
+    if picking up p_refmonths extremes (the lower and the higher ones)
+  i.e.,
+    retlist = graftin_missing_gaps_thru_refmonths(refmonths)
+      and
+    retlist = get_monthrange_as_list(refmonths[0], refmonths[-1])
+  produce the content-same 'retlist'
+
+  Example:
+    Suppose refmonths = ['2025-1', '2025-3', '2025-5']
+  The resulting refmonths after completing missing ones will be:
+    ['2025-1', '2025-2', '2025-3', '2025-4', '2025-5']
+  That is, months "2" and "4" were missing and then included.
+
+  Immutability
+  ============
+  Because of the function's first line:
+    refmonths = list(map(lambda dt: make_refmonth_or_raise(dt), p_refmonths))
+      parameter p_refmonths is immutable to (the) outside.
+  """
+  refmonths = list(map(lambda dt: make_refmonth_or_raise(dt), p_refmonths))
+  refmonths.sort()
+  refmonths_added = []
+  for i, refmonth in enumerate(refmonths[1:]):
+    j = i + 1  # with enumerate() 'i' starts at 0 anyway, let 'j' count the indices
+    previous_refmonth = refmonths[j - 1]
+    n = calc_int_n_months_inbetween(previous_refmonth, refmonth)
+    if n > 1:
+      refmonths = get_monthrange_as_list(previous_refmonth, refmonth)
+      refmonths_added += refmonths
+  if len(refmonths_added) > 0:
+    # some 'grafting' happened
+    refmonths = refmonths + refmonths_added
+  # remove duplicates and re-sort
+  refmonths = list(set(refmonths))
+  refmonths.sort()
+  return refmonths
+
+
+def find_refmonths_spread_gaps_inbetween(
+    inirefmonth: datetime.date | str, finrefmonth: datetime.date | str
+  ) -> list[datetime.date]:
+  inirefmonth = make_refmonth_or_raise(inirefmonth)
+  finrefmonth = make_refmonth_or_raise(finrefmonth)
+  n = calc_int_n_months_inbetween(inirefmonth, finrefmonth)
+  if n < 2:
+    return []
+  mr_list = get_monthrange_as_list(inirefmonth, finrefmonth)
+  # remove extremes
+  _ = mr_list.pop(0), mr_list.pop()
+  mr_list.sort()
+  return mr_list
+
+
 def partition_monthlydays_wi_monthrange(inidate, findate):
   """
   Example:
@@ -263,6 +320,9 @@ def calc_int_n_months_inbetween(
   # =============================================
   # correct order: sooner has precedence on later
   # =============================================
+  inidate = dtfs.make_date_or_raise(inidate)
+  findate = dtfs.make_date_or_raise(findate)
+  # swap their order if needed
   if findate < inidate:
     tmpdate = inidate
     inidate = findate
@@ -765,6 +825,12 @@ def make_refmonth_or_none(p_refmonth: Any | None) -> datetime.date | None:
   """
   if p_refmonth is None:
     return None
+  if isinstance(p_refmonth, datetime.date):
+    if p_refmonth.day == 1:
+      return p_refmonth
+    else:
+      refmonth = datetime.date(year=p_refmonth.year, month=p_refmonth.month, day=1)
+      return refmonth
   refmonth = dtfs.make_date_or_none(p_refmonth)
   if refmonth is None:
     # do not return yet, try cases 'yyyymm' | 'yyyy[sep]m[m]'
@@ -858,6 +924,20 @@ def make_refmonthtuple_w_yearsinifin(yearini, yearfim=None, allow_future=False):
       # cut it off on current_refmonth
       finrefmonth = current_refmonth
   return inirefmonth, finrefmonth
+
+
+def pickup_refmonth_gaps_throughout_list(refmonths: list[datetime.date | str]) -> list[datetime.date]:
+  if refmonths is None or len(refmonths) < 2:
+    return []
+  gaps = []
+  refmonths = list(map(lambda rm: make_refmonth_or_raise(rm), refmonths))
+  for i, refmonth in enumerate(refmonths[1:]):
+    j = i + 1  # 'i' starts at 0 anyway with enumerate()
+    fr_refmonth = refmonths[j-1]
+    to_refmonth = refmonth
+    inner_gaps = find_refmonths_spread_gaps_inbetween(fr_refmonth, to_refmonth)
+    gaps += inner_gaps
+  return gaps
 
 
 def trans_monthrange_into_dailydaterange_or_none(monthrangetuple):
@@ -1024,9 +1104,33 @@ def adhoctest2():
   print(scrmsg)
 
 
+def adhoctest3():
+  """
+
+  refmonths = ['2025-1','2025-3','2025-5',]
+  retlist = graftin_missing_gaps_thru_refmonths(refmonths)
+  scrmsg = f"with graftin_missing_gaps_thru_refmonths() -> input {refmonths} | output {retlist}"
+  print(scrmsg)
+  retlist = get_monthrange_as_list(refmonths[0], refmonths[-1])
+  scrmsg = f"with get_monthrange_as_list(() -> input {refmonths} | output {retlist}"
+  print(scrmsg)
+
+  refmonths = ['2025-1','2025-3','2025-5',]
+  retlist = find_refmonths_spread_gaps_inbetween(refmonths[0], refmonths[-1])
+  scrmsg = f"with find_refmonths_spread_gaps_inbetween(() -> input {refmonths} | output {retlist}"
+  print(scrmsg)
+
+  """
+  refmonths = ['2025-1','2025-3','2025-5',]
+  retlist = pickup_refmonth_gaps_throughout_list(refmonths)
+  scrmsg = f"with find_refmonths_spread_gaps_inbetween(() -> input {refmonths} | output {retlist}"
+  print(scrmsg)
+
+
+
 if __name__ == "__main__":
   """
   process()
   adhoctest1()
   """
-  adhoctest2()
+  adhoctest3()

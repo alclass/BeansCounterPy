@@ -26,7 +26,7 @@ import calendar
 import copy
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonths_mod as refmonth_fs.py  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
-import lib.finfs.indices.indices_fetch_n_fs as cmfs  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
+import lib.fncfs.indices.indices_fetch_n_fs as cmfs  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
 from dateutil import relativedelta
 """
 import datetime

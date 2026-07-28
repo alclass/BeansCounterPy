@@ -1,5 +1,5 @@
 """
-lib/dbfs/__init__.py
+art/immeub/inst/cdutra/credeb_accomp/mdb/__init__.py
   Contains config variables related to its package
 
 """
@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 SCRIPT_DIR = Path(__file__).resolve().parent
 env_path = SCRIPT_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
-LOCAL_MONGODB_URL = os.getenv("LOCAL_MONGODB_URL")
-DBPORT = os.getenv("DBPORT")
-CONNEXION_STR = f"mongodb://{LOCAL_MONGODB_URL}:{DBPORT}"
 LOCAL_MONGODB_CONSTR = os.getenv("LOCAL_MONGODB_CONSTR")
+IMMEUB_DBNAME = os.getenv("IMMEUB_DBNAME")
+CREDEB_ACCOMP_COLLNAME = os.getenv("CREDEB_ACCOMP_COLLNAME")
