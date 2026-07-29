@@ -8,19 +8,8 @@ import lib.fncfs.indices.ipca.ipca_data as ipca
 from decimal import Decimal
 import datetime
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.indices as init
-import lib.fncfs.indices.fncmathfs.finc_math_fs as fmath  # fmath.get_ir_incrfact_f_mora_w_idx_n_expo
+import lib.fncfs.fncmathfs.finance_math_fs as fmath  # fmath.get_ir_incrfact_f_mora_w_idx_n_expo
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
-IPCA = init.IPCA
-
-
-def fetch_ipcadec_v_cacher_f_year(year: int) -> list[tuple[datetime.date | None, Decimal | None]]:
-  olist = []
-  ipcacacher = fncach.IpcaAPICacherRetriever()
-  ipca_dec = ipcacacher.fetch_ipcas_dec_fo_year()
-
-
-
 
 
 def fetch_ipcadec_v_cacher_f_refmonth(refmonth: datetime.date) -> Decimal | None:

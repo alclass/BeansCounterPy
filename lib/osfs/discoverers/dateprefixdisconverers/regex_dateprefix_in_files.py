@@ -8,7 +8,6 @@ lib/osfs/discoverers/dateprefixdisconverers/regex_dateprefix_in_files.py
 
   There are also some extra functions in here.
 """
-import os
 from  pathlib import Path
 import re
 import datetime
@@ -138,7 +137,7 @@ def filterin_files_w_givendateprefix(pdate: datetime.date, files: list[Path]):
   outfiles = [fp / fn for fp, fn in folderpaths_n_fns]
   return outfiles
 
-import art.finc.bnk.inst.bb.local_settings as ls
+import art.fnc.bnk.inst.bb.local_settings as ls
 def adhoctest1():
   refmonth = rmfs.make_refmonth_or_current('2024-10')
   files = ffretr.gather_all_files_up_from(ls.BB_CC_EXTR_ANO_A_ANO_BASEFOLDER)

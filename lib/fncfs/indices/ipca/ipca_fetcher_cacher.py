@@ -100,20 +100,25 @@ class IpcaAPICacherRetriever:
   @property
   def ipca_oldest_refmonth_n_idx(self):
     if self._ipca_oldest_refmonth_n_idx is None:
-      self.find_n_set_ipca_oldest_refmonth_thru_json_cache()
+      self.find_ipca_oldest_n_newest_year_thru_json_cache()
     return self._ipca_oldest_refmonth_n_idx
-
-  def find_n_set_ipca_oldest_refmonth_thru_json_cache(self):
-    jsonexists = fet.find_ipca_oldest_refmonth_thru_json_cache()
 
   @property
   def ipca_mostrecent_refmonth_n_idx(self):
     if self._ipca_mostrecent_refmonth_n_idx is None:
-      self.find_n_set_ipca_oldest_refmonth_thru_json_cache()
+      self.find_n_set_mostrecent_refmonth_n_idx_thru_json_cache()
     return self._ipca_mostrecent_refmonth_n_idx
 
-  def find_n_set_mostrecent_refmonth_thru_json_cache(self):
-    jsonexists = fet.find_ipca_mostrecent_refmonth_thru_json_cache()
+  def find_ipca_oldest_n_newest_year_thru_json_cache(self):
+    oldest_n_newest_years = fet.find_ipca_oldest_n_newest_year_thru_json_cache()
+    if oldest_n_newest_years is None:
+      return
+    iniyear = oldest_n_newest_years[0]
+    finyear = oldest_n_newest_years[-1]
+    iniyeartuplelist = self.retrieve_month_n_ipcadec_tuplelist_fo_year(iniyear)
+    self._ipca_oldest_refmonth_n_idx = iniyeartuplelist[0]
+    finyeartuplelist = self.retrieve_month_n_ipcadec_tuplelist_fo_year(finyear)
+    self._ipca_mostrecent_refmonth_n_idx = finyeartuplelist[-1]
 
   def add_n_manage_years_cache_size(self, year: int):
     if year in self.month_n_ipcapct_dict:
@@ -163,7 +168,7 @@ class IpcaAPICacherRetriever:
   def retrieve_month_n_ipcadec_tuplelist_fo_year(self, year: int) -> list[tuple[datetime.date, Decimal | None]]:
     pdict = self.fetch_ipcas_dec_fr_jsonfile_for_year(year)
     if pdict is not None:
-      trnsp_refmonth_n_ipcadec_fr_dict_tuplelist()
+      # trnsp_refmonth_n_ipcadec_fr_dict_to_tuplelist()
       month_n_ipcadec_tuplelist = [(refmonth, pdict[refmonth]) for refmonth in pdict]
       month_n_ipcadec_tuplelist.sort(key=lambda tpl: tpl[0])
       return month_n_ipcadec_tuplelist
@@ -224,6 +229,13 @@ class IpcaAPICacherRetriever:
     self.retrieve_all_monthly_ipcapct_between_refmonths(inirefmonth, finrefmonth)
     return
 
+  def __str__(self):
+    ostr = f"""{self.__class__.__name__}
+    ipca_oldest_refmonth_n_idx = {self.ipca_oldest_refmonth_n_idx}
+    ipca_mostrecent_refmonth_n_idx = {self.ipca_mostrecent_refmonth_n_idx}
+    """
+    return ostr
+
 
 def adhoctest1():
   """
@@ -251,9 +263,10 @@ def adhoctest2():
   retriever = IpcaAPICacherRetriever()
   refmonths = ['2023-1','2024-3','2025-5',]
   inirefmonth, finrefmonth = refmonths[0], refmonths[-1]
-  tuplelist = retriever.retrieve_all_monthly_ipcapct_between_refmonths(inirefmonth, finrefmonth)
+  retriever.retrieve_all_monthly_ipcapct_between_refmonths(inirefmonth, finrefmonth)
   # scrmsg = f"input {inirefmonth} to {finrefmonth}| output {tuplelist}"
   # print(scrmsg)
+  print(retriever)
 
 
 

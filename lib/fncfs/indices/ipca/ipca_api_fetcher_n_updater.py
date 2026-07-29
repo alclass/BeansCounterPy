@@ -6,8 +6,11 @@ from datetime import datetime
 """
 import datetime
 import decimal
+import os
+from decimal import Decimal
 import json
 from pathlib import Path
+import re
 import urllib.parse
 import urllib.request
 import lib.datesetc.datefs as dtfs
@@ -18,7 +21,9 @@ from lib.datesetc.refmonth_fs import make_refmonth_or_raise, make_current_refmon
 COD_SERIE_IPCA = 433
 BCB_API_URL_INTERPOL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo_serie}/dados?{params_enc_fmt_n_ini_fim}"
 # IPCA_JSONFILE_INTERPOL = "ipca_{refmonth7chars}.json"
-IPCA_JSONFILE_INTERPOL = "ipca_{year}.json"
+IPCA_JSONFILE_INTERPOL = init.YEARLY_JSON_FILENAME_INTERPOL
+re_str_mtch_year = r"^ipca[-](?P<year>\d{4})[.]json$"
+recmp_mtch_year = re.compile(re_str_mtch_year)
 
 
 def does_jsonfile_for_year_ipcas_exist(year: int) -> bool:
@@ -28,13 +33,39 @@ def does_jsonfile_for_year_ipcas_exist(year: int) -> bool:
   return json_filenpath.is_file()
 
 
-def find_ipca_oldest_refmonth_n_idx_thru_json_cache() -> tuple[datetime.date, Decimal] | None:
+def find_ipca_oldest_n_newest_year_thru_json_cache() -> tuple[int, int] | None:
   """
-  def find_n_set_ipca_oldest_refmonth_thru_json_cache(self):
-    jsonexists = fet.find_ipca_oldest_refmonth_thru_json_cache()
 
   """
-  pass
+  ipca_dirpath = init.get_ipca_datadir()
+  entries = os.listdir(ipca_dirpath)
+  jsonfiles = filter(lambda x: recmp_mtch_year.match(x), entries)
+  jsonfiles = list(jsonfiles)
+  jsonfiles = sorted(jsonfiles)
+  if len(jsonfiles) == 0:
+    return None
+  oldest_filename = jsonfiles[0]
+  newest_filename = jsonfiles[-1]
+  # they've already matched in the filter() above
+  match_o = recmp_mtch_year.match(oldest_filename)
+  oldest_year = int(match_o.group('year'))
+  match_o = recmp_mtch_year.match(newest_filename)
+  newest_year = int(match_o.group('year'))
+  return oldest_year, newest_year
+
+
+def find_ipca_oldest_year_thru_json_cache() -> int | None:
+  oldest_n_newest = find_ipca_oldest_n_newest_year_thru_json_cache()
+  if oldest_n_newest is None:
+    return None
+  return oldest_n_newest[0]
+
+
+def find_ipca_mostrecent_year_thru_json_cache() -> int | None:
+  oldest_n_newest = find_ipca_oldest_n_newest_year_thru_json_cache()
+  if oldest_n_newest is None:
+    return None
+  return oldest_n_newest[-1]
 
 
 def write_jsonresponse_within_dates_to(json_res: str, dates: tuple[datetime.date, datetime.date]) -> None:
@@ -283,8 +314,16 @@ def adhoctest1():
   # resultado_json  = 'resultado_json'
   print(resultado_json)
 
-
 def adhoctest2():
+  year = find_ipca_oldest_year_thru_json_cache()
+  scrmsg = f"{__name__} find_ipca_oldest_year_thru_json_cache() => year = {year}"
+  print(scrmsg)
+  oldest_n_newest = find_ipca_oldest_n_newest_year_thru_json_cache()
+  scrmsg = f"{__name__} find_ipca_oldest_n_newest_year_thru_json_cache() => oldest_n_newest = {oldest_n_newest}"
+  print(scrmsg)
+
+
+def adhoctest3():
   """
   fetch_ipca_for_years()
   fetch_ipca_curyear_uptilnow()
@@ -309,6 +348,6 @@ if __name__ == '__main__':
   """
   adhoctest1()
   adhoctest2()
-  """
   process()
-  adhoctest1()
+  """
+  adhoctest2()

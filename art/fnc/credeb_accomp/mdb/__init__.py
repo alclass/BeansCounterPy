@@ -1,5 +1,5 @@
 """
-art/immeub/inst/cdutra/credeb_accomp/mdb/__init__.py
+art/fnc/credeb_accomp/mdb/__init__.py
   Contains config variables related to its package
 
 """

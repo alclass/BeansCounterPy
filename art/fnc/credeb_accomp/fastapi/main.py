@@ -1,5 +1,5 @@
 """
-art/immeub/inst/cdutra/credeb_accomp/fastapi/main.py
+art/fnc/credeb_accomp/fastapi/main.py
 
 my_project/
 ├── main.py          # FastAPI Backend
@@ -13,8 +13,8 @@ For reolading the app when it's changed:
     $ fastapi dev app/fastapi_main.py
     $ uvicorn main:app.fastapi_main --reload
 
-uvicorn main:art.immeub.inst.cdutra.credeb_accomp.fastapi --reload
-fastapi dev art/immeub/inst/cdutra/credeb_accomp/fastapi/main.py
+uvicorn main:art.fnc.credeb_accomp.fastapi --reload
+fastapi dev art/fnc/credeb_accomp/fastapi/main.py
 
 Open in Browser:
 Go to [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
@@ -31,13 +31,16 @@ from pydantic import BaseModel
 import art.fnc.credeb_accomp.mdb as mdb
 import art.fnc.credeb_accomp as crdbinit
 app = FastAPI(title="DebCredAccompanier CRUD App")
+LOCAL_MONGODB_CONSTR = mdb.LOCAL_MONGODB_CONSTR
+IMMEUB_DBNAME = mdb.IMMEUB_DBNAME
+CREDEB_ACCOMP_COLLNAME = mdb.CREDEB_ACCOMP_COLLNAME
 
 # MongoDB connection setup (adjust URI/database name as needed for your local setup)
-MONGO_DETAILS = "mongodb://localhost:27017"
+MONGO_DETAILS = LOCAL_MONGODB_CONSTR  # "mongodb://localhost:27017"
 client = AsyncIOMotorClient(MONGO_DETAILS)
-mongo_dbname = mdb.IMMEUB_DBNAME
+mongo_dbname = IMMEUB_DBNAME
 database = client.get_database(mongo_dbname)  # Replace with your DB name
-debcre_collname = mdb.CREDEB_ACCOMP_COLLNAME
+debcre_collname = CREDEB_ACCOMP_COLLNAME
 collection = database.get_collection(debcre_collname)  # Replace with your Collection name
 templates = Jinja2Templates(directory="templates")
 # Default constant mirroring DIN_META_MENSAL
@@ -101,7 +104,7 @@ async def read_root(request: Request):
 
 @app.post("/api/records/", response_model=DebCredResponse)
 async def create_record(record: DebCredCreate):
-  data = record.dict()
+  data = record.model_dump()  # formerly record.dict()
   # Mocking basic backend calculation steps corresponding to __post_init__ logic
   data["finvalue_d1"] = data["inivalue_d1"] + data["cre_in_tasks"]
   data["finvalue_d2"] = data["inivalue_d2"] + data["cre_in_pay"]
@@ -132,9 +135,9 @@ async def get_record(_id: str):
 
 
 @app.put("/api/records/{id}", response_model=DebCredResponse)
-async def update_record(id: str, record: DebCredUpdate):
+async def update_record(_id: str, record: DebCredUpdate):
   from bson import ObjectId
-  update_data = {k: v for k, v in record.dict(exclude_unset=True).items() if v is not None}
+  update_data = {k: v for k, v in record.model_dump(exclude_unset=True).items() if v is not None}
 
   if not update_data:
     raise HTTPException(status_code=400, detail="No fields provided for update")
@@ -142,14 +145,14 @@ async def update_record(id: str, record: DebCredUpdate):
   # Recalculate fields if primary components change
   update_data["updt_saldos_has_run"] = True
 
-  result = await collection.update_one({"_id": ObjectId(id)}, {"$set": update_data})
+  result = await collection.update_one({"_id": ObjectId(_id)}, {"$set": update_data})
   if result.modified_count == 0:
     # Check if document exists even if values didn't change
-    existing = await collection.find_one({"_id": ObjectId(id)})
+    existing = await collection.find_one({"_id": ObjectId(_id)})
     if not existing:
       raise HTTPException(status_code=404, detail="Record not found")
 
-  updated_doc = await collection.find_one({"_id": ObjectId(id)})
+  updated_doc = await collection.find_one({"_id": ObjectId(_id)})
   return helper_document(updated_doc)
 
 

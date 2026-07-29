@@ -28,7 +28,7 @@ from decimal import Decimal
 from dinero import Dinero
 from dinero.currencies import BRL
 from dataclasses import dataclass, field, asdict
-import art.fnc.credeb_accomp.monthly_data_credeb_accomp as accdt  # accdt.items
+import art.fnc.credeb_accomp.dictdata_fo_monthly_credeb_accomp as accdt  # accdt.items
 import art.fnc.credeb_accomp as init
 import art.fnc.credeb_accomp.mdb.serialize_dinero_n_decimal as obj_srlz
 import lib.datesetc.refmonth_fs as rmfs

@@ -1,5 +1,5 @@
 """
-art/immeub/inst/cdutra/credeb_accomp/__init__.py
+art/fnc/credeb_accomp/__init__.py
   Contains config-variables at this package level.
 
   Such as:
