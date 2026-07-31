@@ -15,11 +15,26 @@ load_dotenv(dotenv_path=env_path)
 # ================
 IPCA_MIDPATH = os.getenv("IPCA_MIDPATH")
 YEARLY_JSON_FILENAME_INTERPOL = os.getenv("YEARLY_JSON_FILENAME_INTERPOL")
+# =============
+# raise OSError exception if os.getenv() gets None
+# =============
+errmsg_interpol = "Error: please, fill in config-var [{configvar}] in .env in directory [{SCRIPT_DIR}]"
+if IPCA_MIDPATH is None:
+  configvar = "IPCA_MIDPATH"
+  errmsg = errmsg_interpol.format(configvar=configvar, SCRIPT_DIR=SCRIPT_DIR)
+  raise OSError(errmsg)
+if YEARLY_JSON_FILENAME_INTERPOL is None:
+  configvar = "YEARLY_JSON_FILENAME_INTERPOL"
+  errmsg = errmsg_interpol.format(configvar=configvar, SCRIPT_DIR=SCRIPT_DIR)
+  raise OSError(errmsg)
 
 
 def get_ipca_datadir() -> Path:
   """
   Gets data directory for monthly ipca indices
+
+  Notice that an exception is not raised if IPCA_MIDPATH does not exist.
+  Caller may create it later on and, then, if so, raise an exception.
 
   p = get_ipca_datadir()
   print(p)
@@ -33,7 +48,7 @@ def depr_get_ipca_datadir_on_year(year: int) -> Path:
   """
   DEPRECATED
   (This function is correct and works, but ipca dir does not exist anywore per year.)
-  Gets data directory for monthly ipca indices
+  Gets data directory for monthly ipca indices.
 
   p = get_ipca_datadir_on_year(2026)
   print(p)
@@ -47,7 +62,8 @@ def adhoctest1():
   """
   year = 2026
   p = depr_get_ipca_datadir_on_year(year)
-  scrmsg = f"adhoctest (deprecated because ipca's are not per year anymore) depr_get_ipca_datadir_on_year({year}) -> {p}"
+  scrmsg = (f"adhoctest (deprecated because ipca's are not per year anymore)"
+            f" depr_get_ipca_datadir_on_year({year}) -> {p}")
   print(scrmsg)
 
 

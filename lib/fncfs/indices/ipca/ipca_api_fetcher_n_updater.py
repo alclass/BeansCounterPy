@@ -3,11 +3,11 @@
 lib/fncfs/indices/ipca/ipca_api_fetcher.py
 
 from datetime import datetime
+from decimal import Decimal
 """
 import datetime
 import decimal
 import os
-from decimal import Decimal
 import json
 from pathlib import Path
 import re
@@ -48,8 +48,13 @@ def find_ipca_oldest_n_newest_year_thru_json_cache() -> tuple[int, int] | None:
   newest_filename = jsonfiles[-1]
   # they've already matched in the filter() above
   match_o = recmp_mtch_year.match(oldest_filename)
+  # the next line is for the IDE for filter() above guarantees they're not None
+  if match_o is None:
+    return None
   oldest_year = int(match_o.group('year'))
   match_o = recmp_mtch_year.match(newest_filename)
+  if match_o is None:
+    return None
   newest_year = int(match_o.group('year'))
   return oldest_year, newest_year
 
@@ -75,7 +80,8 @@ def write_jsonresponse_within_dates_to(json_res: str, dates: tuple[datetime.date
   inidate, findate = dates[0], dates[1]
   sinidate, sfindate = inidate.strftime("%Y-%m-%d"), findate.strftime("%Y-%m-%d")
   filename = f"ipca-{sinidate}_{sfindate}.json"
-  ipca_dirpath = init.get_ipca_datadir_on_year(inidate.year)
+  # ipca_dirpath = init.get_ipca_datadir_on_year(inidate.year)
+  ipca_dirpath = init.get_ipca_datadir()
   filepath = ipca_dirpath / filename
   with open(filepath, 'w') as outfile:
     outfile.write(json_res)
@@ -150,7 +156,7 @@ def fetch_n_store_ipcas_in_current_year_uptilnow() -> Path | None:
   return writtenfile
 
 
-def fetch_n_store_monthly_ipcas_to_jsonfile_fo_year(year: int):
+def fetch_n_store_monthly_ipcas_to_jsonfile_fo_year(year: int) -> Path | None:
   """
   API-fetches yearly IPCA indices for a given year and stores/caches them to a local JSON file.
 
@@ -170,16 +176,19 @@ def fetch_n_store_monthly_ipcas_to_jsonfile_fo_year(year: int):
   in file = {years_ipca_filepath}
   """
   print(scrmsg)
+  return years_ipca_filepath
 
 
 def read_ipca_fr_jsonfile_for_refmonth_via_jsonfile(refmonth: datetime.date) -> decimal.Decimal | None:
   """
+  DEPRECATED
   This function is not needed anymore because data was grouped by year, not refmonth
   """
   refmonth7chars = refmonth.strftime("%Y-%m")
   interpol_rm_dict = {'refmonth7chars': refmonth7chars}
   ipca_jsonfilename = IPCA_JSONFILE_INTERPOL.format(**interpol_rm_dict)
-  ipca_dirpath = init.get_ipca_datadir_on_year(refmonth.year)
+  # ipca_dirpath = init.get_ipca_datadir_on_year(refmonth.year)
+  ipca_dirpath = init.get_ipca_datadir()
   ipca_jsonfile = ipca_dirpath / ipca_jsonfilename
   datadictlist = json.load(open(ipca_jsonfile))
   if len(datadictlist) > 0:
@@ -313,6 +322,7 @@ def adhoctest1():
   resultado_json = bcb_api_fetch_monthly_ipcas_between(inidate, findate)
   # resultado_json  = 'resultado_json'
   print(resultado_json)
+
 
 def adhoctest2():
   year = find_ipca_oldest_year_thru_json_cache()

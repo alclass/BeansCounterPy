@@ -17,7 +17,7 @@ To find all .env's in the repo's directory tree:
 from pathlib import PosixPath
 import sys
 """
-import local_root_settings as rootsett
+import local_settings as ls
 import os
 from pathlib import Path
 BB_FI_EXTRACTS_ROOT_FOLDERNAME = "FI Extratos Mensais Ano a Ano BB OD"  # conventioned: do not change it
@@ -31,7 +31,8 @@ APP_ROOTFOLDER = Path(os.path.dirname(__file__))
 
 
 def get_datadir_foldername_or_default() -> str:
-  return rootsett.DATADIR_FOLDERNAME or DEFAULT_DATADIR_FOLDERNAME
+  datadir_foldername = ls.DATADIR_FOLDERNAME or DEFAULT_DATADIR_FOLDERNAME
+  return datadir_foldername
 
 
 def get_apps_data_rootdir_abspath() -> Path:

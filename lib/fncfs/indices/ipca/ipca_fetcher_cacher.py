@@ -261,7 +261,7 @@ def adhoctest2():
   scrmsg = f"input {refmonths} | output {retlist}"
   print(scrmsg)
   retriever = IpcaAPICacherRetriever()
-  refmonths = ['2023-1','2024-3','2025-5',]
+  refmonths = ['2010-2','2015-3','2019-12',]
   inirefmonth, finrefmonth = refmonths[0], refmonths[-1]
   retriever.retrieve_all_monthly_ipcapct_between_refmonths(inirefmonth, finrefmonth)
   # scrmsg = f"input {inirefmonth} to {finrefmonth}| output {tuplelist}"
@@ -285,7 +285,7 @@ def process():
 
 if __name__ == '__main__':
   """
+  adhoctest1()
   process()
   """
-  # adhoctest1()
   adhoctest2()

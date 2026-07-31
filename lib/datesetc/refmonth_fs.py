@@ -1127,7 +1127,6 @@ def adhoctest3():
   print(scrmsg)
 
 
-
 if __name__ == "__main__":
   """
   process()
