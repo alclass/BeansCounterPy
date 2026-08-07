@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/bnk/models/bb/fi/fibb_daily_results_numbers_comma_to_point_convert.py
+art/bnk/pydantmodels/bb/fi/fibb_daily_results_numbers_comma_to_point_convert.py
 
 """
 import datetime

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/models/main.py
+art/immeub/rent/pydantmodels/main.py
 
 For reolading the app when it's changed:
-    $ fastapi dev art/immeub/rent/models/main.py
-    $ uvicorn main:art.immeub.rent.models.main --reload
+    $ fastapi dev art/immeub/rent/pydantmodels/main.py
+    $ uvicorn main:art.immeub.rent.pydantmodels.main --reload
 
 Here is the complete implementation for your FastAPI
   application. It includes the API request structures (schemas),

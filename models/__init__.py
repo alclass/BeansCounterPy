@@ -1,4 +1,4 @@
 """
-models/__init__.py
+pydantmodels/__init__.py
 """
 pass

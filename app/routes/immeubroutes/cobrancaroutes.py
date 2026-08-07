@@ -4,7 +4,7 @@ app/routes/immeubroutes/co branca_routes.py
 
 """
 from fastapi import APIRouter
-import art.immeub.rent.models.json_fatura_maker as jfat  # jfat.make_one
+import art.immeub.rent.pydantmodels.json_fatura_maker as jfat  # jfat.make_one
 cobrancarouter = APIRouter(prefix="/mes", tags=["Month's Cobrança Context"])
 router = APIRouter()
 
@@ -23,7 +23,7 @@ async def get_cobranca_by_immeub_sigla_n_refmonth(sigla: str, refmonth: str):
 
     return {"immeub_nick": immeub_nick, "refmonthdate": refmonthdate}
     An Example JSON fatura_card:
-      @module: art.immeubroutes.rent.models.json_fatura_maker
+      @module: art.immeubroutes.rent.pydantmodels.json_fatura_maker
         function: make_one
   """
   _, _ = sigla, refmonth

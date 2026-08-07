@@ -3,7 +3,7 @@
 fundoAplicBB.py
   Contains class FundoAplicBB which is a specialization of parent class fAplic.FundoAplic
   Parent class is general, this one is polymorphic for bnk 'bdb'.
-  Remember that this polymorphism is due to the fact that models publish different data files,
+  Remember that this polymorphism is due to the fact that pydantmodels publish different data files,
     that need different approaches to their scraping.
 """
 import art.finc.bnk.models.fundoAplic as fAplic

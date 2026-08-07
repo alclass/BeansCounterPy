@@ -585,11 +585,11 @@ def adhoctest2():
 
 def adhoctest3():
   """
-  Notice that to avoid "circular imports" this module cannot import models.models.banksgeneral
+  Notice that to avoid "circular imports" this module cannot import pydantmodels.pydantmodels.banksgeneral
     (because that imports this),
     so the adhoctest here will have variable bb_fi_rootfolder_abspath hardcoded
   If this path changes, for running this adhoctest(), variable must be updated too
-    bb_fi_rootfolder_abspath = models.models.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
+    bb_fi_rootfolder_abspath = pydantmodels.pydantmodels.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
 
   print('dateprefixfinder.lesser_yearmonthprefix_folderpath()')
   print(dateprefixfinder)

@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/rent/models/fatura_maker_w_wo_mora.py
+art/immeubroutes/rent/pydantmodels/fatura_maker_w_wo_mora.py
   Contains monthly and refmonthly date functions.
 
 import fs.datefs.introspect_dates as intr
 from typing import Union
-from dateutil.relativedelta import relativedelta
-from patsy import desc
-import lib.datesetc.datefs as dfs  # dfs.transform_strdate_to_date
 import lib.datesetc.datehilofs as hilo  # dfs.transform_strdate_to_date
-# from sqlalchemy.testing import exclude
 """
 import calendar
 import copy

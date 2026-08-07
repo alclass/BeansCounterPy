@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/models/main2.py
+art/immeub/rent/pydantmodels/main2.py
 
 For reolading the app when it's changed:
-    $ fastapi dev art/immeub/rent/models/main.py
-    $ uvicorn main:art.immeub.rent.models.main --reload
+    $ fastapi dev art/immeub/rent/pydantmodels/main.py
+    $ uvicorn main:art.immeub.rent.pydantmodels.main --reload
 
 Fixing the Code IssuesHere is why your code hit
   those walls and how we are fixing them:i1)
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
   # Target database cleanly (Fixes i1 metadata/type error)
   database = client.get_database("real_estate_simplified")
 
-  # Initialize Beanie with our stripped down two models
+  # Initialize Beanie with our stripped down two pydantmodels
   await init_beanie(database=database, document_models=[Tenant, Contract])
   yield
   # Cleanup on shutdown (if needed) can go here

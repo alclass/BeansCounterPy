@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/rent/models/json_fatura_maker.py
+art/immeubroutes/rent/pydantmodels/json_fatura_maker.py
 
 fatura fields
 
@@ -37,7 +37,7 @@ from dataclasses import asdict  # , dataclass, field   # , field
 import art.immeub.rent.bill as init  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
 import lib.datesetc.refmonth_fs as rmfs
 import lib.datesetc.datefs as dtfs
-import art.immeub.rent.models.fatura_etal_models as fatfs  # fatfs.FaturaCard
+import art.immeub.rent.pydantmodels.fatura_etal_models as fatfs  # fatfs.FaturaCard
 DEFAULT_FIX_IR_PCT = init.DEFAULT_FIX_IR_PCT  # this is percentual
 DEFAULT_FIX_IR_DEC = DEFAULT_FIX_IR_PCT / 100  # this is decimal
 
@@ -58,7 +58,7 @@ class Mounter:
 
 def make_one():
   """
-  art.immeubroutes.rent.models.json_fatura_maker.make_one
+  art.immeubroutes.rent.pydantmodels.json_fatura_maker.make_one
   """
   today = datetime.date.today()
   immeub_address = ["Rua Camel Doutor, 67 apt 101", "Barra Central 20999-999"]

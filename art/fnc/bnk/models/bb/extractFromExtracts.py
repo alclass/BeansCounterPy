@@ -67,7 +67,7 @@ class BBFundoExtractScraper:
       print(txttrunk)
 
   def __str__(self):
-    outstr = 'Number of models = ' + str(len(self.txttrunks))
+    outstr = 'Number of pydantmodels = ' + str(len(self.txttrunks))
     return outstr
 
 

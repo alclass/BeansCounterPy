@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/fnc/bnk/models/banksgeneral.py
+art/fnc/bnk/pydantmodels/banksgeneral.py
 
 """
 import os

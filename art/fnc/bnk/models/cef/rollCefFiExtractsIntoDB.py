@@ -2,7 +2,7 @@
 """
 rollCefFiExtractsIntoDB.py
   Receives a refmonthdate range (ini to fim) and calls
-    => models/models/cef/extractCefFiDataFromXml.py
+    => pydantmodels/pydantmodels/cef/extractCefFiDataFromXml.py
    for each set of (fundo, refmonthdate) and inserts info into DB.
 """
 

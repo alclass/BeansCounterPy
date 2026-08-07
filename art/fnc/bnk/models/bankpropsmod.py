@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-models/models/bankpropsmod.py
+pydantmodels/pydantmodels/bankpropsmod.py
 """
 
 

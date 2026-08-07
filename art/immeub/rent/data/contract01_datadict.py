@@ -3,10 +3,10 @@
 art/immeub/rent/data/contract01_datadict.py
 
 import art.immeub.rent.data.contract01_datadict.py
-art.immeub.rent.models.contract_molder.Person
+art.immeub.rent.pydantmodels.contract_molder.Person
 import copy
 """
-import art.immeub.rent.models.contract_molder as mold  # mold.Person
+import art.immeub.rent.pydantmodels.contract_molder as mold  # mold.Person
 import datetime
 from dinero import Dinero
 from dinero.currencies import BRL

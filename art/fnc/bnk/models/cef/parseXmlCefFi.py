@@ -18,7 +18,7 @@ import lib.dbfs.dbasfolder.find_dateprefixedfiles_fr_basefolder as fndr
 import lib.osfs.filefolder_retriever_fs as osfs
 import art.finc.bnk.models.banksgeneral as bkge
 import art.finc.bnk.models.cef.listXmlNodesAndValuesForCefFi as prsXml  # prsXml.parse_xml_file
-# import models.models.fundoAplic as fAplic
+# import pydantmodels.pydantmodels.fundoAplic as fAplic
 CEF_BANK3LETTER = bkge.GenBank.BANK3LETTER_CEF
 
 

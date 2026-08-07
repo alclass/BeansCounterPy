@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/models/escadas/stairStepHeightsCorrection.py
+art/pydantmodels/escadas/stairStepHeightsCorrection.py
   A script that calculates step heights, to be leveled with mass,
     for a stair with non-equal step heights.
 

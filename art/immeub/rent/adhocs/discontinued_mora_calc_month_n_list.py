@@ -23,7 +23,7 @@ import lib.datesetc.datefs as dtfs # dfs.stringify_date
 import lib.fncfs.dinerofs.dinserial_fs as dinfs # dfs.stringify_date
 import art.immeub.rent.bill as init
 import art.immeub.rent.bill.mora_calculator as mc  # mc.MoraMonthCalculator
-import art.immeub.rent.models.fatura_maker_w_wo_mora as rmcm  # rmcm.MCRefmonth
+import art.immeub.rent.pydantmodels.fatura_maker_w_wo_mora as rmcm  # rmcm.MCRefmonth
 IPCA = "IPCA"
 MoraMonthCalculator = mc.MoraMonthCalculator
 DEFAULT_FIX_IR_PCT = init.DEFAULT_FIX_IR_PCT

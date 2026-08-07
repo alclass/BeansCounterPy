@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/models/schema_bizmodels.py
+art/immeub/rent/pydantmodels/schema_bizmodels.py
 
 # ==========================================
 # MONGO DOCUMENTS (DB LAYOUT)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-models/models/bankpathfinder.py
+pydantmodels/pydantmodels/bankpathfinder.py
 """
 import inspect
 import os.path

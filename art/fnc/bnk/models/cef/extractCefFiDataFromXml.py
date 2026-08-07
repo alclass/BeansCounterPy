@@ -36,9 +36,9 @@ class CefFiXMLDataExtractor:
 
     For the time being, the parsing strategy is to use xmltree.findall(nodepath)
       and observe nodes and their positions as they occur. This observation is done with the help of:
-        => models/models/cef/parseXmlCefFi.py
+        => pydantmodels/pydantmodels/cef/parseXmlCefFi.py
     Once these node positionings are taken, they are "hardcoded" in:
-        => models/models/cef/xmliterposDataDictForCefFundos.py
+        => pydantmodels/pydantmodels/cef/xmliterposDataDictForCefFundos.py
 
     The scheme is used by CEF which has pdf data files converted into xml.
       BB uses scraping directly from data text files.

@@ -117,7 +117,7 @@ class DebCredAccompanier:
   finvalue_d1: Dinero = field(default_factory=lambda: None)
   finvalue_d2: Dinero = field(default_factory=lambda: None)
   finvalue_res: Dinero = field(default_factory=lambda: None)
-  updt_saldos_has_run: bool = False  # this Class models a run-once object
+  updt_saldos_has_run: bool = False  # this Class pydantmodels a run-once object
   is_closed_n_in_db: bool = False
   is_data_from_db: bool = False  # to avoid __post_init__() execution
 

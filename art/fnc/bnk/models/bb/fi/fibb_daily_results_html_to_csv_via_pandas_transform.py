@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-models/models/bb/fi/fibb_daily_results_html_to_csv_via_pandas_transform.py
+pydantmodels/pydantmodels/bb/fi/fibb_daily_results_html_to_csv_via_pandas_transform.py
 """
 import datetime
 import os

@@ -8,8 +8,8 @@ readDataFromDBForBBFI.py
 # import fs.db.trees.lookup_monthrange_in_datafolder as lkup  # for finding "conventioned" paths
 # import fs.osfs.oshilofunctions as hilo  # for recuperating refmonth from str
 import art.finc.bnk.models.banksgeneral as bkge  # for bootsrapping bnk's fi's base folderpath (needed for lkup)
-# import models.models.bb.bbScraperWithFileText as bbScrp  # for the BBFI text scraper
-# import models.models.fundoAplicSql as fApSql  # inherited class for db-inserting
+# import pydantmodels.pydantmodels.bb.bbScraperWithFileText as bbScrp  # for the BBFI text scraper
+# import pydantmodels.pydantmodels.fundoAplicSql as fApSql  # inherited class for db-inserting
 import art.finc.bnk.db.createtable_fundos as creatdb
 import sqlite3
 import settings as sett

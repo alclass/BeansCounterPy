@@ -51,6 +51,7 @@ O documento emitido pela Receita Federal possui
 import copy
 """
 import random
+import string
 from functools import reduce
 pesos_passo1 = list(range(10, 1, -1))  # [10, 9, 8, 7, 6, 5, 4, 3, 2]
 pesos_passo2 = list(range(11, 1, -1))  # [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]
@@ -81,6 +82,16 @@ def raise_if_inconsistent_pre_cpf(p_pre_cpf: str):
     raise ValueError(errmsg)
 
 
+def are_there_non_numberdigits_in_list_or_str(digits: str | list) -> bool:
+  """
+  Checks/verifies if a list (or a str) contains non-numbers
+  """
+  bool_list = list(map(lambda n: n in string.digits, digits))
+  if False in bool_list:
+    return True
+  return False
+
+
 def raise_if_nonnumbers_in_list_or_str(digits: str):
   """
   Consider this function private,
@@ -91,11 +102,9 @@ def raise_if_nonnumbers_in_list_or_str(digits: str):
     b) a formatted (and correct) CPF will 'defeat' this checking here!
     c) in that sense this function should be considered 'private'
   """
-  try:
-    # the list() executes the map() which may, as it's checked for, raise ValueError
-    # without list(), the map() is formed but not executed (intended for checking ValueError)
-    _ = list(map(lambda n: int(n), digits))
-  except (TypeError, ValueError):
+  # the list() executes the map() which may, as it's checked for, raise ValueError
+  # without list(), the map() is formed but not executed (intended for checking ValueError)
+  if are_there_non_numberdigits_in_list_or_str(digits):
     errmsg = f"Erro: o CPF '{digits}' possui dígitos não-numéricos"
     raise ValueError(errmsg)
 
@@ -199,6 +208,16 @@ def make_random_11digit_cpf():
   dv = calc_os_2digitos_verificadores_cpflike(digits9)
   cpf = digits9 + dv
   return cpf
+
+
+def is_11char_cpf_valid(cpf: str) -> bool:
+  if cpf is None:
+    return False
+  if len(cpf) != 11:
+    return False
+  tupl = checa_cpf_digitos_verificadores(cpf)
+  if_valid = tupl[0]
+  return if_valid
 
 
 def checa_cpf_digitos_verificadores(cpf: str) -> tuple:

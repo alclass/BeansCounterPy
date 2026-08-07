@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """"
 show_amt_evol_wi_daterange_viadb.py
-  prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses) for all models with a date range
+  prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses) for all pydantmodels with a date range
   (this script searches via db [there's another version that searches via data files])
 """
 import sys

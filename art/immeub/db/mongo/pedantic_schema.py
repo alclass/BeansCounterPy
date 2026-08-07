@@ -46,7 +46,7 @@ class User(Document):
 async def init_db():
   # Connect to localhost
   iclient = AsyncIOMotorClient("mongodb://localhost:27017")
-  # Initialize Beanie with your document models
+  # Initialize Beanie with your document pydantmodels
   await init_beanie(database=iclient.my_local_database, document_models=[User])
   # Upload/Save a document to test it
   new_user = User(username="johndoe", email="john@example.com", age=25)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-models/models/bb/fi/analyser_monthly_results_fibb_.py
+pydantmodels/pydantmodels/bb/fi/analyser_monthly_results_fibb_.py
   reads the last daily result file available for a month and tries to aggregate,
   if there are data available, on a monthly basis (instead of on a daily basis)
 """

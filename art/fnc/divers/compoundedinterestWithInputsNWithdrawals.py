@@ -4,8 +4,8 @@ art/divers/compoundedinterestWithInputsNWithdrawals.py
 
 # import datetime
 # import lib.db.trees.lookup_monthrange_convention_from_basedatafolder_on as find
-# import models.models.banksgeneral
-# import models.models.extractdistributor as extrdistr
+# import pydantmodels.pydantmodels.banksgeneral
+# import pydantmodels.pydantmodels.extractdistributor as extrdistr
 """
 import sys
 import lib.datesetc.datefs as dtfs

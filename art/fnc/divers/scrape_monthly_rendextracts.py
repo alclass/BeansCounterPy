@@ -7,7 +7,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import lib.dbfs.dbasfolder.find_dateprefixedfiles_fr_basefolder as finder
 import art.finc.bnk.models.banksgeneral as bkge
-# from models.extractFromWithinAFundoReport import WithinFundoExtractScraper
+# from pydantmodels.extractFromWithinAFundoReport import WithinFundoExtractScraper
 import art.finc.bnk.models.bb.fi.bbScraperWithFileText as extScr
 import lib.texts.texts_scrapehelper as scrapehelper
 # import settings

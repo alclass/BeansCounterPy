@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-models/models/bb/fi/bbfi_file_find.py
-models/models/bb/fi/bbfi_file_find.py
+pydantmodels/pydantmodels/bb/fi/bbfi_file_find.py
+pydantmodels/pydantmodels/bb/fi/bbfi_file_find.py
 
 2023-10-10 RFDI BB rendimentos diários.csv
 """
