@@ -11,7 +11,7 @@ import calendar
 import copy
 import datetime
 import lib.datesetc.datefs as dtfs
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL
 import lib.datesetc.refmonth_fs as rmfs  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
 import lib.fncfs.indices.ipca.indices_fetch_n_fs as cmfs  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
@@ -36,7 +36,7 @@ class EachRefmonth:
   _var_ir_dec: float = None  # to be fetched based on refmonth
   _monthsfraction: float = None
   # these attributes are filled later on in the downstream class 'mounter' (or calculator)
-  moraparcel: Dinero = None
+  moraparcel: Decimal = None
   incrfactor: float = None  # increase factor
   fix_ir_dec: float = None  # the fix Interest Rate index that comes in here from the downstream calculator
 
@@ -162,7 +162,7 @@ class EachRefmonthMora:
   """
   """
   refmonth: datetime.date
-  moradinero: Dinero
+  moradinero: Decimal
   multiplier: float
 
 
@@ -180,15 +180,15 @@ class MCRefmonthRanger:
     self.descr = descr
     self.cmrefmonths: list[EachRefmonth] = []
     self.incrfactors: list[float] = []
-    self.fatura_total: Dinero | None = None
+    self.fatura_total: Decimal | None = None
     self.treat_attrs()
 
   def treat_attrs(self):
     self.inidate = dtfs.make_date_or_raise(self.inidate)
     self.findate = dtfs.make_date_or_today(self.findate)
     self.fillindata()
-    if not isinstance(self.inimontant, Dinero):
-      self.inimontant = Dinero(str(self.inimontant), BRL)
+    if not isinstance(self.inimontant, Decimal):
+      self.inimontant = Decimal(str(self.inimontant), BRL)
 
   def fetch_n_store_cmrefmonths(self):
     """
@@ -275,7 +275,7 @@ class MCRefmonthRanger:
 def adhoctest1():
   inidate = "2026-01-10"
   findate = "2026-04-07"
-  inimontant = Dinero("1000", BRL)
+  inimontant = Decimal("1000", BRL)
   mcr = MCRefmonthRanger(
     inidate=inidate,
     findate=findate,

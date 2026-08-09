@@ -31,7 +31,7 @@ from dateutil import relativedelta
 """
 import datetime
 import json
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL
 from dataclasses import asdict  # , dataclass, field   # , field
 import art.immeub.rent.bill as init  # refmonth_fs.py.fillin_refmonths_fr_ndayslist
@@ -46,7 +46,7 @@ def json_date_serial(obj):
     """JSON serializer for objects not serializable by default JSON code"""
     if isinstance(obj, datetime.date):
         return dtfs.date_to_str_4y_dash_2m_dash_2d(obj)
-    if isinstance(obj, Dinero):
+    if isinstance(obj, Decimal):
       strval = f"{obj.raw_amount:.2f}"
       return strval
     raise TypeError(f"Type {type(obj)} not serializable")
@@ -67,7 +67,7 @@ def make_one():
     munic_inscr='AAAAA',
     cityname="Rio de Janeiro",
     immeub_address=immeub_address,
-    monthlypay=Dinero("250", BRL),
+    monthlypay=Decimal("250", BRL),
     refmonth=refmonth,
   )
   thisyear = today.year
@@ -76,14 +76,14 @@ def make_one():
     immeub_address=immeub_address,
     incend_inscr='1m2aa-54b',
     uf_statesigla='RJ',
-    yearly_value=Dinero("50", BRL),
+    yearly_value=Decimal("50", BRL),
     refyear=incendtarif_refyear,
   )
   condtarif = fatfs.CondTarif(
     condname='Edifício Douto',
     immeub_address=immeub_address,
     refmonth=refmonth,
-    tarifvalue=Dinero("150", BRL),
+    tarifvalue=Decimal("150", BRL),
     # espelho_pdf_url: str = None
   )
   faturalines = []
@@ -94,7 +94,7 @@ def make_one():
     refmonth=refmonth,
     explain="no prazo",
     cred_or_debt="D",
-    value=Dinero(str(1000), BRL)
+    value=Decimal(str(1000), BRL)
   )
   faturalines.append(faturaline)
   # 2nd prop trib

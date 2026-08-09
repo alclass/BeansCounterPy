@@ -5,7 +5,7 @@ art/immeubroutes/pydantmodels/adhoc_bill_maker.py
 """
 import locale
 from art.immeub.rent.bill.billing_mod import PayItem
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL  # USD, EUR
 import datetime
 import lib.datesetc.rmfs as rm
@@ -22,7 +22,7 @@ def process():
     seq=1,
     descr='aluguel',
     ori_refmont=rm.make_refmonth_or_raise(today),
-    price=Dinero(strprice, BRL)  # Safe string initialization
+    price=Decimal(strprice, BRL)  # Safe string initialization
   )
   # payitem.add_mora()
   print(payitem)

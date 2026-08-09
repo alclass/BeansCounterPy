@@ -31,7 +31,7 @@ from lib import texts
 """
 import datetime
 from dateutil import relativedelta
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL
 from dataclasses import dataclass  # , field, asdict
 from typing import List
@@ -50,7 +50,7 @@ def json_date_serial(obj):
     """JSON serializer for objects not serializable by default JSON code"""
     if isinstance(obj, datetime.date):
         return dtfs.date_to_str_4y_dash_2m_dash_2d(obj)
-    if isinstance(obj, Dinero):
+    if isinstance(obj, Decimal):
       strval = f"{obj.raw_amount:.2f}"
       return strval
     raise TypeError(f"Type {type(obj)} not serializable")
@@ -63,7 +63,7 @@ class FaturaLine(Document):
   refmonth: datetime.date
   explain: str
   cred_or_debt: str
-  value: Dinero = None
+  value: Decimal = None
 
 
 @dataclass
@@ -73,7 +73,7 @@ class IncendTax:
   immeub_address: list[str]
   refmonth: datetime.date = None  # has context of duemonth i.e., month of payment (or M+1 if in convention)
   description: str = "taxa de incêndio estadual"
-  yearly_value: Dinero = None
+  yearly_value: Decimal = None
   refyear: int = None
   incendtax_url: str = None
 
@@ -100,8 +100,8 @@ class PropTrib:
   cityname: str
   immeub_address: list[str]
   refmonth: datetime.date
-  yearonepay: Dinero = None
-  monthlypay: Dinero = None
+  yearonepay: Decimal = None
+  monthlypay: Decimal = None
   parcels_ifmonthly: int = 10
   inimonth_ifmonthly: int = 2
   finmonth_ifmonthly: int = 11
@@ -118,7 +118,7 @@ class PropTrib:
   def get_value_by_context(self):
     if self.yearonepay is not None:
       return self.yearonepay
-    if not isinstance(self.monthlypay, Dinero):
+    if not isinstance(self.monthlypay, Decimal):
       errmsg = f"monthlypay ({self.monthlypay}) is not type Dinero. Cannot continue."
       raise ValueError(errmsg)
     return self.monthlypay
@@ -166,7 +166,7 @@ class CondTarif:
   condname: str
   immeub_address: list[str]
   refmonth: datetime.date
-  tarifvalue: Dinero = None
+  tarifvalue: Decimal = None
   espelho_pdf_url: str = None
 
   def generate_faturaline(self):
@@ -188,8 +188,8 @@ class ImmeubFaturaBaseMold(Document):
   """
   This class is an idea for a possible Contrat.generate() method that may fill in the attributes below
   """
-  aluguel: Dinero
-  condominium: Dinero
+  aluguel: Decimal
+  condominium: Decimal
   proptrib: Link[PropTrib]
   # proptrib: PropTrib = None
   incendtax: Link[IncendTax]
@@ -220,7 +220,7 @@ class FaturaCard(Document):
   fat_launchdate: datetime.date = None  # when it goes to payor (at end of month)
   rev_letter: str = 'a'  # revision letter (b, c...)  if fatura is ammended a posteriori
   duedate: datetime.date = None  # gets it from contract
-  total_a_pagar: Dinero = None  # computed by method calculate()
+  total_a_pagar: Decimal = None  # computed by method calculate()
   boleta_url_ifavail: str = None  # in case of a more formal billing-doc then the Pix-address above
 
   @property
@@ -265,7 +265,7 @@ class FaturaCard(Document):
       self.set_unique_fat_id()
     if self.duedate is None:
       self.set_duedate_by_refmonth()
-    _total = Dinero("0.0", BRL)
+    _total = Decimal("0.0", BRL)
     for item in self.items:
       cred_or_debt = item.cred_or_debt
       if cred_or_debt == 'D':

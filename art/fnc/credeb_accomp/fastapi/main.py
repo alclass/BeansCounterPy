@@ -20,71 +20,22 @@ Open in Browser:
 Go to [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
   to view and interact with your responsive local CRUD UI.
 """
+import pprint
 from datetime import date
+import datetime
 from decimal import Decimal
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel
+from fastapi import APIRouter, FastAPI
+router = APIRouter()
 import art.fnc.credeb_accomp.mdb as mdb
-import art.fnc.credeb_accomp as crdbinit
-app = FastAPI(title="DebCredAccompanier CRUD App")
-LOCAL_MONGODB_CONSTR = mdb.LOCAL_MONGODB_CONSTR
-IMMEUB_DBNAME = mdb.IMMEUB_DBNAME
-CREDEB_ACCOMP_COLLNAME = mdb.CREDEB_ACCOMP_COLLNAME
-
-# MongoDB connection setup (adjust URI/database name as needed for your local setup)
-MONGO_DETAILS = LOCAL_MONGODB_CONSTR  # "mongodb://localhost:27017"
-client = AsyncIOMotorClient(MONGO_DETAILS)
-mongo_dbname = IMMEUB_DBNAME
-database = client.get_database(mongo_dbname)  # Replace with your DB name
-debcre_collname = CREDEB_ACCOMP_COLLNAME
-collection = database.get_collection(debcre_collname)  # Replace with your Collection name
-templates = Jinja2Templates(directory="templates")
+import art.fnc.credeb_accomp as cd_init
+import art.fnc.credeb_accomp.credeb_accompanying_mod as cd_accomp
+import art.fnc.credeb_accomp.mdb.readers.mongo_reader_refmonths as mngr  # mngr.MongoDBCollectionRetriever
+import lib.datesetc.refmonth_fs as rmfs
+# templates = Jinja2Templates(directory="templates")
 # Default constant mirroring DIN_META_MENSAL
-DEFAULT_DIN_META_MENSAL = Decimal(crdbinit.VALOR_META_MENSAL_IN_BRL)
-
-
-# Pydantic Schemas
-class DebCredBase(BaseModel):
-  refmonth: date
-  inivalue_d1: Decimal
-  inivalue_d2: Decimal
-  inivalue_res: Decimal
-  cre_in_tasks: Decimal
-  cre_in_pay: Decimal
-  cre_in_trnsp_n_frut: Decimal
-  deb_giro: Decimal
-  valor_meta_no_mes: Decimal = DEFAULT_DIN_META_MENSAL
-
-
-class DebCredCreate(DebCredBase):
-  pass
-
-
-class DebCredUpdate(BaseModel):
-  refmonth: Optional[date] = None
-  inivalue_d1: Optional[Decimal] = None
-  inivalue_d2: Optional[Decimal] = None
-  inivalue_res: Optional[Decimal] = None
-  cre_in_tasks: Optional[Decimal] = None
-  cre_in_pay: Optional[Decimal] = None
-  cre_in_trnsp_n_frut: Optional[Decimal] = None
-  deb_giro: Optional[Decimal] = None
-  valor_meta_no_mes: Optional[Decimal] = None
-
-
-class DebCredResponse(DebCredBase):
-  id: str
-  _corrmone_n_intrst_if_any: Optional[Decimal] = None
-  _ipca_dec: Optional[Decimal] = None
-  finvalue_d1: Optional[Decimal] = None
-  finvalue_d2: Optional[Decimal] = None
-  finvalue_res: Optional[Decimal] = None
-  updt_saldos_has_run: bool = False
-  is_closed_n_in_db: bool = False
+import art.fnc.credeb_accomp.fastapi.models.pydanticmodels as pydtc  # pydtc.trnsf_credeb_dataclass_objs_to_pydantic
+app = FastAPI(title="DebCredAccompanier CRUD App")
 
 
 def helper_document(doc) -> dict:
@@ -95,71 +46,51 @@ def helper_document(doc) -> dict:
 
 
 # --- Frontend Route ---
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-  return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/")
+async def get_all_refmonth_slips():
+  mfetcher = mngr.MongoDBCollectionRetriever()
+  objs = mfetcher.fetch_all_as_objs()
+  pydantics = pydtc.trnsf_credeb_dataclass_objs_to_pydantic(objs)
+  return pydantics
 
 
-# --- CRUD Endpoints ---
-
-@app.post("/api/records/", response_model=DebCredResponse)
-async def create_record(record: DebCredCreate):
-  data = record.model_dump()  # formerly record.dict()
-  # Mocking basic backend calculation steps corresponding to __post_init__ logic
-  data["finvalue_d1"] = data["inivalue_d1"] + data["cre_in_tasks"]
-  data["finvalue_d2"] = data["inivalue_d2"] + data["cre_in_pay"]
-  data["finvalue_res"] = data["inivalue_res"] + data["cre_in_trnsp_n_frut"] - data["deb_giro"]
-  data["updt_saldos_has_run"] = True
-  data["is_closed_n_in_db"] = False
-
-  result = await collection.insert_one(data)
-  created_doc = await collection.find_one({"_id": result.inserted_id})
-  return helper_document(created_doc)
+@app.get("/{p_refmonth}")
+async def get_monthly_slip(p_refmonth: str):
+  refmonth = rmfs.make_refmonth_or_none(p_refmonth)
+  if refmonth is None:
+    return {}
+  mfetcher = mngr.MongoDBCollectionRetriever()
+  slip = mfetcher.find_by_refmonth_as_obj(refmonth)
+  pydantic_obj = pydtc.trnsf_credeb_dataclass_obj_to_pydantic(slip)
+  return pydantic_obj
 
 
-@app.get("/api/records/", response_model=List[DebCredResponse])
-async def get_records():
-  records = []
-  async for doc in collection.find():
-    records.append(helper_document(doc))
-  return records
+def adhoctest1():
+  d = Decimal(0)
+  print(d)
 
 
-@app.get("/api/records/{id}", response_model=DebCredResponse)
-async def get_record(_id: str):
-  from bson import ObjectId
-  doc = await collection.find_one({"_id": ObjectId(_id)})
-  if doc:
-    return helper_document(doc)
-  raise HTTPException(status_code=404, detail="Record not found")
+def cli_show_records():
+  mfetcher = mngr.MongoDBCollectionRetriever()
+  objs = mfetcher.fetch_all_as_objs()
+  pydantics = pydtc.trnsf_credeb_dataclass_objs_to_pydantic(objs)
+  for i, o in enumerate(pydantics):
+    seq = i + 1
+    print(seq)
+    pprint.pprint(o)
+  slip = mfetcher.find_by_refmonth_as_obj('2026-5')
+  print('slip =>', slip)
 
 
-@app.put("/api/records/{id}", response_model=DebCredResponse)
-async def update_record(_id: str, record: DebCredUpdate):
-  from bson import ObjectId
-  update_data = {k: v for k, v in record.model_dump(exclude_unset=True).items() if v is not None}
 
-  if not update_data:
-    raise HTTPException(status_code=400, detail="No fields provided for update")
-
-  # Recalculate fields if primary components change
-  update_data["updt_saldos_has_run"] = True
-
-  result = await collection.update_one({"_id": ObjectId(_id)}, {"$set": update_data})
-  if result.modified_count == 0:
-    # Check if document exists even if values didn't change
-    existing = await collection.find_one({"_id": ObjectId(_id)})
-    if not existing:
-      raise HTTPException(status_code=404, detail="Record not found")
-
-  updated_doc = await collection.find_one({"_id": ObjectId(_id)})
-  return helper_document(updated_doc)
+def process():
+  """
+  """
+  cli_show_records()
 
 
-@app.delete("/api/records/{id}")
-async def delete_record(_id: str):
-  from bson import ObjectId
-  result = await collection.delete_one({"_id": ObjectId(_id)})
-  if result.deleted_count == 1:
-    return {"message": "Record successfully deleted"}
-  raise HTTPException(status_code=404, detail="Record not found")
+if __name__ == '__main__':
+  """
+  adhoctest1()
+  """
+  process()

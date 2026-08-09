@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-art/bookroutes/packt/mdb/upsertors/jsonToMongoUpsertor.py
+art/fnc/credeb_accomp/mdb/writers/jsonToMongoUpsertor.py
+
   Explanation?
     (...)
 
@@ -19,9 +20,10 @@ from pathlib import Path
 import datetime
 from pymongo import MongoClient
 from art.bks.packt import DEFAULT_LOCAL_MONGO_CONN_URL
-from art.bks.packt import DEFAULT_MONGO_DBNAME
-from art.bks.packt import DEFAULT_MONGO_COLLNAME
 import lib.datesetc.stringify_datetimes as strtdelta
+import art.fnc.credeb_accomp.mdb as dbinit
+IMMEUB_DBNAME = dbinit.IMMEUB_DBNAME
+CREDEB_ACCOMP_COLLNAME = dbinit.CREDEB_ACCOMP_COLLNAME
 
 
 class MongoUpsertor:
@@ -29,8 +31,8 @@ class MongoUpsertor:
   def __init__(self, mongo_dbname=None, mongo_collname=None) -> None:
     self.start_time = datetime.datetime.now()
     self.end_time = None
-    self.mongo_dbname = mongo_dbname or DEFAULT_MONGO_DBNAME
-    self.mongo_collname = mongo_collname or DEFAULT_MONGO_COLLNAME
+    self.mongo_dbname = mongo_dbname or IMMEUB_DBNAME
+    self.mongo_collname = mongo_collname or CREDEB_ACCOMP_COLLNAME
     self.mongo_cli_conn_url = None
     self.mongo_cli_conn = None
     self.mongo_db = None

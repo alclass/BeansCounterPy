@@ -17,22 +17,19 @@ To find all .env's in the repo's directory tree:
 from pathlib import PosixPath
 import sys
 """
-import local_settings as ls
 import os
 from pathlib import Path
-BB_FI_EXTRACTS_ROOT_FOLDERNAME = "FI Extratos Mensais Ano a Ano BB OD"  # conventioned: do not change it
-BB_FI_EXTRACTS_FOLDERNAME_YEAR_INTERPOL = "{year} FI Extratos Mensais BB"  # conventioned: notice the str interpolation
-BB_FI_EXTRACT_FILENAME_YEARMONTH_INTERPOL = '{year}-{month:02d} FI extrato BB.txt'  # also conventioned:yyyy/mm interpol
-DEFAULT_DATADIR_FOLDERNAME = 'dados'  # this one is parameterized, a different one may be set in local_settings.py
-SUBFOLDER_BANKDATA = 'bankdata'
-# this one is parameterized, a different one may be set in local_settings.py
-APP_SQLITE_FILENAME = 'beanscounterapp.sqlite'
+from dotenv import load_dotenv
+SCRIPT_DIR = Path(__file__).resolve().parent
+env_path = SCRIPT_DIR / ".env"
+load_dotenv(dotenv_path=env_path)
 APP_ROOTFOLDER = Path(os.path.dirname(__file__))
+APP_SQLITE_FILENAME = os.getenv("APP_SQLITE_FILENAME", 'beanscounterapp.sqlite')
+DATADIR_FOLDERNAME = os.getenv("DATADIR_FOLDERNAME", 'dados')
 
 
 def get_datadir_foldername_or_default() -> str:
-  datadir_foldername = ls.DATADIR_FOLDERNAME or DEFAULT_DATADIR_FOLDERNAME
-  return datadir_foldername
+  return DATADIR_FOLDERNAME
 
 
 def get_apps_data_rootdir_abspath() -> Path:

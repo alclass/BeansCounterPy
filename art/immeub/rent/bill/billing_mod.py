@@ -8,7 +8,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from dataclasses import dataclass, field
 from lib.datesetc import rmfs
-from dinero import Dinero
+from dinero import Decimal
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 import lib.datesetc.rmfs as rm
@@ -20,9 +20,9 @@ class PayItem:
   seq: int
   descr: str
   ori_refmont: datetime.date
-  price: Dinero
-  mora: Dinero | None = None
-  mora_pieces: list[Dinero] = field(default_factory=list)
+  price: Decimal
+  mora: Decimal | None = None
+  mora_pieces: list[Decimal] = field(default_factory=list)
   moradate: datetime.date | None = None
 
   @property
@@ -71,7 +71,7 @@ def process():
     seq=1,
     descr='aluguel',
     ori_refmont=rm.make_refmonthdate_or_none(today),
-    price=Dinero(strprice, BRL)  # Safe string initialization
+    price=Decimal(strprice, BRL)  # Safe string initialization
   )
   # payitem.add_mora()
   print(payitem)

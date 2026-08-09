@@ -8,7 +8,7 @@ import copy
 """
 import art.immeub.rent.pydantmodels.contract_molder as mold  # mold.Person
 import datetime
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL
 from __init__ import DEFAULT_NMONTHS_DURATION
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
@@ -60,8 +60,8 @@ immeub = mold.Immeub(
 rcontract = mold.RentContract(
   imm_nickname='CDouto',  # may attach obj mold.Immeub by this 'key'
   inidate=datetime.date(year=2026, month=1, day=1),
-  cur_rentvalue=Dinero("1100", BRL),
-  ori_rentvalue=Dinero("1000", BRL),
+  cur_rentvalue=Decimal("1100", BRL),
+  ori_rentvalue=Decimal("1000", BRL),
   nmonths_duration=DEFAULT_NMONTHS_DURATION,
   has_proptax=True,
   has_incendtarif=True,

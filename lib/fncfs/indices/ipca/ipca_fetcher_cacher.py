@@ -14,6 +14,7 @@ from decimal import Decimal
 import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.indices.ipca.ipca_api_fetcher_n_updater as fet  # fet.write_jsonresponse_within_dates_to()
 INT_IPCA_YEARS_IN_CACHE = 10
+NUMBER_OF_FETCH_TRIES = 3
 
 
 def trnsp_refmonth_n_ipcadec_fr_dict_to_tuplelist(pdict):
@@ -100,16 +101,16 @@ class IpcaAPICacherRetriever:
   @property
   def ipca_oldest_refmonth_n_idx(self):
     if self._ipca_oldest_refmonth_n_idx is None:
-      self.find_ipca_oldest_n_newest_year_thru_json_cache()
+      self.find_n_set_ipca_oldest_n_newest_year_thru_json_cache()
     return self._ipca_oldest_refmonth_n_idx
 
   @property
   def ipca_mostrecent_refmonth_n_idx(self):
     if self._ipca_mostrecent_refmonth_n_idx is None:
-      self.find_n_set_mostrecent_refmonth_n_idx_thru_json_cache()
+      self.find_n_set_ipca_oldest_n_newest_year_thru_json_cache()
     return self._ipca_mostrecent_refmonth_n_idx
 
-  def find_ipca_oldest_n_newest_year_thru_json_cache(self):
+  def find_n_set_ipca_oldest_n_newest_year_thru_json_cache(self):
     oldest_n_newest_years = fet.find_ipca_oldest_n_newest_year_thru_json_cache()
     if oldest_n_newest_years is None:
       return
@@ -119,6 +120,22 @@ class IpcaAPICacherRetriever:
     self._ipca_oldest_refmonth_n_idx = iniyeartuplelist[0]
     finyeartuplelist = self.retrieve_month_n_ipcadec_tuplelist_fo_year(finyear)
     self._ipca_mostrecent_refmonth_n_idx = finyeartuplelist[-1]
+
+  def fetch_the_last_n_months_n_ipca(self, n):
+    months_n_ipca_last_n = []
+    refmonth, idx = self.ipca_mostrecent_refmonth_n_idx
+    if refmonth is None or idx is None:
+      return []
+    months_n_ipca_last_n.append((refmonth, idx))
+    previous_refmonth = refmonth
+    while len(months_n_ipca_last_n) < n:
+      refmonth = rmfs.make_refmonth_it_minus_n(previous_refmonth, 1)
+      idx = self.fetch_ipca_dec_for_refmonth(refmonth)
+      if idx is None:
+        break
+      months_n_ipca_last_n.append((refmonth, idx))
+      previous_refmonth = refmonth
+    return months_n_ipca_last_n
 
   def add_n_manage_years_cache_size(self, year: int):
     if year in self.month_n_ipcapct_dict:
@@ -165,7 +182,9 @@ class IpcaAPICacherRetriever:
     year_ipcas_dec = {month: year_ipcas_pct[month] / Decimal(100.0) for month in year_ipcas_pct}
     return year_ipcas_dec
 
-  def retrieve_month_n_ipcadec_tuplelist_fo_year(self, year: int) -> list[tuple[datetime.date, Decimal | None]]:
+  def retrieve_month_n_ipcadec_tuplelist_fo_year(
+      self, year: int, ntries: int = 0
+    ) -> list[tuple[datetime.date, Decimal | None]]:
     pdict = self.fetch_ipcas_dec_fr_jsonfile_for_year(year)
     if pdict is not None:
       # trnsp_refmonth_n_ipcadec_fr_dict_to_tuplelist()
@@ -174,7 +193,10 @@ class IpcaAPICacherRetriever:
       return month_n_ipcadec_tuplelist
     # we have to web-API fetch it and retry reading from the cache
     fet.fetch_n_store_monthly_ipcas_to_jsonfile_fo_year(year)
-    return self.retrieve_month_n_ipcadec_tuplelist_fo_year(year, retry=True)
+    if ntries > NUMBER_OF_FETCH_TRIES:
+      errmsg = f"Error: system failed to fetch and store local jsonfile for {year}."
+      raise OSError(errmsg)
+    return self.retrieve_month_n_ipcadec_tuplelist_fo_year(year, ntries=ntries+1)
 
   def fetch_ipca_pct_fr_jsonfile_for_refmonth(self, p_refmonth: datetime.date | str) -> decimal.Decimal | None:
     refmonth = rmfs.make_refmonth_or_raise(p_refmonth)
@@ -267,6 +289,8 @@ def adhoctest2():
   # scrmsg = f"input {inirefmonth} to {finrefmonth}| output {tuplelist}"
   # print(scrmsg)
   print(retriever)
+  plist = retriever.fetch_the_last_n_months_n_ipca(3)
+  print(plist)
 
 
 

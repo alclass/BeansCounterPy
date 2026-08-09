@@ -9,29 +9,34 @@ art/immeub/rent/pydantmodels/person_pydant.py
 from dataclasses import dataclass, field   # , asdict
 import datetime
 from dateutil.relativedelta import relativedelta
-from dinero import Dinero
+from dinero import Decimal
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
 from typing import List
 from beanie import Document, Link
-from pydantic import BaseModel, field_validator, EmailStr
+from pydantic import field_validator, EmailStr, BaseModel  # Field
+import pydantic
 
 
 class Person(BaseModel):
+  """
+  class Person(Document):
+
+  """
   fullname: str
   cpf: str
   phonenumber: str
-  email: EmailStr
-  email_alt: str = None
+  email: pydantic.EmailStr
+  email_alt: pydantic.EmailStr = None
   phonenumber_alt: str = None
   docid: str = None
   docid_alt: str = None
   profession: str = None
   birth_date: datetime.date = None
-  address: list[str] = field(default_factory=list)
-  obs: list[str] = field(default_factory=list)
+  address: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  obs: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
 
   @property
-  def cpf_fmt(self):
+  def cpf_fmt(self) -> str:
     return cpfv.format_cpf(self.cpf, adds_dots=True)
 
   @field_validator('cpf')
@@ -50,7 +55,6 @@ class Person(BaseModel):
   def validate_email(cls, email: str) -> str:
     return email
 
-
   def __repr__(self):
     ostr = f"""{self.fullname} | {self.cpf_fmt} | {self.phonenumber} | {self.email}"""
     return ostr
@@ -62,14 +66,34 @@ class Person(BaseModel):
     return ostr
 
 
-def adhoctest1():
+class PersonDoc(Person, Document):
+  class Settings:
+    name = "persons"
+
+
+def get_person_ex():
   person = Person(
     fullname="John Doe",
     cpf="12345678909",
     phonenumber="99991111",
-    email="johndoe@@example.com",
+    email="johndoe@example.com",
     docid="1234567",
   )
+  return person
+
+
+def adhoctest1():
+  """
+  persondoc = PersonDoc(
+    fullname="John Doe",
+    cpf="12345678909",
+    phonenumber="99991111",
+    email="johndoe@example.com",
+    docid="1234567",
+  )
+  print(persondoc)
+  """
+  person = get_person_ex()
   print(person)
 
 

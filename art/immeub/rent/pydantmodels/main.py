@@ -28,7 +28,7 @@ import datetime
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from dinero import Dinero
+from dinero import Decimal
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from beanie import Document, Link, init_beanie

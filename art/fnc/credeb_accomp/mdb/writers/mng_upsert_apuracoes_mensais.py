@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-art/immeub/inst/cdutra/aliss_dc_accomp/mdb/mongo_upsert_refmonths.py
+art/fnc/credeb_accomp/mdb/writers/mng_upsert_apuracoes_mensais.py
 
 """
 import datetime
-
-import art.finc.credeb_accomp_pkg.credeb_accompanying_mod as credeb_acc  # .DebCredAccompanier
-import art.finc.credeb_accomp_pkg.mdb.writers.jsonToMongoUpsertor as mngUp
-import art.finc.credeb_accomp_pkg as init
+import art.fnc.credeb_accomp.credeb_accompanying_mod as credeb_acc  # .DebCredAccompanier
+import art.fnc.credeb_accomp.mdb.writers.jsonToMongoUpsertor as mngUp
+import art.fnc.credeb_accomp.mdb as init
 import pprint
 IMMEUB_DBNAME = init.IMMEUB_DBNAME
-ALIS_DEBT_ACC_COLLNAME = init.ALIS_DEBT_ACC_COLLNAME
+CREDEB_ACCOMP_COLLNAME = init.CREDEB_ACCOMP_COLLNAME
 
 
 def mongo_upsert_refmonths_in_db():
@@ -21,7 +20,7 @@ def mongo_upsert_refmonths_in_db():
   # olist = []
   mongoup = mngUp.MongoUpsertor(
     mongo_dbname=IMMEUB_DBNAME,
-    mongo_collname=ALIS_DEBT_ACC_COLLNAME,
+    mongo_collname=CREDEB_ACCOMP_COLLNAME,
   )
   seq = 0
   for debcre_acc_o in debcred_acc_objlist:

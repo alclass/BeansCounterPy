@@ -5,13 +5,15 @@ art/immeub/inst/cdutra/credeb_accomp/mdb/readers/mongo_reader_refmonths.py
 import pprint
 # from decima-l import Decimal
 """
-import art.finc.credeb_accomp_pkg.credeb_accompanying_mod as debcred_acc  # .DebCredAccompanier
-import art.finc.credeb_accomp_pkg as init
-import art.finc.credeb_accomp_pkg.mdb.serialize_dinero_n_decimal as srlz  # srlz.din_dec_dict_fact
+import datetime
+import art.fnc.credeb_accomp.credeb_accompanying_mod as debcred_acc  # .DebCredAccompanier
+import art.fnc.credeb_accomp.mdb as init
+import art.fnc.credeb_accomp.mdb.serialize_dinero_n_decimal as srlz  # srlz.din_dec_dict_fact
+import lib.datesetc.refmonth_fs as rmfs
 from pymongo import MongoClient
 DEFAULT_MONGO_URI_STR = init.LOCAL_MONGODB_CONSTR
 DEFAULT_MONGO_DBNAME = init.IMMEUB_DBNAME
-DEFAULT_MONGO_COLLNAME = init.ALIS_DEBT_ACC_COLLNAME
+DEFAULT_MONGO_COLLNAME = init.CREDEB_ACCOMP_COLLNAME
 
 
 def refmonths_reader_fr_db():
@@ -47,7 +49,9 @@ class MongoDBCollectionRetriever:
     self.mongo_cli_conn = None
     self.mongo_db = None
     self.mongo_coll = None
-    self.accomprefmonths = None  # to signal for fetch_all_n_store()
+    self.accomprefmonths: list = []  # to signal for fetch_all_n_store()
+    self.has_run_fetch_all_n_store = False
+    self.json_accomprefmonths: list = []
     # self.open_conn()
 
   @property
@@ -79,17 +83,27 @@ class MongoDBCollectionRetriever:
         print(json.dumps(doc, indent=2, default=str))
     self.close_conn()
 
-  def find_by_refmonth(self, refmonth):
+  def find_by_refmonth_as_obj(self, p_refmonth):
     self.open_conn()
+    refmonth = rmfs.make_refmonth_or_none(p_refmonth)
+    if refmonth is None:
+      return {}
+    refmonth = datetime.datetime.combine(refmonth, datetime.time.min)
+    if refmonth is None:
+      return {}
     isbn_query = {"refmonth": refmonth}
     doc = self.mongo_coll.find_one(isbn_query)
-    bookmeta, bm = None, None
+    credeb_o = None
     if doc is not None:
-      bm = BookModel.BookInfoDC.create_instance(doc)
-      if bm is not None:
-        bookmeta = bm.asdict
+      pdict = srlz.deserialize_mongo_doc(doc, is_data_from_db=True)
+      credeb_o = debcred_acc.DebCredAccompanier.instantiate_fr_dict(pdict)
     self.close_conn()
-    return bookmeta or {}
+    return credeb_o
+
+  def find_by_refmonth_as_json(self, p_refmonth):
+    credeb_o = self.find_by_refmonth_as_obj(p_refmonth)
+    return credeb_o or {}
+
 
   def retrieve_all_as_json(self):
     """
@@ -97,12 +111,12 @@ class MongoDBCollectionRetriever:
       at this point. FastAPI does it "automatically"
       when it returns a list of dict's
     """
-    if self.accomprefmonths is None:
-      self.fetch_all_n_store()
+    # if self.accomprefmonths is None:
+    self.fetch_all_n_store()
     json_list = []
     self.open_conn()
-    for i, bm in enumerate(self.accomprefmonths):
-      json_list.append(bm)
+    for i, credeb_o in enumerate(self.accomprefmonths):
+      json_list.append(credeb_o.asdict())
     self.open_conn()
     return json_list
 
@@ -112,6 +126,9 @@ class MongoDBCollectionRetriever:
     Also this method should not run more than once,
       except if a refreshing scheme is created
     """
+    if self.has_run_fetch_all_n_store:
+      return
+    self.has_run_fetch_all_n_store = True
     self.accomprefmonths = []  # initially self.bookroutes is None
     # print(f"\tRetrieving all {self.mongo_count} documents:")
     self.open_conn()
@@ -120,9 +137,14 @@ class MongoDBCollectionRetriever:
       self.bk_count = seq
       # print(seq, json.dumps(doc, indent=2, default=str))
       pdict = srlz.deserialize_mongo_doc(doc, is_data_from_db=True)
-      credeb_o = debcred_acc.DebCredAccompanier.frdict(pdict)
+      credeb_o = debcred_acc.DebCredAccompanier.instantiate_fr_dict(pdict)
       self.accomprefmonths.append(credeb_o)
     self.close_conn()
+
+  def fetch_all_as_objs(self):
+    self.fetch_all_n_store()
+    return self.accomprefmonths
+
 
   def cli_show_refmonth_acc(self):
     if self.accomprefmonths is None:
@@ -131,7 +153,7 @@ class MongoDBCollectionRetriever:
       return
     self.accomprefmonths.sort(key=lambda b: b.refmonth)
     for i, bm in enumerate(self.accomprefmonths):
-      print(i+1, bm)
+      print(i+1, '->', bm)
 
   def process(self):
     # self.read_first_5_docs()

@@ -7,7 +7,7 @@ import locale
 import datetime
 from dateutil.relativedelta import relativedelta
 from dataclasses import asdict, dataclass, field
-from dinero import Dinero
+from dinero import Decimal
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 import lib.datesetc.refmonth_fs as rmfs
@@ -42,8 +42,8 @@ class FaturaClosedRec:
   refmonth: datetime.date
   closedate: datetime.date
   fatura_uniq_id: str  # this is upper(nickname)+"yyyymm"+<rev_letter>
-  paid_at_moment: Dinero = None
-  remaining_ifany: Dinero = None
+  paid_at_moment: Decimal = None
+  remaining_ifany: Decimal = None
 
   def fetch_last_fatura_in_mongo(self, mongocoll):
     docs = mongocoll.filter({

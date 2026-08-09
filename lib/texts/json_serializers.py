@@ -7,7 +7,7 @@ import lib.texts.re_str_fs as rstrfs
 import regex
 from typing import Any
 """
-from dinero import Dinero
+from dinero import Decimal
 
 
 def dinero_serializer(obj):
@@ -18,7 +18,7 @@ def dinero_serializer(obj):
   j_string = json.dumps(amount, default=dinero_serializer, indent=2)
   print(json_string)
   """
-  if isinstance(obj, Dinero):
+  if isinstance(obj, Decimal):
     return {
         "amount": str(obj.amount), # Convert Decimal to string
         "currency": obj.currency

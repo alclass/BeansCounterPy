@@ -7,7 +7,7 @@ art/immeub/rent/pydantmodels/schema_bizmodels.py
 # ==========================================
 """
 import datetime
-from dinero import Dinero
+from dinero import Decimal
 from typing import List
 from beanie import Document, Link
 
@@ -56,9 +56,9 @@ class Contract(Document):
   tenants: List[Link[Person]]
   inidate: datetime.date
   duration_in_months: int
-  ori_monthly_price: Dinero
-  cur_monthly_price: Dinero
-  history_prices: dict[datetime.date, Dinero]
+  ori_monthly_price: Decimal
+  cur_monthly_price: Decimal
+  history_prices: dict[datetime.date, Decimal]
   fix_m_monecorr_dec: float
   var_m_monecorr_idxname: str
   monthly_dueday: int
@@ -71,11 +71,11 @@ class Contract(Document):
 class BillingItem(Document):
   seq: int
   description: str
-  value: Dinero
+  value: Decimal
   refmonth: datetime.date
-  mora: Dinero
+  mora: Decimal
   explains: str
-  itemtotal: Dinero
+  itemtotal: Decimal
   comments: str
 
   class Settings:
@@ -90,7 +90,7 @@ class BillingCard(Document):
   readydate: datetime.date
   closedate: datetime.date
   billingitems: list[BillingItem]
-  total: Dinero
+  total: Decimal
   comments: str
 
   class Settings:

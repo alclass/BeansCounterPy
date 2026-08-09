@@ -17,10 +17,11 @@ load_dotenv(dotenv_path=env_path)
 # 1 date config-vars
 # ================
 # the refmonth below is the beginning of the credeb accompanying
-REFMONTH_INI_FOR_META = os.getenv("REFMONTH_INI_FOR_META")
+REFMONTH_BEGINNING_THE_SERIES = os.getenv("REFMONTH_BEGINNING_THE_SERIES")
 # ================
 # 2 money or finance factor config-vars
 # ================
 # the convention or agreement of the monthly payment goal amount
-VALOR_META_MENSAL_IN_BRL = os.getenv("VALOR_META_MENSAL_IN_BRL")
-MORA_FIX_FLOAT = os.getenv("MORA_FIX_FLOAT")
+DEFAULT_VALOR_META_MENSAL_IN_BRL = os.getenv("DEFAULT_VALOR_META_MENSAL_IN_BRL")
+STR_MORA_FIX_FLOAT = os.getenv("DEFAULT_MORA_FIX_FLOAT", "0.02")
+DEFAULT_MORA_FIX_FLOAT = float(STR_MORA_FIX_FLOAT)

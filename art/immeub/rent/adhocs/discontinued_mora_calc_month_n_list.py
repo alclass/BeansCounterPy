@@ -14,7 +14,7 @@ The main class here should (regex)use the calculing class MoraMonthCalculator
 
 """
 import calendar
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL  # USD, EUR
 from dataclasses import dataclass
 import datetime
@@ -121,9 +121,9 @@ class MonthRangeMoraMounter:
 
 @dataclass
 class MoraBillingItem:
-  inimontant: Dinero=None
-  _finmontant: Dinero=None
-  _moravalue: Dinero=None
+  inimontant: Decimal=None
+  _finmontant: Decimal=None
+  _moravalue: Decimal=None
   fix_ir_pct: float=0.0
   var_ir_pct: float=0.0
   refmonth: datetime.date=None  # when refmonth is set, ini and fin are None
@@ -205,8 +205,8 @@ class MoraMonthChunksCalculator:
     self.treat_params()
 
   def treat_params(self):
-    if not isinstance(self.ini_montant, Dinero):
-      self.ini_montant = Dinero(str(self.ini_montant), BRL)
+    if not isinstance(self.ini_montant, Decimal):
+      self.ini_montant = Decimal(str(self.ini_montant), BRL)
     self.ini_date = dtfs.make_date_or_raise(self.ini_date)
     self.fin_date = dtfs.make_date_or_today(self.fin_date)
     # treat self.fix_ir_pct
@@ -293,7 +293,7 @@ class MoraMonthChunksCalculator:
   def inbetween_mora(self):
     if self._inbetween_mora is None:
       self._inbetween_mora = self.ini_montant * self.multiplier_for_mora
-      self._inbetween_mora = Dinero(str(self._inbetween_mora), BRL)
+      self._inbetween_mora = Decimal(str(self._inbetween_mora), BRL)
     return self._inbetween_mora
 
   mora = inbetween_mora

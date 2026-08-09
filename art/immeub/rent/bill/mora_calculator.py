@@ -31,7 +31,7 @@ Here is an example for an n_months exponent:
 import copy
 from bson.decimal128 import Decimal128
 from decimal import Decimal, ROUND_HALF_UP
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL  # USD, EUR
 import datetime
 import lib.datesetc.datefs as dtfs # dfs.stringify_date
@@ -83,8 +83,8 @@ class MoraMonthCalculator:
     self._comp_ir_multiplier = None
 
   def treat_params(self):
-    if not isinstance(self.initialmontant, Dinero):
-      self.initialmontant = Dinero(str(self.initialmontant), BRL)
+    if not isinstance(self.initialmontant, Decimal):
+      self.initialmontant = Decimal(str(self.initialmontant), BRL)
     self.inidate = dtfs.make_date_or_raise(self.inidate)
     self.findate = dtfs.make_date_or_today(self.findate)
     # treat self.fix_ir_pct
@@ -164,10 +164,10 @@ class MoraMonthCalculator:
     return Decimal(1.0) + self.multiplier_for_mora
 
   @property
-  def mora_increment(self) -> Dinero:
+  def mora_increment(self) -> Decimal:
     if self._mora_increment is None:
       self._mora_increment = self.initialmontant * self.multiplier_for_mora
-      self._mora_increment = Dinero(str(self._mora_increment), BRL)
+      self._mora_increment = Decimal(str(self._mora_increment), BRL)
     return self._mora_increment
 
   mora = mora_increment

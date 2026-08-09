@@ -6,22 +6,23 @@ For client modules:
 
 import lib.datesetc.refmonth_fs as rmfs
 import datetime
-import dinero
 import bson
 import json
 """
 from dataclasses import dataclass, asdict
+import dinero
+from dinero import Dinero
 from dinero.currencies import BRL
-import dinero.currencies as dcurs
 import datetime
 from decimal import Decimal, Context, ROUND_HALF_UP
 from bson.decimal128 import Decimal128
-from dinero import Dinero
+from decimal import Decimal
+import pprint
 
 
 @dataclass
 class Transaction:
-  amount: Dinero
+  amount: Decimal
   fee: Decimal
 
 
@@ -83,12 +84,14 @@ def deserialize_mongo_doc(doc: dict, is_data_from_db=False) -> dict:
       # print(scrmsg)
       currency_string = value["currency"]  # e.g., "BRL"
       try:
-        # Dynamic lookup: fetches dinero.currencies.BRL object from the string "BRL"
-        currency_constant = getattr(dcurs, currency_string)
+        # dynamic lookup: fetches dinero.currencies with getattr(din_curencies, "BRL")
+        # it doesn't get the constant (in this case BRL), it gets rather a dict that can instantiate back 'dinero'
+        currency_dict = getattr(dinero.currencies, currency_string)
+        pass
       except AttributeError:
         # Fallback safeguard in case an unexpected currency string appears
         raise ValueError(f"Currency symbol '{currency_string}' not found in dinero.currencies")
-      cleaned[key] = Dinero(decimal_amount, currency_constant)
+      cleaned[key] = Dinero(decimal_amount, currency_dict)
 
     # 2. Convert Decimal128 back to standard Decimal
     elif hasattr(value, "to_decimal"):
@@ -108,7 +111,7 @@ def deserialize_mongo_doc(doc: dict, is_data_from_db=False) -> dict:
 
 def example_usage():
     # Example usage
-    dinero_obj = Dinero("100.50", BRL)
+    dinero_obj = Decimal("100.50", BRL)
     decimal_obj = Decimal("2.50")
 
     tx = Transaction(amount=dinero_obj, fee=decimal_obj)
@@ -130,9 +133,15 @@ def adhoctest1():
     'dec': dec,
     'dat': today
   }
-  print('pdict', pdict)
+  print('pdict')
+  pprint.pprint(pdict)
   serialized = serialize_credeb_for_json_as_dict(pdict)
-  print('serialized', serialized)
+  print('serialized')
+  pprint.pprint(serialized)
+  deserialized = deserialize_mongo_doc(serialized)
+  print('deserialized')
+  pprint.pprint(deserialized)
+
 
 
 def adhoctest2():
@@ -210,7 +219,8 @@ def adhoctest2():
     "is_closed_n_in_db": false
   }
   deserialized = deserialize_mongo_doc(pjson)
-  print(deserialized)
+  print('deserialized')
+  pprint.pprint(deserialized)
 
 
 def process():
@@ -223,4 +233,4 @@ if __name__ == '__main__':
   """
   process()
   """
-  adhoctest2()
+  adhoctest1()

@@ -1,6 +1,6 @@
 import unittest
 import art.immeub.rent.bill.mora_calculator as mclc  # mclc.MoraMonthCalculator
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL  # USD, EUR
 import lib.datesetc.rmfs as rmfs  # refmonth_fs.py.months_inbetween_ret_int_n_float
 
@@ -11,7 +11,7 @@ class Test1(unittest.TestCase):
     Zero both fix and var interest rates,
       then ini_montant should be equal to fin_montant
     """
-    mi = Dinero("1000", BRL)
+    mi = Decimal("1000", BRL)
     di, df = "2026-01-01", "2026-01-31"
     mo = mclc.MoraMonthCalculator(
       ini_montant=mi,
@@ -31,7 +31,7 @@ class Test1(unittest.TestCase):
       which involves a "simpler" calculation: fm = im * (1 + ir) ** 1,
       because exponent is "1"
     """
-    mi = Dinero("1000", BRL)
+    mi = Decimal("1000", BRL)
     di, df = "2026-01-01", "2026-01-31"
     mo = mclc.MoraMonthCalculator(
       ini_montant=mi,
@@ -41,7 +41,7 @@ class Test1(unittest.TestCase):
       var_ir_pct=5,
     )
     # fin_montant is 10% more than ini_montant
-    mf = Dinero("1100", BRL)
+    mf = Decimal("1100", BRL)
     mlt_mo = round(mo.multiplier_for_fm, 1)
     self.assertAlmostEqual(mlt_mo, 1.1)
     self.assertEqual(mo.fin_montant, mf)
@@ -53,7 +53,7 @@ class Test1(unittest.TestCase):
       which also involves a "simpler" calculation: fm = im * (1 + ir) ** 2,
       because exponent is "2"
     """
-    mi = Dinero("1000", BRL)
+    mi = Decimal("1000", BRL)
     di, df = "2026-01-01", "2026-02-28"
     mo = mclc.MoraMonthCalculator(
       ini_montant=mi,
@@ -63,7 +63,7 @@ class Test1(unittest.TestCase):
       var_ir_pct=5,
     )
     # fin_montant is 10% more than ini_montant
-    mf = Dinero("1210", BRL)
+    mf = Decimal("1210", BRL)
     # mlt_mo = round(mo.multiplier_for_fm, 3)
     self.assertEqual(31 + 28, mo.days_elapsed)
     self.assertEqual(2, 2)  # mo.inbetween_months

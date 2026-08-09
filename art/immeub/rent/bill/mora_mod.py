@@ -7,7 +7,7 @@ import locale
 import datetime
 from dateutil.relativedelta import relativedelta
 from dataclasses import dataclass, field
-from dinero import Dinero
+from dinero import Decimal
 from dinero.currencies import BRL  # USD, EUR
 import lib.datesetc.rmfs as rm
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
@@ -29,11 +29,11 @@ class Mora:
   descr: str
   ori_refmont: datetime.date
   to_date: datetime.date
-  val_before: Dinero
+  val_before: Decimal
   fix_mo_intrst: float = 0.01
   var_mo_intrst: float = 0.0
   comment: str = ""
-  _val_after: Dinero = field(default_factory=lambda: Dinero("-1", BRL))
+  _val_after: Decimal = field(default_factory=lambda: Decimal("-1", BRL))
 
   @property
   def elapsed_months(self):
@@ -68,13 +68,13 @@ class Mora:
   def val_after(self):
     if self._val_after.raw_amount < 0:
       f_montant = self.calc_final_mont()
-      self._val_after = Dinero(str(f_montant), BRL)
+      self._val_after = Decimal(str(f_montant), BRL)
     return self._val_after
 
   @property
   def val_mora(self):
     if self.val_after.raw_amount < 0:
-      return Dinero("0.0", BRL)
+      return Decimal("0.0", BRL)
     return self.val_after - self.val_before
 
   def __str__(self):
@@ -100,7 +100,7 @@ def adhoctest1():
     descr='mora aluguel',
     ori_refmont=rm.calc_refmonth_minus_n(today, 2),
     to_date=today,
-    val_before=Dinero(strprice, BRL)  # Safe string initialization
+    val_before=Decimal(strprice, BRL)  # Safe string initialization
   )
   # payitem.add_mora()
   print(noraitem)
