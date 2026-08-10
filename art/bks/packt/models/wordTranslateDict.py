@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-art/bookroutes/packt/pydantmodels/wordTranslateDict.py
-import art.bookroutes.packt.pydantmodels.wordTranslateDict as wTD  # wtd.transdict
+art/bookroutes/packt/pdntcmdls/wordTranslateDict.py
+import art.bookroutes.packt.pdntcmdls.wordTranslateDict as wTD  # wtd.transdict
 """
 
 

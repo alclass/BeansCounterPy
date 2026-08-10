@@ -34,7 +34,7 @@ class AutoFindCommaPointNumberTransformer:
     b) or a decimal-place-point-separated
   Upon finding it, it transforms one into another.
 
-  One use hypothesis for this class is when dealing with data text that
+  One use hypothesis for this class is when dealing with testdata text that
     contains numberfs 'located' with comma separated decimal places
     and these must be transformed to its point separated decimal places format
     to, then, be 'cast' into 'native' numberfs (basically int's, float's or double's)

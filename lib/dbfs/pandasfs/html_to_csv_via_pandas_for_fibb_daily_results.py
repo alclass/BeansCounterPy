@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 art/download/fibb_daily_results_html_to_csv_via_pandas_transform.py
-  transforms & converts one or more html data files into their csv equivalent ones.
+  transforms & converts one or more html testdata files into their csv equivalent ones.
 The argparse has the following optional parameters:
 
 args => Namespace(ini=[<initial_date>] fim=[<finish_date'], datelist=[<adatelist>]
@@ -53,7 +53,7 @@ class ArgsDispatcher:
     """
     For every day-date, one by one, that is integrated into self.datelist, dispatch calls:
       WithPandasHtmlToCsvConverter(pdate)
-    The purpose is to convert all html data files in the conventioned folder into their respective csv's.
+    The purpose is to convert all html testdata files in the conventioned folder into their respective csv's.
       TO-DO: the above class WithPandasHtmlToCsvConverter will, still "to do", better organizes the date folders.
     """
     for pdate in self.datelist:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/rent/pydantmodels/json_fatura_maker.py
+art/immeubroutes/rent/pdntcmdls/json_fatura_maker.py
 
 fatura fields
 
@@ -58,7 +58,7 @@ class Mounter:
 
 def make_one():
   """
-  art.immeubroutes.rent.pydantmodels.json_fatura_maker.make_one
+  art.immeubroutes.rent.pdntcmdls.json_fatura_maker.make_one
   """
   today = datetime.date.today()
   immeub_address = ["Rua Camel Doutor, 67 apt 101", "Barra Central 20999-999"]

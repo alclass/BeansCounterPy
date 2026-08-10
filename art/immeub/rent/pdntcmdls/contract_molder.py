@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/pydantmodels/contract_molder.py
+art/immeub/rent/pdntcmdls/contract_molder.py
   This class is the molding for the creation of a rent billing card
 
 # from dinero.currencies import BRL

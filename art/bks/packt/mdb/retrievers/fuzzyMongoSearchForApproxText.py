@@ -77,9 +77,9 @@ class FuzzySearch:
 
   def insert_dummy_data(self):
     """
-    # Let's insert some dummy data for demonstration
+    # Let's insert some dummy testdata for demonstration
     """
-    self.mongo_coll.delete_many({})  # Clear old data
+    self.mongo_coll.delete_many({})  # Clear old testdata
     self.mongo_coll.insert_many([
       {"title": "Mastering Python", "author": "Samir Madhavan"},
     ])

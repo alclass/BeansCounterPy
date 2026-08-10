@@ -263,7 +263,7 @@ class SqliteBBTripleRend:
       sql = sql % {'tablename': self.tablename, 'limit': limit, 'offset': offset}
     cursor.close()
     conn.close()
-    return None  # the statement "yield" above returns each chunk of data limit/offset by limit/offset
+    return None  # the statement "yield" above returns each chunk of testdata limit/offset by limit/offset
 
   def do_select_all_w_limit_n_offset(self, plimit=None, poffset=None):
     """
@@ -302,7 +302,7 @@ class SqliteBBTripleRend:
             % {'tablename': self.tablename, 'limit': limit, 'offset': offset}
     cursor.close()
     conn.close()
-    return None  # the statement "yield" above returns each chunk of data limit/offset by limit/offset
+    return None  # the statement "yield" above returns each chunk of testdata limit/offset by limit/offset
 
   def do_select_all(self):
     sql = 'select * from %(tablename)s;' % {'tablename': self.tablename}

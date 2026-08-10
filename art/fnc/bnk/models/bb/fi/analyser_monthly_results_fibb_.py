@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-pydantmodels/pydantmodels/bb/fi/analyser_monthly_results_fibb_.py
+pdntcmdls/pdntcmdls/bb/fi/analyser_monthly_results_fibb_.py
   reads the last daily result file available for a month and tries to aggregate,
-  if there are data available, on a monthly basis (instead of on a daily basis)
+  if there are testdata available, on a monthly basis (instead of on a daily basis)
 """
 import datetime
 import os.path

@@ -150,7 +150,7 @@ class DebCredAccompanier:
   # when a month 'closes', if a needed adjustment comes up, that must be done in the current month
   # because one month's adjustment will cause all subsequent months to adjust as well
   is_closed: bool = True
-  # if data comes from db, there is no need to 'calculate', because everything goes calculated to db
+  # if testdata comes from db, there is no need to 'calculate', because everything goes calculated to db
   is_data_from_db: bool = False  # so, it's a flag to avoid __post_init__() execution
 
   def __post_init__(self):
@@ -165,7 +165,7 @@ class DebCredAccompanier:
       a1-3 self.finvalue_d2: whose value is calculated if self.inivalue_d2 is non-zero
            and IPCA for the month is available (the mora incidence)
 
-    a2 - to calculate (and fetch if data not in db [in case it's closed]) financial attributes
+    a2 - to calculate (and fetch if testdata not in db [in case it's closed]) financial attributes
          here, it acts also to update the 'month'
 
     ============
@@ -224,7 +224,7 @@ class DebCredAccompanier:
   def seq_refmonth(self) -> int:
     refmonth_ini_f_meta = find_refmonth_beginning_the_series_as_date()
     n_months_inbetween = rmfs.calc_int_n_months_inbetween(refmonth_ini_f_meta, self.refmonth)
-    # month 1 is conventioned as the 'legacy' 2025-10 which has not a data-record,
+    # month 1 is conventioned as the 'legacy' 2025-10 which has not a testdata-record,
     # leaving it to the subsequent month
     # so, add one to 1
     return n_months_inbetween + 1

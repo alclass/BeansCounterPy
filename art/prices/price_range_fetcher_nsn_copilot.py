@@ -96,7 +96,7 @@ def retry_session(total=3, backoff_factor=0.5, status_forcelist=(429, 500, 502, 
 # Helpers de parsing
 # -----------------------------
 PRICE_PATTERNS = [
-    # Padrões comuns de faixa: "Historical data shows pricing from $162.93 to $271.55"
+    # Padrões comuns de faixa: "Historical testdata shows pricing from $162.93 to $271.55"
     re.compile(r"pricing\s+from\s+\$?\s*([0-9.,]+)\s*(?:to|\-)\s*\$?\s*([0-9.,]+)", re.IGNORECASE),
     re.compile(r"price\s*range\s*[:\-]\s*\$?\s*([0-9.,]+)\s*(?:–|-|to)\s*\$?\s*([0-9.,]+)", re.IGNORECASE),
 ]
@@ -246,7 +246,7 @@ def screenshot_price_fragment(url: str, outdir: str, item_id: str, logger: loggi
         except Exception:
             pass
 
-        # 2) Fallback: tenta uma seção de Q&A que cite 'Historical data shows'
+        # 2) Fallback: tenta uma seção de Q&A que cite 'Historical testdata shows'
         if candidate is None:
             try:
                 candidate = wait.until(

@@ -1,34 +1,34 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/pydantmodels/billing_mod.py
-
+art/immeubroutes/pdntcmdls/billing_mod.py
+from dateutil.relativedelta import relativedelta
+from dataclasses import dataclass, field
 """
 import locale
 import datetime
 from prettytable import PrettyTable
 import pydantic
-from dateutil.relativedelta import relativedelta
-from dataclasses import dataclass, field
 import lib.datesetc.refmonth_fs as rmfs
 from decimal import Decimal
-import art.immeub.rent.pydantmodels.person_pydant as pers  # pers.PydtcPerson
-
+import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 DECIMAL_ZERO = Decimal("0")
-
-
-# from art.immeub.rent.pydantmodels.schema_bizmodels import BillingCard
-
+# from art.immeub.rent.pdntcmdls.schema_bizmodels import BillingCard
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 
 
 class PydtcPayment(pydantic.BaseModel):
+  """
+  @see also a simplified version
+    which is a @dataclass with only fields date and value
+  """
   date: datetime.date
   value: Decimal
   payor: pers.PydtcPerson = pydantic.Field(default_factory=lambda: None)
   refdoc: str = pydantic.Field(default_factory=lambda: "ref pagamento")
   comment: str = pydantic.Field(default_factory=lambda: "p/ aluguel e encargos")
+
 
 class PydtcBillingItem(pydantic.BaseModel):
   seq: int
@@ -70,6 +70,9 @@ class PydtcBillingItem(pydantic.BaseModel):
     return odict
 
   class MongoJsonRepr(pydantic.BaseModel):
+    """
+    This is a 'helper' class for MongoDB doc-saving
+    """
     seq: int
     descr: str
     refmonth: datetime.date
@@ -96,12 +99,11 @@ class PydtcBillingItem(pydantic.BaseModel):
     outstr = f"{self.descr} | {self.refmmm} | {fmt_value} | {self.mora} | {self.total_item}"
     """
     table = PrettyTable()
-    headers = ["seq",  "descrição", "data-ref",  "valor", "mora", "total"]
+    headers = ["seq",  "descrição", "testdata-ref",  "valor", "mora", "total"]
     table.field_names = headers
     values = self.get_the_6_line_values_as_lst()
     table.add_row(values)
     print(table)
-
 
   def __str__(self):
     fmt_value = locale.format_string("%.2f", self.value, grouping=True)

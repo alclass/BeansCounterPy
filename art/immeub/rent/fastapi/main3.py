@@ -1,5 +1,5 @@
 """
-art/immeub/rent/pydantmodels/main3.py
+art/immeub/rent/pdntcmdls/main3.py
   This is the 3rd attempt to roll up a FastAPI server
   This time we replaced Beanie and Motor with mongoengine
   It's working and the async/await systematic was not impacted
@@ -96,7 +96,7 @@ class ContractCreateRequest(BaseModel):
 # Seed / Manage Tenants
 @app.post("/tenants", status_code=status.HTTP_201_CREATED)
 def create_tenant(payload: BaseModel):
-  # Dynamically extract data to avoid Pydantic conflict on MongoEngine objects
+  # Dynamically extract testdata to avoid Pydantic conflict on MongoEngine objects
   data = payload.model_dump() if hasattr(payload, 'model_dump') else payload.model_dump()
   tenant = Tenant(name=data.get("name"), email=data.get("email")).save()
   return tenant.to_api_dict()

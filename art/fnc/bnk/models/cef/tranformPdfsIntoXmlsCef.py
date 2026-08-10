@@ -137,7 +137,7 @@ class YearBatchPdfToXmlTransformer:
 def xmltransform_all_data_years():
   basefolderpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
   finder = fndr.DatePrefixedOSEntriesFinder(basefolderpath)
-  # roll all available data years
+  # roll all available testdata years
   for yearfolderpath in finder.gen_folderpaths_within_yearrange_or_wholeinterval():
     yearbatch_converter = YearBatchPdfToXmlTransformer(yearfolderpath)
     yearbatch_converter.process()
@@ -147,7 +147,7 @@ def xmltransform_all_data_years():
 def adhoctest():
   basefolderpath = bkge.GenBank.get_bank_fi_folderpath_by_its3letter(CEF_BANK3LETTER)
   finder = fndr.DatePrefixedOSEntriesFinder(basefolderpath)
-  # roll all available data years
+  # roll all available testdata years
   for yearfolderpath in finder.gen_folderpaths_within_yearrange_or_wholeinterval():
     print('yearfolderpath', yearfolderpath)
 

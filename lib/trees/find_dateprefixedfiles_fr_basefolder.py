@@ -158,9 +158,9 @@ class DatePrefixedOSEntriesFinder:
                                                      +--["2022-10 FI extrato.txt"]
 
     IMPORTANT:
-      The file structure above is data for this system. If it's not in the convention above,
+      The file structure above is testdata for this system. If it's not in the convention above,
         this system will not work correctly. It may point it either as error or
-        that it can't find the data that it needs or show empty results.
+        that it can't find the testdata that it needs or show empty results.
     """
     self.rootdirpath = rootdirpath or DEFAULT_ROOTPATH
     self._l1_year_fopaths = None  # this list is stored right after __init__()
@@ -585,11 +585,11 @@ def adhoctest2():
 
 def adhoctest3():
   """
-  Notice that to avoid "circular imports" this module cannot import pydantmodels.pydantmodels.banksgeneral
+  Notice that to avoid "circular imports" this module cannot import pdntcmdls.pdntcmdls.banksgeneral
     (because that imports this),
     so the adhoctest here will have variable bb_fi_rootfolder_abspath hardcoded
   If this path changes, for running this adhoctest(), variable must be updated too
-    bb_fi_rootfolder_abspath = pydantmodels.pydantmodels.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
+    bb_fi_rootfolder_abspath = pdntcmdls.pdntcmdls.banksgeneral.BANK.get_bank_fi_folderpath_by_its3letter('bdb')
 
   print('dateprefixfinder.lesser_yearmonthprefix_folderpath()')
   print(dateprefixfinder)

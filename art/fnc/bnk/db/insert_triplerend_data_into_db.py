@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 insert_triplerend_data_into_db.py
-  reads data from (the extracts) text files and record them to db
+  reads testdata from (the extracts) text files and record them to db
 """
 import settings as sett
 import os.path
@@ -121,7 +121,7 @@ class Insertor:
     self.roller.process()
     n_records = len(self.roller.fundo_result_records)
     print('Read %d read_daterange_records' % n_records)
-    # roller has list [fundo_result_records] which contains the sought-for data
+    # roller has list [fundo_result_records] which contains the sought-for testdata
 
   def process(self):
     self.read_daterange_records()

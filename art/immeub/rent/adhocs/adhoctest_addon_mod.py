@@ -5,7 +5,7 @@ art/immeubroutes/cdutra/rent/addon_mod.py
 """
 import datetime
 import art.immeub.rent.pydantmodels.addon_mod as addonmod  # AddOnItem
-import art.immeub.rent.adhocs.discontinued_mora_calc_month_n_list as mc  # mc.MonthRangeMoraMounter
+import art.immeub.rent.adhocs.discontinued.discontinued_mora_calc_month_n_list as mc  # mc.MonthRangeMoraMounter
 
 
 def adhoctest1():

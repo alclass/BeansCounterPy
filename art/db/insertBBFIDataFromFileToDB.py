@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 insertBBFIDataFromFileToDB.py
-  loads the whole available data in files, or a subset of it, to a SQL-DB.
+  loads the whole available testdata in files, or a subset of it, to a SQL-DB.
 
   Obs: At this time, it looks up all available files and not a subset.
 """

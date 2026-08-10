@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 insertCefFiDataFromFileToDB.py
-  loads the whole available data in files, or a subset of it, to a SQL-DB.
+  loads the whole available testdata in files, or a subset of it, to a SQL-DB.
 
   Obs: At this time, it looks up all available files and not a subset.
 
-Notice this scripts deals with "CEF" data files. For "BB" data files, there is another script in this package.
+Notice this scripts deals with "CEF" testdata files. For "BB" testdata files, there is another script in this package.
 """
 import os
 import art.finc.bnk.db.createtable_fundos as creatdb

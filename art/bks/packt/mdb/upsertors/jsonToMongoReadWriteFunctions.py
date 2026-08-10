@@ -38,7 +38,7 @@ def json_to_mongodb_simple(
   with open(json_file_path, 'r') as file:
     data = json.load(file)
 
-  # Insert data
+  # Insert testdata
   if isinstance(data, list):
     # If JSON contains an array of documents
     result = collection.insert_many(data)
@@ -207,11 +207,11 @@ def json_to_mongodb_streaming(
 
 
 def main():
-  json_to_mongodb_simple('data.json', 'my_database', 'my_collection')
+  json_to_mongodb_simple('testdata.json', 'my_database', 'my_collection')
 
   # Advanced usage with options
   from_jsonfile_to_mongodb_advanced(
-    'data.json',
+    'testdata.json',
     'my_database',
     'my_collection',
     replace_existing=True,

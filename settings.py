@@ -46,7 +46,7 @@ def show_paths():
   datapath = get_apps_data_rootdir_abspath()
   print('rootdir =', datapath)
   datapath = get_datadir_foldername_or_default()
-  print('data dir foldername =', datapath)
+  print('testdata dir foldername =', datapath)
 
 
 if __name__ == '__main__':

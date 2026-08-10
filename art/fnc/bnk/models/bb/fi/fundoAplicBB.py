@@ -3,7 +3,7 @@
 fundoAplicBB.py
   Contains class FundoAplicBB which is a specialization of parent class fAplic.FundoAplic
   Parent class is general, this one is polymorphic for bnk 'bdb'.
-  Remember that this polymorphism is due to the fact that pydantmodels publish different data files,
+  Remember that this polymorphism is due to the fact that pdntcmdls publish different testdata files,
     that need different approaches to their scraping.
 """
 import art.finc.bnk.models.fundoAplic as fAplic
@@ -26,7 +26,7 @@ class FundoAplicBB(fAplic.FundoAplic):
 
   def __init__(self):
     self.finder = bkge.GenBank.get_pathentries_finderobj_by_bank3letter(self.BANK3LETTER)
-    # self.finder is an osfs-entries look-up class object, it finds folders, data files and daterange
+    # self.finder is an osfs-entries look-up class object, it finds folders, testdata files and daterange
     super().__init__()
     self.bank3letter = self.BANK3LETTER
     self.refmonthdate_ini = None

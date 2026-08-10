@@ -41,7 +41,7 @@ async function startServer() {
 }
 }
 
-// 5. Define an API endpoint to get data from the collection
+// 5. Define an API endpoint to get testdata from the collection
 // When you visit http://localhost:3000/data in your browser, this code runs.
 app.get('/data', async (req, res) => {
     // Check if the database connection is ready
@@ -61,14 +61,14 @@ app.get('/data', async (req, res) => {
         // This is what your browser will receive and display
         res.json(documents);
     } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).send('An error occurred while fetching data.');
+        console.error('Error fetching testdata:', error);
+        res.status(500).send('An error occurred while fetching testdata.');
     }
 });
 
 // 6. A simple home route for testing
 app.get('/', (req, res) => {
-    res.send('Hello! Go to <a href="/data">/data</a> to see your MongoDB data.');
+    res.send('Hello! Go to <a href="/testdata">/testdata</a> to see your MongoDB testdata.');
 });
 
 // 7. Finally, start the server by calling the function we defined

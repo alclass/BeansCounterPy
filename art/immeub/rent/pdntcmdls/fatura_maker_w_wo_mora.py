@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/rent/pydantmodels/fatura_maker_w_wo_mora.py
+art/immeubroutes/rent/pdntcmdls/fatura_maker_w_wo_mora.py
   Contains monthly and refmonthly date functions.
 
 import fs.datefs.introspect_dates as intr
@@ -25,7 +25,7 @@ DEFAULT_FIX_IR_DEC = DEFAULT_FIX_IR_PCT / 100  # this is decimal
 class EachRefmonth:
   """
   This dataclass does not calculate 'mora', it does not receive 'inimontant' (initial montant),
-    it aims to 'carry' data for the 'downstream calculator' which calculates 'mora' and contains 'inimontant'
+    it aims to 'carry' testdata for the 'downstream calculator' which calculates 'mora' and contains 'inimontant'
     (this latter comes as the following class)
   """
   oridate: datetime.date
@@ -193,7 +193,7 @@ class MCRefmonthRanger:
   def fetch_n_store_cmrefmonths(self):
     """
     The 'fetch' verb prefixing the methodname is because EachRefmonth objects
-      need to db-fetch (but data may come from files or API's) its refmonth's monetary correction index.
+      need to db-fetch (but testdata may come from files or API's) its refmonth's monetary correction index.
     """
     tuplelist = rmfs.mount_ndays_n_refmonth_tuplelist(
       self.inidate,
@@ -230,7 +230,7 @@ class MCRefmonthRanger:
     return list(refmonths)
 
   def get_monecorrlist(self):
-    monecorrlist = map(lambda o: o.var_ir_dec, self.cmrefmonths)
+    monecorrlist = map(lambda o: o.var_ir_as_ipca_dec, self.cmrefmonths)
     return list(monecorrlist)
 
   def get_moraparcels(self):

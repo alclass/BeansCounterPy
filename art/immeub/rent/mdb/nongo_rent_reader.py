@@ -5,12 +5,10 @@ import pprint
 # from decima-l import Decimal
 """
 from pymongo import MongoClient
-import datetime
 import re
-import lib.datesetc.refmonth_fs as rmfs
-import art.immeub.rent.bill.billingcard_pydantic as bcardpydtc  # bcardpydtc.PydtcBillingCard
+import art.immeub.rent.pdntcmdls.billingcard_pydantic as bcardpydtc  # bcardpydtc.PydtcBillingCard
 import art.immeub.rent.mdb as mdbinit
-LOCAL_MONGODB_CONSTR = mdbinit.LOCAL_MONGODB_CONSTR
+LOCAL_MONGODB_CONSTR = mdbinit.MONGODB_CON_STR
 IMMEUB_DBNAME = mdbinit.IMMEUB_DBNAME
 BILLINGCARD_COLLNAME = mdbinit.BILLINGCARD_COLLNAME
 
@@ -81,7 +79,7 @@ class MongoDBCollectionRetriever:
         elem = {key: value for key, value in elem.items() if value is not None}
         def remove_nones_fr_billingitems(p_list: list):
           """
-          None's must be removed from the data
+          None's must be removed from the testdata
           The outer dict was cleaned up above, now we must remove None's in the billing_items
           (Because billing_items is a dictlist, the dict's are recreated, but the list is used mutably.)
           """
@@ -142,7 +140,6 @@ class MongoDBCollectionRetriever:
     self.fetch_all_n_store()
     return self.accomprefmonths
 
-
   def cli_show_refmonth_acc(self):
     if self.accomprefmonths is None:
       self.fetch_all_n_store()
@@ -165,7 +162,6 @@ class MongoDBCollectionRetriever:
       self.mongo_cli_conn.close()
 
 
-
 def adhoctest1():
   """
   refmonths_reader_fr_db()
@@ -174,9 +170,12 @@ def adhoctest1():
   apelido = 'cdouto'
   print('Finding by apelido', apelido)
   o = retriever.find_by_immapelido_as_obj(apelido)
-  json_o = o.model_dump_json(indent=2)
-  print('Found', json_o)
-  print('type', type(o))
+  if o is not None:
+    json_o = o.model_dump_json(indent=2)
+    print('Found', json_o)
+    print('type', type(o))
+  else:
+    print('Not found')
 
 
 def process():

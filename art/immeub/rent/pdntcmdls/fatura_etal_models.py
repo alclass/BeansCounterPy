@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/pydantmodels/fatura_etal_models.py
+art/immeub/rent/pdntcmdls/fatura_etal_models.py
 
 fatura fields:
   header:

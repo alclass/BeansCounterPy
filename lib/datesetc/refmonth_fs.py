@@ -5,7 +5,7 @@ lib/datesetc/refmonth_fs.py
 
 Quick Comparison: Iterator vs Generator
   Iterator[YieldType]:
-    Perfect for standard data streams and loops.
+    Perfect for standard testdata streams and loops.
   Generator[YieldType, SendType, ReturnType]:
     Mandatory for coroutines, .send() pipelines, or explicit returns.
 

@@ -40,8 +40,8 @@ class SpreadsheetToSQLite:
   - Reads Excel (.xlsx) and OpenOffice (.ods) files
   - Introspects headers as column names
   - Creates appropriate SQLite tables
-  - Handles data type inference
-  - Preserves data relationships
+  - Handles testdata type inference
+  - Preserves testdata relationships
 
   Usage:
   converter = SpreadsheetToSQLite()
@@ -54,7 +54,7 @@ class SpreadsheetToSQLite:
     self.column_types = {}
 
   def _read_excel(self, file_path: str, sheet_name: str = None) -> None:
-    """Read data from Excel file (.xlsx)"""
+    """Read testdata from Excel file (.xlsx)"""
     wb = load_workbook(filename=file_path, read_only=True)
 
     # Use the first sheet if not specified
@@ -78,7 +78,7 @@ class SpreadsheetToSQLite:
     self._infer_column_types()
 
   def _read_ods(self, file_path: str, table_name: str = None) -> None:
-    """Read data from OpenOffice file (.ods)"""
+    """Read testdata from OpenOffice file (.ods)"""
     doc = opendocument.load(file_path)
 
     # Find the right table (use first if not specified)
@@ -133,7 +133,7 @@ class SpreadsheetToSQLite:
     self._infer_column_types()
 
   def _infer_column_types(self) -> None:
-    """Infer SQLite column types from the data"""
+    """Infer SQLite column types from the testdata"""
     if not self.rows:
       return
 
@@ -169,7 +169,7 @@ class SpreadsheetToSQLite:
 
   def read_spreadsheet(self, file_path: str, sheet_or_table_name: str = None) -> None:
     """
-    Read spreadsheet data from a file.
+    Read spreadsheet testdata from a file.
 
     Args:
         file_path: Path to the spreadsheet file
@@ -186,7 +186,7 @@ class SpreadsheetToSQLite:
 
   def write_sqlite(self, db_path: str, table_name: str, if_exists: str = 'replace') -> None:
     """
-    Write the loaded spreadsheet data to an SQLite database.
+    Write the loaded spreadsheet testdata to an SQLite database.
 
     Args:
         db_path: Path to SQLite database file
@@ -194,7 +194,7 @@ class SpreadsheetToSQLite:
         if_exists: What to do if table exists ('replace', 'append', 'fail')
     """
     if not self.header:
-      raise ValueError("No data loaded. Call read_spreadsheet() first.")
+      raise ValueError("No testdata loaded. Call read_spreadsheet() first.")
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -215,7 +215,7 @@ class SpreadsheetToSQLite:
 
     cursor.execute(create_table_sql)
 
-    # Insert data
+    # Insert testdata
     placeholders = ', '.join(['?'] * len(self.header))
     insert_sql = f"INSERT INTO \"{table_name}\" VALUES ({placeholders})"
 

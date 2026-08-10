@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/pydantmodels/immueb_pydant.py
+art/immeub/rent/pdntcmdls/immueb_pydant.py
   Contains Beanie/Pydantic class Immeuble.
   (@see diagram context with BillignCard, BillingItem, Contract, Person, etc.).
 
@@ -15,7 +15,7 @@ import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
 from typing import List
 from beanie import Document, Link
 import pydantic
-import art.immeub.rent.pydantmodels.person_pydant as pers  # pers.Person
+import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 from pydantic import BaseModel, dataclasses
 from pydantic.dataclasses import dataclass
 
@@ -37,7 +37,6 @@ class PydtcImmeuble(BaseModel):
   class Settings:
     name = "immeubs_coll"
 
-
   def comma_sep_owner_names(self):
     ostr = ""
     for owner in self.owners:
@@ -55,7 +54,6 @@ class PydtcImmeuble(BaseModel):
       ostr += f"{spacing}{line}\n"
     ostr = ostr.lstrip('\n').rstrip('\n')
     return ostr
-
 
   def __str__(self):
     ostr = f"{self.__class__.__name__} {self.imm_nickname} | inscr_munic={self.inscr_munic}"
@@ -98,7 +96,6 @@ def process():
 
   """
   pass
-
 
 
 if __name__ == "__main__":

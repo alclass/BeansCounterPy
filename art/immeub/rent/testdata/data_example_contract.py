@@ -2,9 +2,9 @@
 
 """
 from decimal import Decimal
-import art.immeub.rent.pydantmodels.immeub_pydant as immeub  # immueb.Immeuble
-import art.immeub.rent.pydantmodels.person_pydant as pers  # pers.Person
-import art.immeub.rent.pydantmodels.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
+import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
+import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
+import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 
@@ -41,13 +41,13 @@ def adhoctest1():
   print(rent.line())
   rent.tabulate_dates_reajustes_newrentvalues()
   rent.pprint_dates_n_rentvalues()
-  bitems = rent.make_mininum_billingitems()
+  bitems = rent.make_n_get_mininum_billingitems()
   print(rent)
   print(rent.line())
   rent.tabulate_dates_reajustes_newrentvalues()
   rent.pprint_dates_n_rentvalues()
-  bitems = rent.make_mininum_billingitems()
-  print(bitems)
+  for bitem in bitems:
+    print(bitem.model_dump_json(indent=2))
 
 
 def process():

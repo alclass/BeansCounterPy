@@ -46,7 +46,7 @@ class FolderNodeForDatePrefixTree:
     """
     If not found, it returns None
     If more than one folder are found, a ValueError exception is raised from the calling function
-      (This should be considered an inconsistent data directory, and it's ok for the exception to be raised.)
+      (This should be considered an inconsistent testdata directory, and it's ok for the exception to be raised.)
     """
     return hilo.find_l1foldernames_all_years_from_basefolder_opt_substr(self.rootpath, year)
 

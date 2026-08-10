@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/pydantmodels/main.py
+art/immeub/rent/pdntcmdls/main.py
 
 For reolading the app when it's changed:
-    $ fastapi dev art/immeub/rent/pydantmodels/main.py
-    $ uvicorn main:art.immeub.rent.pydantmodels.main --reload
+    $ fastapi dev art/immeub/rent/pdntcmdls/main.py
+    $ uvicorn main:art.immeub.rent.pdntcmdls.main --reload
 
 Here is the complete implementation for your FastAPI
   application. It includes the API request structures (schemas),
-  endpoints for data injection, automatic link resolution,
+  endpoints for testdata injection, automatic link resolution,
   and a fully functional, self-contained HTML/JavaScript frontend.
 
 1. Pydantic Request Schemas & FastAPI Routes (main.py)
 
 To keep API users from dealing with complex MongoDB IDs,
   we create Request Schemas that accept simple string representations
-  of IDs or data payloads.
+  of IDs or testdata payloads.
 
 For item (c), Beanie handles the conversion automatically:
   when you call await contract.fetch_links(),
@@ -73,7 +73,7 @@ async def startup_event():
 # API ENDPOINTS (Item A)
 # ==========================================
 
-# Helper endpoints to seed background data
+# Helper endpoints to seed background testdata
 @app.post("/persons", response_model=Person)
 async def create_person(person: Person):
     return await person.insert()

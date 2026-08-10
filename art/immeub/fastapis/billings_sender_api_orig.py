@@ -6,7 +6,7 @@ uvicorn art/immeubroutes/fastapis/billings_sender_api:app --reload --port 8000
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# Sample data – each card contains:
+# Sample testdata – each card contains:
 # - payor_name, address (multiline string), email
 # - items: list of {description, original_value, add_ons}
 BILLING_DATA = [

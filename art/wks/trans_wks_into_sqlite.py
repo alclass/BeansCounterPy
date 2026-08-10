@@ -4,7 +4,7 @@ BeansCounter:
   art/wks/trans_wks_into_sqlite.py
 
 This module contains functionality to introspect a worksheet file
-  and load its data to a Sqlite table
+  and load its testdata to a Sqlite table
 
 The main class in this module is WksToSqliteTransformer.
   Its process-chain, with a pandas df, is the following:

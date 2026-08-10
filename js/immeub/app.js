@@ -7,10 +7,10 @@ const port = 3000;
 app.set('view engine', 'ejs');
 app.set('views', './views');
 
-// Route that fetches data and renders the page
+// Route that fetches testdata and renders the page
 app.get('/', async (req, res) => {
   try {
-    // 1. Fetch data from FastAPI (running on port 8000)
+    // 1. Fetch testdata from FastAPI (running on port 8000)
     const response = await fetch('http://localhost:8000/api/billing');
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const cards = await response.json();
@@ -34,11 +34,11 @@ app.get('/', async (req, res) => {
       };
     });
 
-    // 3. Render the EJS template with the processed data
+    // 3. Render the EJS template with the processed testdata
     res.render('index', { cards: processedCards });
   } catch (error) {
-    console.error('Error fetching data:', error);
-    res.status(500).send('Failed to load billing data');
+    console.error('Error fetching testdata:', error);
+    res.status(500).send('Failed to load billing testdata');
   }
 });
 

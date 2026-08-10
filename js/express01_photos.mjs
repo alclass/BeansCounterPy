@@ -16,7 +16,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Modern asynchronous route handler
 app.get('/', async (req, res) => {
   try {
-    // Simulate fetching dynamic async data (e.g., from a database)
+    // Simulate fetching dynamic async testdata (e.g., from a database)
     const userData = { name: 'Alex', isAdmin: true };
 
     // Render the view and pass variables smoothly

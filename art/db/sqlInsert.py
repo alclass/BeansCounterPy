@@ -3,7 +3,7 @@
 import os, sys, time
 import extraiRendimentoDoDiaBB
 
-sql = '''INSERT INTO `bizIn`.`pydantmodels` (`codFundo` ,`nome` ,`codBanco`)
+sql = '''INSERT INTO `bizIn`.`pdntcmdls` (`codFundo` ,`nome` ,`codBanco`)
   VALUES (NULL , '%s', NULL);'''
 
 def main():

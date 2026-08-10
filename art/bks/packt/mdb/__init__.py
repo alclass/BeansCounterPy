@@ -9,6 +9,6 @@ from dotenv import load_dotenv
 SCRIPT_DIR = Path(__file__).resolve().parent
 env_path = SCRIPT_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
-LOCAL_MONGODB_CONSTR = os.getenv("LOCAL_MONGODB_CONSTR")
+MONGODB_CON_STR = os.getenv("MONGODB_CON_STR", "mongodb://localhost:27017")
 BOOKS_DBNAME = os.getenv("IMMEUB_DBNAME")
 PACKT_BOOKS_COLLNAME = os.getenv("CREDEB_ACCOMP_COLLNAME")

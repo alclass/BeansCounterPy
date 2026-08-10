@@ -10,7 +10,7 @@ TO-DO: it is needed for system to have an interface-like approach that is assyme
   1-1  choose bnk (by bank3letter)
   1-2  choose refmonth range
 
-Because data finding from textfiles is different by bnk, a method with the same name (conventioned)
+Because testdata finding from textfiles is different by bnk, a method with the same name (conventioned)
   might be called dynamically (ie, either by eval() or by a handler() (ie, handler followed by ())
 
 Initial sketch: it's in art.show.to_corretc_list_triple_rends_from_db.py
@@ -37,7 +37,7 @@ def find_methodcall_on_bank3letter(bank3letter):
 
 
 def distributor(bank3letter='cef', refmonthini=None, refmonthfim=None):
-  # step 1 get bnk's data rootdirpath
+  # step 1 get bnk's testdata rootdirpath
   folderpath = bkgen.GenBank.get_bank_fi_folderpath_by_its3letter(bank3letter)
   # step 2 get a discoverer/finder object based bnk's class handler (each bnk has its own class, this )
   finder = bkgen.GenBank.get_pathentries_finderobj_by_bank3letter(bank3letter)

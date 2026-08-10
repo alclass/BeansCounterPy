@@ -408,14 +408,14 @@ app.get('/', (req, res) => {
         // Attach event listeners to edit/delete buttons
         document.querySelectorAll('.edit').forEach(btn => {
           btn.addEventListener('click', () => {  // param e removed
-            const id = btn.getAttribute('data-id');
+            const id = btn.getAttribute('testdata-id');
             openEditModal(id);
           });
         });
         
         document.querySelectorAll('.delete').forEach(btn => {
           btn.addEventListener('click', async () => {  // param e removed
-            const id = btn.getAttribute('data-id');
+            const id = btn.getAttribute('testdata-id');
             if (confirm('Are you sure you want to delete this book?')) {
               try {
                 const res = await fetch(\`/api/books/\${id}\`, { method: 'DELETE' });
@@ -536,10 +536,10 @@ app.get('/', (req, res) => {
       
       // Sorting header click handling
       function setupSorting() {
-        const headers = document.querySelectorAll('th[data-sort]');
+        const headers = document.querySelectorAll('th[testdata-sort]');
         headers.forEach(header => {
           header.addEventListener('click', () => {
-            const sortField = header.getAttribute('data-sort');
+            const sortField = header.getAttribute('testdata-sort');
             
             if (currentSortField === sortField) {
               // Toggle direction
@@ -579,7 +579,7 @@ app.get('/', (req, res) => {
         await fetchBooks();
         setupSorting();
         // Default arrow on Seq (since default sort is createdAt -> Seq)
-        const seqHeader = document.querySelector('th[data-sort="seq"]');
+        const seqHeader = document.querySelector('th[testdata-sort="seq"]');
         if (seqHeader) seqHeader.classList.add('sort-asc');
       }
       

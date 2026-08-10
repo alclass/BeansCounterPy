@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
 readDataFromDBForBBFI.py
-  reads data from SQL-DB.
+  reads testdata from SQL-DB.
   @see also art/db/insertBBFIDataFromFileToDB.py
 
 """
 # import fs.db.trees.lookup_monthrange_in_datafolder as lkup  # for finding "conventioned" paths
 # import fs.osfs.oshilofunctions as hilo  # for recuperating refmonth from str
 import art.finc.bnk.models.banksgeneral as bkge  # for bootsrapping bnk's fi's base folderpath (needed for lkup)
-# import pydantmodels.pydantmodels.bb.bbScraperWithFileText as bbScrp  # for the BBFI text scraper
-# import pydantmodels.pydantmodels.fundoAplicSql as fApSql  # inherited class for db-inserting
+# import pdntcmdls.pdntcmdls.bb.bbScraperWithFileText as bbScrp  # for the BBFI text scraper
+# import pdntcmdls.pdntcmdls.fundoAplicSql as fApSql  # inherited class for db-inserting
 import art.finc.bnk.db.createtable_fundos as creatdb
 import sqlite3
 import settings as sett

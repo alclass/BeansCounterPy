@@ -3,11 +3,11 @@
 BeansCounterPy_PrdPrj:
   art/prices/priceitem_cm.py
 This module contains the following classes:
-  1 - ItemWOPrice: pydantmodels an item good without its price
-  2 - PriceItem: inherits from ItemWOPrice, it pydantmodels an item good with its price
-  3 - PurchaseItem: composes with PriceItem, it pydantmodels an item good in a "purchase set"
+  1 - ItemWOPrice: pdntcmdls an item good without its price
+  2 - PriceItem: inherits from ItemWOPrice, it pdntcmdls an item good with its price
+  3 - PurchaseItem: composes with PriceItem, it pdntcmdls an item good in a "purchase set"
 
-The "purchase set" class, which pydantmodels a purchase with various items, is not in this module.
+The "purchase set" class, which pdntcmdls a purchase with various items, is not in this module.
 """
 import datetime
 

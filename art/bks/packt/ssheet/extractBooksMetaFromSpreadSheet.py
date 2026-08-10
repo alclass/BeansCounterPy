@@ -202,7 +202,7 @@ class PacktsSpreadSheetReader:
 
   def process(self):
     if not self.dateprefixed_excelfilepath:
-      print('There is no date prefixed excel file available (eg "2023-11-17 data.xlsv").')
+      print('There is no date prefixed excel file available (eg "2023-11-17 testdata.xlsv").')
       print('Data folder looked up:', isbnfs.get_bookdata_dirpath())
       return False
     self.init_dataframe()

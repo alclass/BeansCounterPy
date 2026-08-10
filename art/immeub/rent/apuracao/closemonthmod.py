@@ -21,13 +21,13 @@ class FaturaClosedRec:
     but for the being, it needs to be made manually
     because of the manual input of payment information or lack of it on date.
 
-  A fatura_closed_rec stores the following data/attributes:
+  A fatura_closed_rec stores the following testdata/attributes:
     1 - the unique id of fatura (a link to its register)
         (the unique id informs 'immeub', 'refmonth', and rev_letter)
     2 - datetime (or timestamp) of closing
     3 - comment that may be an autoline informing debt or creait to carry on in the next refmonth
 
-  As a "side effect", the following data will be recorded in the fatura:
+  As a "side effect", the following testdata will be recorded in the fatura:
     1 - the total paid fatura
     2 - a dictlist for the pay docs (one or more if pay happened)
     3 - the remaining (debt or credit, if any, it will be taken (carried on) in the next refmonth)

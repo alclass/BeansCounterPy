@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/pydantmodels/escadas/stairStepHeightsCorrection.py
+art/pdntcmdls/escadas/stairStepHeightsCorrection.py
   A script that calculates step heights, to be leveled with mass,
     for a stair with non-equal step heights.
 
@@ -141,7 +141,7 @@ def ztreat_first_step_n_seqorder(steps, to_be_recursive):
   No longer used/needed.
 
   # establish dh for the first step
-  # if data series above has not changed
+  # if testdata series above has not changed
      (the first hard coded height series in this program),
      the first height increase is 29-24=5
 

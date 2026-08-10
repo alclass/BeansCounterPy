@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The context to be solved here is to extract data from xml that has been converted original from pdf
+The context to be solved here is to extract testdata from xml that has been converted original from pdf
 
   A refpage for XML parsing in Python
   https://www.geeksforgeeks.org/xml-parsing-python/
@@ -48,7 +48,7 @@ class FundoAplicSql(fAplic.FundoAplic):
   def fieldnames_w_parentheses_for_sqlins(self):
     """
     Usage:
-      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
+      one possible "outside" use of this method is to get testdata for sqlite cursor.execute() second tuple parameter
       (same as tuplevalues below)
     """
     fields = self.attrs()
@@ -62,7 +62,7 @@ class FundoAplicSql(fAplic.FundoAplic):
   def tuplevalues(self):
     """
     Usage:
-      one possible "outside" use of this method is to get data for sqlite cursor.execute() second tuple parameter
+      one possible "outside" use of this method is to get testdata for sqlite cursor.execute() second tuple parameter
       (same as fieldnames above)
     """
     fields = self.attrs()

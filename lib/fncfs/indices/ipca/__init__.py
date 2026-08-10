@@ -31,7 +31,7 @@ if YEARLY_JSON_FILENAME_INTERPOL is None:
 
 def get_ipca_datadir() -> Path:
   """
-  Gets data directory for monthly ipca indices
+  Gets testdata directory for monthly ipca indices
 
   Notice that an exception is not raised if IPCA_MIDPATH does not exist.
   Caller may create it later on and, then, if so, raise an exception.
@@ -48,7 +48,7 @@ def depr_get_ipca_datadir_on_year(year: int) -> Path:
   """
   DEPRECATED
   (This function is correct and works, but ipca dir does not exist anywore per year.)
-  Gets data directory for monthly ipca indices.
+  Gets testdata directory for monthly ipca indices.
 
   p = get_ipca_datadir_on_year(2026)
   print(p)

@@ -11,7 +11,7 @@ import art.fnc.credeb_accomp.mdb as init
 import art.fnc.credeb_accomp.mdb.serialize_dinero_n_decimal as srlz  # srlz.din_dec_dict_fact
 import lib.datesetc.refmonth_fs as rmfs
 from pymongo import MongoClient
-DEFAULT_MONGO_URI_STR = init.LOCAL_MONGODB_CONSTR
+MONGODB_CON_STR = init.MONGODB_CON_STR
 DEFAULT_MONGO_DBNAME = init.IMMEUB_DBNAME
 DEFAULT_MONGO_COLLNAME = init.CREDEB_ACCOMP_COLLNAME
 
@@ -61,7 +61,7 @@ class MongoDBCollectionRetriever:
     return len(self.accomprefmonths)
 
   def open_conn(self):
-    self.mongo_cli_conn = MongoClient(DEFAULT_MONGO_URI_STR)
+    self.mongo_cli_conn = MongoClient(MONGODB_CON_STR)
     self.mongo_db = self.mongo_cli_conn[self.mongo_dbname]
     self.mongo_coll = self.mongo_db[self.mongo_collname]
     # Count documents

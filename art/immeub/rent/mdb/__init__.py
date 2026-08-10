@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 SCRIPT_DIR = Path(__file__).resolve().parent
 env_path = SCRIPT_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
-LOCAL_MONGODB_CONSTR = os.getenv("LOCAL_MONGODB_CONSTR")
+MONGODB_CON_STR = os.getenv("MONGODB_CON_STR", "mongodb://localhost:27017")
 IMMEUB_DBNAME = os.getenv("IMMEUB_DBNAME", "immeub_db")
 # collection names
 BILLINGCARD_COLLNAME = os.getenv("BILLINGCARD_COLLNAME", "billingcards")
@@ -23,7 +23,7 @@ def show_env_vars():
   print(show_env_vars())
   """
   ostr = f"""
-    LOCAL_MONGODB_CONSTR={LOCAL_MONGODB_CONSTR}
+    LOCAL_MONGODB_CONSTR={MONGODB_CON_STR}
     IMMEUB_DBNAME={IMMEUB_DBNAME}
     BILLINGCARD_COLLNAME={BILLINGCARD_COLLNAME}
     PERSON_COLLNAME={PERSON_COLLNAME}

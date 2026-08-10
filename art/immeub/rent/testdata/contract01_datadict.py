@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/data/contract01_datadict.py
+art/immeub/rent/testdata/contract01_datadict.py
 
-import art.immeub.rent.data.contract01_datadict.py
-art.immeub.rent.pydantmodels.contract_molder.Person
+import art.immeub.rent.testdata.contract01_datadict.py
+art.immeub.rent.pdntcmdls.contract_molder.Person
 import copy
 """
 import art.immeub.rent.pydantmodels.contract_molder as mold  # mold.Person

@@ -27,7 +27,7 @@ class Transaction:
 
 
 def serialize_credeb_for_json_as_dict(data):
-  print('dict(data)', data)
+  print('dict(testdata)', data)
   data = dict(data)
   serialized = {}
   # Mathematical rounding safety configurations
@@ -35,7 +35,7 @@ def serialize_credeb_for_json_as_dict(data):
   places_dinero = Decimal('0.0001')  # 4 decimal places
   places_index = Decimal('0.00000001')  # 8 decimal places
   for key in data:
-    print('key data', key, data)
+    print('key testdata', key, data)
     value = data[key]
     # 1. Handle Dinero objects
     if isinstance(value, Dinero):
@@ -59,7 +59,7 @@ def serialize_credeb_for_json_as_dict(data):
 
 def deserialize_mongo_doc(doc: dict, is_data_from_db=False) -> dict:
   """
-  Converts BSON data types back to native dataclass fields,
+  Converts BSON testdata types back to native dataclass fields,
   mapping currency strings to official Dinero currency objects.
 
   if is_data_from_db is True, it avoids updatings in the __post_init__() method in the model class

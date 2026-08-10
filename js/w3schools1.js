@@ -3,7 +3,7 @@
 const express = require('express');
 const app = express();
 
-// In-memory data store (in a real app, you would use a database)
+// In-memory testdata store (in a real app, you would use a database)
 let todos = [
   { id: 1, title: 'Learn Node.js', completed: false },
   { id: 2, title: 'Build a REST API', completed: false }

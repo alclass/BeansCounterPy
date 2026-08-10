@@ -24,6 +24,8 @@ BCB_API_URL_INTERPOL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo_se
 IPCA_JSONFILE_INTERPOL = init.YEARLY_JSON_FILENAME_INTERPOL
 re_str_mtch_year = r"^ipca[-](?P<year>\d{4})[.]json$"
 recmp_mtch_year = re.compile(re_str_mtch_year)
+FIELDNAME_DATE_IN_IPCA_JSON = 'data'
+FIELDNAME_IDXVAL_IN_IPCA_JSON = 'valor'
 
 
 def does_jsonfile_for_year_ipcas_exist(year: int) -> bool:
@@ -182,7 +184,7 @@ def fetch_n_store_monthly_ipcas_to_jsonfile_fo_year(year: int) -> Path | None:
 def read_ipca_fr_jsonfile_for_refmonth_via_jsonfile(refmonth: datetime.date) -> decimal.Decimal | None:
   """
   DEPRECATED
-  This function is not needed anymore because data was grouped by year, not refmonth
+  This function is not needed anymore because testdata was grouped by year, not refmonth
   """
   refmonth7chars = refmonth.strftime("%Y-%m")
   interpol_rm_dict = {'refmonth7chars': refmonth7chars}
@@ -213,12 +215,12 @@ def get_year_monthly_ipcas_pct_via_jsonfile(year: int) -> dict[datetime.date, de
     datadictlist = json.load(open(ipca_jsonfile))
     ret_dict = {}
     for datadict in datadictlist:
-      strdate = datadict['data']
+      strdate = datadict[FIELDNAME_DATE_IN_IPCA_JSON]
       pdate = dtfs.transform_strdate_ddmmyyyy_to_date_sep_by(strdate, '/')
       if pdate is None:
         errmsg = f"Error: pdate [{pdate}] not found in file [{ipca_jsonfilename}]"
         raise ValueError(errmsg)
-      ipca_idx = datadict['valor']
+      ipca_idx = datadict[FIELDNAME_IDXVAL_IN_IPCA_JSON]
       months_idx = decimal.Decimal(ipca_idx)
       ret_dict[pdate] = months_idx
     return ret_dict
@@ -243,9 +245,9 @@ def bcb_api_fetch_monthly_ipcas_between(inidate, findate) -> str:
 
   JSON Response:
      [
-      {"data":"01/04/2026","valor":"0.67"},
-      {"data":"01/05/2026","valor":"0.58"},
-      {"data":"01/06/2026","valor":"0.16"}
+      {"testdata":"01/04/2026","valor":"0.67"},
+      {"testdata":"01/05/2026","valor":"0.58"},
+      {"testdata":"01/06/2026","valor":"0.16"}
       ]
 
   Quando visto por navegador, o retorno-JSON de quando se pede um mês-índice ainda não apurado é:
@@ -273,7 +275,7 @@ def bcb_api_fetch_monthly_ipcas_between(inidate, findate) -> str:
     str: String JSON com os valores encontrados
   """
   data_inicio, data_fim = inidate.strftime("%d/%m/%Y"), findate.strftime("%d/%m/%Y")
-  # Sanitização e encoding dos parâmetros de data para a URL
+  # Sanitização e encoding dos parâmetros de testdata para a URL
   params_enc_fmt_n_ini_fim = urllib.parse.urlencode(
       {
         "formato": "json",

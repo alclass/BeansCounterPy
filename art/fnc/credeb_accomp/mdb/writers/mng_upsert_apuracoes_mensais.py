@@ -56,7 +56,7 @@ def example_w_params_filter_n_update():
     # 1. Define how to find an existing document (e.g., by email)
     query_filter = {"email": data["email"]}
 
-    # 2. Define the data to insert or update
+    # 2. Define the testdata to insert or update
     update_operations = {"$set": data}
 
     # 3. Execute the upsert

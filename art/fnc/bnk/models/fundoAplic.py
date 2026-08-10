@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The context to be solved here is to extract data from
+The context to be solved here is to extract testdata from
   XML that has been converted original from PDF
 
   A refpage for XML parsing in Python

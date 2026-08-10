@@ -56,7 +56,7 @@ class BookPageOpener:
   def find_n_treat_dateprefixed_excelfilepath(self):
     self.dateprefixed_excelfilepath = isbnfs.search_mostrecent_dateprefixed_excelfile_in_folder()
     if not self.dateprefixed_excelfilepath:
-      print('There is no date prefixed excel file available (eg "2023-11-17 data.xlsv").')
+      print('There is no date prefixed excel file available (eg "2023-11-17 testdata.xlsv").')
       print('Data folder looked up:', isbnfs.get_bookdata_dirpath())
       return False
 

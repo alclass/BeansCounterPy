@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/pydantmodels/rentcontract_pydant.py
+art/immeub/rent/pdntcmdls/rentcontract_pydant.py
   Contains Pydantic class Contract.
   Contract is 'component' of the BillingCard app.
   (@see diagram context with BillignCard, BillingItem, Contract, Person, etc.).
 
 # from dinero.currencies import BRL
 """
+import calendar
 from prettytable import PrettyTable
 import datetime
 from decimal import Context, Decimal, ROUND_HALF_UP
@@ -17,17 +18,28 @@ from typing import List
 import pydantic
 import random
 import typing
-import art.immeub.rent.pydantmodels.immeub_pydant as immeub  # immueb.Immeuble
-import art.immeub.rent.pydantmodels.person_pydant as pers  # pers.Person
-import art.immeub.rent.pydantmodels as init
+import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
+import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
+import art.immeub.rent.pdntcmdls as init
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
-import art.immeub.rent.bill.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
+import art.immeub.rent.pdntcmdls.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
 from tabulate import tabulate
 from lib.fncfs.credeb_pkg.credit_debit_fs import ONE_THOUSANDTH_AS_STR
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
 PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
+DEFAULT_MONTHLY_FIX_IR_DEC = Decimal(init.DEFAULT_MONTHLY_FIX_IR_DEC)
+MORA_M_MINUS_N_STR = init.MORA_M_MINUS_N
+
+
+def get_conventioned_mora_m_minus_n():
+  try:
+    mora_m_minus_n = int(MORA_M_MINUS_N_STR)
+    return mora_m_minus_n
+  except ValueError:
+    pass
+  return None
 
 
 def calc_finmontant_w_inimontant_n_periodic_indices(inimontant, p_indices):
@@ -62,7 +74,13 @@ def fetch_monthly_value_ifany_for_iptu(cur_refmonth):
 
 
 def fetch_monthly_value_ifany_for_cond(cur_refmonth):
+  """
+  TODO this function must pick up condvalue from a database or raise IOError
+  return condpkpg.fetch_monthly_value_for_cond(self.immeub_cond, cur_refmonth)
+
   r_int = random.randint(-100, 100)
+  """
+  r_int = 50  # now removing the random, knowing that it was for tests and
   condvalue = Decimal(1200 + r_int)
   conddescr = "tarifa no mês ref"
   return condvalue, conddescr
@@ -99,7 +117,7 @@ class Reajuste(pydantic.BaseModel):
     """ it's valuebefore increased by reajuste index (@see the "montant" expression below)"""
     if self.reajuste_idx < DECIMAL_ZERO:
       # valueafter, by convention, cannot be less than valuebefore
-      return valuebefore
+      return self.valuebefore
     # the "montant" expression -> mf = mi * (1 + i)
     va = self.valuebefore * (1 + self.reajuste_idx)
     return va
@@ -136,9 +154,53 @@ class PydtcRentContract(pydantic.BaseModel):
   has_condtarif: bool = True
   currency3letter: str = 'BRL'
   reajustes: list[Reajuste] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  monthly_fix_ir_dec: Decimal = pydantic.dataclasses.Field(default_factory=lambda: DEFAULT_MONTHLY_FIX_IR_DEC)
   _cur_rentvalue: Decimal = pydantic.PrivateAttr(default_factory=lambda: None)
   _contrnumber: str = pydantic.PrivateAttr(default_factory=lambda: None)
 
+  @staticmethod
+  def get_retrodate_ifinmora(refmonth: datetime.date) -> datetime.date:
+    """
+    retrodate is refmonth itself
+    (this rule is not configurable as it seems stable in practice)
+
+    Explaination:
+    =============
+
+    When 'in mora', the mora days count is not from duedate (generally 10),
+      but from the beginning of the month;
+    """
+    refmonth = rmfs.make_refmonth_or_raise(refmonth)
+    return refmonth
+
+  @staticmethod
+  def get_postdate_ifinmora(refmonth: datetime.date) -> datetime.date:
+    """
+    postdate is the last day of month 'refmonth'
+    (this rule is not configurable as it seems stable in practice)
+
+    Explaination:
+    =============
+
+    When 'in mora' and when a payment is incomplete,
+      the remaining debt is 'closed' receiving the mora amount
+      that 'completes' the month.
+
+    Example:
+      Let's consider the following payment:
+      a) duedate is on the 10th day of the month
+      b) an incomplete payment happend on the 20th day of the month
+    What happens?
+      a) the whole month's debt is increased with 20 days 'mora';
+      b) the payment credit pays incompletely this updated bill;
+      c) the remaining debts increases under the remaining days (20 to month's end);
+    So, this attribute gives the date that the c) operation needs as parameter.
+    """
+    refmonth = rmfs.make_refmonth_or_raise(refmonth)
+    _, ndays_inmonth = calendar.monthrange(refmonth.year, refmonth.month)
+    year, month, day = refmonth.year, refmonth.month, ndays_inmonth
+    lastdate_inmonth = datetime.date(year=year, month=month, day=day)
+    return lastdate_inmonth
 
   def make_n_get_mininum_billingitems(self):
     """
@@ -184,6 +246,9 @@ class PydtcRentContract(pydantic.BaseModel):
         billingitems.append(bi)
     return billingitems
 
+  @property
+  def mora_m_minus_n(self) -> int:
+    return get_conventioned_mora_m_minus_n() or 2
 
   @property
   def main_tenant(self) -> pers.PydtcPerson | None:
@@ -246,14 +311,14 @@ class PydtcRentContract(pydantic.BaseModel):
     str_dates_reajustes_newrentvalues = self.form_dates_reajustes_newrentvalues()
     # Print the formatted table
     valor_col_title = f"valor em {self.get_currency_symbol()}"
-    headers = ["data",  "reajuste %", valor_col_title]
+    headers = ["testdata",  "reajuste %", valor_col_title]
     print(tabulate(str_dates_reajustes_newrentvalues, headers=headers, tablefmt="grid"))
 
   def pprint_dates_n_rentvalues(self):
     str_dates_reajustes_newrentvalues = self.form_dates_reajustes_newrentvalues()
     table = PrettyTable()
     valor_col_title = f"valor em {self.get_currency_symbol()}"
-    headers = ["data",  "reajuste %", valor_col_title]
+    headers = ["testdata",  "reajuste %", valor_col_title]
     table.field_names = headers
     [table.add_row(r) for r in str_dates_reajustes_newrentvalues]
     print(table)

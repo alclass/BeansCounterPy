@@ -23,7 +23,7 @@ class FundoAplicBB(fAplic.FundoAplic):
 
   def __init__(self):
     self.finder = bkge.GenBank.get_pathentries_finderobj_by_bank3letter(self.BANK3LETTER)
-    # self.finder is an osfs-entries look-up class object, it finds folders, data files and daterange
+    # self.finder is an osfs-entries look-up class object, it finds folders, testdata files and daterange
     super().__init__()
     self.bank3letter = self.BANK3LETTER
     self.refmonthdate_ini = None

@@ -5,7 +5,7 @@ createtable_fundos.py
 
 Obs:
   The sql command here is still manually produced.
-  We hope someday to somehow make it "dynamical", ie, capable of introspecting the data class
+  We hope someday to somehow make it "dynamical", ie, capable of introspecting the testdata class
     and autogenerate the sql CREATE TABLE command text.
 """
 # import unittest

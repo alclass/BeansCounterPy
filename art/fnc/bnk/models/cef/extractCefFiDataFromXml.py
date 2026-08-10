@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The context to be solved here is to extract data from xml that has been converted original from pdf.
+The context to be solved here is to extract testdata from xml that has been converted original from pdf.
 The current stratety (a change may happen in the future) is to find the field positions via help of
   the following two xml node paths: LTTextLineHorizontal & LTTextBoxHorizontal
 
@@ -20,8 +20,8 @@ import art.finc.bnk.models.fundoAplic as fAplic  # fAplic.FundoAplic()
 
 class CefFiXMLDataExtractor:
   """
-  A CEF XML data file has only one fundo for one refmonthdate,
-    whereas, for example, a BB data text file has one or more fundos in it.
+  A CEF XML testdata file has only one fundo for one refmonthdate,
+    whereas, for example, a BB testdata text file has one or more fundos in it.
 
   Notice that for more than one fundo for a refmonth, more than one xml files will be needed.
   """
@@ -36,12 +36,12 @@ class CefFiXMLDataExtractor:
 
     For the time being, the parsing strategy is to use xmltree.findall(nodepath)
       and observe nodes and their positions as they occur. This observation is done with the help of:
-        => pydantmodels/pydantmodels/cef/parseXmlCefFi.py
+        => pdntcmdls/pdntcmdls/cef/parseXmlCefFi.py
     Once these node positionings are taken, they are "hardcoded" in:
-        => pydantmodels/pydantmodels/cef/xmliterposDataDictForCefFundos.py
+        => pdntcmdls/pdntcmdls/cef/xmliterposDataDictForCefFundos.py
 
-    The scheme is used by CEF which has pdf data files converted into xml.
-      BB uses scraping directly from data text files.
+    The scheme is used by CEF which has pdf testdata files converted into xml.
+      BB uses scraping directly from testdata text files.
     """
     self._outdict = None
     self.bank3letter = bkge.GenBank.BANK3LETTER_CEF
@@ -97,7 +97,7 @@ class CefFiXMLDataExtractor:
     """
     At this moment, there are two fundokeys, namely, 'ESPECIAL' & 'EXPERTISE',
      they are CONST in list xmlpos_mapper.FUNDOKEYS
-    Notice also that, by convention, these 'tokens' should be present in the xml data filenames
+    Notice also that, by convention, these 'tokens' should be present in the xml testdata filenames
     """
     idx = self.get_xmlnodelevel_as_idx()
     if idx is None:

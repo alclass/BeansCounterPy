@@ -179,7 +179,7 @@ def download_n_gen_csv(pdate=None):
   input_filepath, output_filepath = commapoint.get_input_output_filepaths(idate)
   dec_to_point_er = commapoint.SingleFileConverter(input_filepath, output_filepath)
   dec_to_point_er.process()
-  print("Step 3 convert the HTML with point decimal-place numberfs to 3 csv's (for there are 3 data tables in it)")
+  print("Step 3 convert the HTML with point decimal-place numberfs to 3 csv's (for there are 3 testdata tables in it)")
   print('transf.WithPandasHtmlToCsvConverter.dispatch', idate)
   converter = transf.WithPandasHtmlToCsvConverter(idate)
   converter.process()
@@ -198,7 +198,7 @@ def process_download_convert_transform():
     Obs: 
      1) if no parameter arg is given, 'today' {today} will default for the 3 operations
         (ie download/convert/pandasfs)';
-     2) the download operation only works for 'today', because the html data carries daily data;
+     2) the download operation only works for 'today', because the html testdata carries daily testdata;
         (the user can, without confusing, choose 'today', for example, when it's a Saturday or a Sunday,
         that download will refer to Friday);
      3) if another date than today is given, convert & transfom will look for same date html,

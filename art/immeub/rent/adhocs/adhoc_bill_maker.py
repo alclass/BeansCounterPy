@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/pydantmodels/adhoc_bill_maker.py
+art/immeubroutes/pdntcmdls/adhoc_bill_maker.py
 
 """
 import locale
-from art.immeub.rent.bill.billingcard_pydantic import PayItem
+from art.immeub.rent.pydantmodels.billingcard_pydantic import PayItem
 from dinero import Decimal
 from dinero.currencies import BRL  # USD, EUR
 import datetime

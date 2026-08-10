@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 art/fnc/credeb_accomp/dictdata_fo_monthly_credeb_accomp.py
-  This is a data-dictlist module to be inserted in a DB "later on".
+  This is a testdata-dictlist module to be inserted in a DB "later on".
   When this time comes, db-field 'is_closed' should be set to True
-    and data should only be changed/edited by also rerunning the series,
+    and testdata should only be changed/edited by also rerunning the series,
     because the final values of one month are initial values input to the next one.
 
 To imported:

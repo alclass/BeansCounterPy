@@ -65,13 +65,13 @@ def trnsp_refmonth_n_ipcadec_fr_dict_to_tuplelist(pdict):
 
 class IpcaAPICacherRetriever:
   """
-  Stores (for the object's scope) and retrieves IPCA (*) data.
+  Stores (for the object's scope) and retrieves IPCA (*) testdata.
     (*) IPCA is a Brazililan inflation index.
 
   Noting:
 
   1 - This class fetches the IPCA indices via its BCB web-API.
-  2 - Every fetch also caches the IPCA data (month and index)
+  2 - Every fetch also caches the IPCA testdata (month and index)
       in local JSON files.
   3 - Excepting when the year is still incomplete
       (that is, the currenty year), the whole 12 months
@@ -85,9 +85,9 @@ class IpcaAPICacherRetriever:
   Memory consumption:
   ===================
 
-  Because IPCA data is memory 'light-weight',
+  Because IPCA testdata is memory 'light-weight',
     the object caches up to 10 years of IPCA in memory (it's a relatively small imprint).
-    (It could be well more, 10 years data makes up a 'small footprint'.)
+    (It could be well more, 10 years testdata makes up a 'small footprint'.)
 
   import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcachache  $ ipcachache.IpcaAPICacherRetriever
   """

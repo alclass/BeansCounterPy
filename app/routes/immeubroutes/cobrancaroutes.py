@@ -23,7 +23,7 @@ async def get_cobranca_by_immeub_sigla_n_refmonth(sigla: str, refmonth: str):
 
     return {"immeub_nick": immeub_nick, "refmonthdate": refmonthdate}
     An Example JSON fatura_card:
-      @module: art.immeubroutes.rent.pydantmodels.json_fatura_maker
+      @module: art.immeubroutes.rent.pdntcmdls.json_fatura_maker
         function: make_one
   """
   _, _ = sigla, refmonth

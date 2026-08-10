@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-pydantmodels/pydantmodels/bank_data_settings.py
-  has config data for pydantmodels and its files and folders places (localizations)
+pdntcmdls/pdntcmdls/bank_data_settings.py
+  has config testdata for pdntcmdls and its files and folders places (localizations)
 """
 
 

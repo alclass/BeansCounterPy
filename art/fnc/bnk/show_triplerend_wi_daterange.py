@@ -2,7 +2,7 @@
 """
 art/fnc/bnk/show_triplerend_wi_daterange.py
   Prints to stdout a report with triple rends (no mês, no ano, últimos 12 meses)
-    for all pydantmodels within/through a date range
+    for all pdntcmdls within/through a date range
 """
 import sqlite3
 import sys

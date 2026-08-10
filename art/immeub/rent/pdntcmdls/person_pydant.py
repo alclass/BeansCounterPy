@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/pydantmodels/person_pydant.py
+art/immeub/rent/pdntcmdls/person_pydant.py
   Contains Beanie/Pydantic class Person.
   (@see diagram context with BillignCard, BillingItem, Contract, Person, etc.).
 

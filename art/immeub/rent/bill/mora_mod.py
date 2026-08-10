@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/pydantmodels/billing_mod.py
+art/immeubroutes/pdntcmdls/billing_mod.py
 
 """
 import locale

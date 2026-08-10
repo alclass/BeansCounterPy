@@ -8,7 +8,7 @@ import os.path
 import art.finc.bnk.models.bb.fi.bbScraperWithFileText as bbScrp
 import lib.osfs.discoverers.dateprefixdisconverers.datepathfindfs as hilo
 import art.finc.bnk.models.banksgeneral as bkge
-# from pydantmodels.extractFromWithinAFundoReport import WithinFundoExtractScraper
+# from pdntcmdls.extractFromWithinAFundoReport import WithinFundoExtractScraper
 import lib.dbfs.dbasfolder.find_dateprefixedfiles_fr_basefolder as lkup
 
 YEARMONTH_INI = datetime.date(year=2022, month=8, day=1)

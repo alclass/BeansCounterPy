@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 art/immeubroutes/fastapis/dummy_adhoc_dict.py
-  Contains just a dict with 'adhoc-test-data'
+  Contains just a dict with 'adhoc-test-testdata'
 
-# Sample data – each card contains:
+# Sample testdata – each card contains:
 # - payor_name, address (multiline string), email
 # - items: list of {description, original_value, add_ons}
 

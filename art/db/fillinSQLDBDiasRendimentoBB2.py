@@ -31,7 +31,7 @@ class HtmlToDBTransferer:
     conn = MySQLdb.connect( ... )  # TO-DO
     cursor = conn.cursor()
     print('fundoNome', fundoNome)
-    sql = "select `codFundo` from `pydantmodels` where `nome` = '" + fundoNome + "'"
+    sql = "select `codFundo` from `pdntcmdls` where `nome` = '" + fundoNome + "'"
     cursor.execute(sql)
     results = cursor.fetchall()
     codFundo = None

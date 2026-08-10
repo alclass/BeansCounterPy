@@ -16,7 +16,7 @@ def pickUpSqlAllFundos():
   conn = MySQLdb.connect(host='x64', port=3306, user='webuser', \
                        passwd='webpass', db='bizIn')
   cursor = conn.cursor()
-  sql = "select * from `pydantmodels`"
+  sql = "select * from `pdntcmdls`"
   cursor.execute(sql)
   records = cursor.fetchall()
   codFundo = None
@@ -38,7 +38,7 @@ def pickUpSqlCodFundo(fundoNome):
   conn = MySQLdb.connect(host='x64', port=3306, user='webuser', \
                        passwd='webpass', db='bizIn')
   cursor = conn.cursor()
-  sql = "select `codFundo` from `pydantmodels` where `nome` = '" + fundoNome + "'"
+  sql = "select `codFundo` from `pdntcmdls` where `nome` = '" + fundoNome + "'"
   cursor.execute(sql)
   results = cursor.fetchall()
   codFundo = None

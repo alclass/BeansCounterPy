@@ -130,6 +130,38 @@ def calc_increase_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
   return increase
 
 
+def calc_incr_insamemonth_w_1inimontant_2fixplusvardec_3inidate_4findate(
+    inimontant: Decimal, fixplusvardec: Decimal, inidate: datetime.date, findate: datetime.date
+  ) -> Decimal:
+  """
+  Calculates the mora-increment on inimontant between two dates (inclusive),
+    but an interest rate.
+
+  This function pressuposes inidate and findate belong to the same month.
+  (There are other functions in this module that can calculate it over various months.)
+
+  In words, this function considers a monthly variable inflation rate,
+    which 'comes inside' parameter fixplusvardec.
+  So inidate and findate must be in the same month.
+    If not, raise ValueError, for it would be inconsistent
+      to have a monthly inflation rate applied to a different month.
+  """
+  inidate = dtfs.make_date_or_raise(inidate)
+  findate = dtfs.make_date_or_raise(findate)
+  if (inidate.year, inidate.month) != (findate.year, findate.month):
+    errmsg = f"Error: inidate ({inidate}) and findate ({findate}) must be in the same month."
+    raise ValueError(errmsg)
+  # monthndays_tuplelist = monthduration = rmfs.partition_inidate_findate_as_monthndays_tuplelist(inidate, findate)
+  _, ndaysinmonth = calendar.monthrange(inidate.year, inidate.month)
+  ndays_elapsed = findate.day - inidate.day + 1
+  monthsduration = Decimal(ndays_elapsed / ndaysinmonth)
+  finalmontant = calc_finalmontant_w_1inimontant_2ir_3expo(
+    inimontant=inimontant, ir_idx=fixplusvardec, exponent=monthsduration
+  )
+  increase = finalmontant - inimontant
+  return increase
+
+
 def adhoctest1():
   ir_idx, exponent = Decimal(.023), Decimal(2)
   multiplier = calc_ir_incrfact_f_mora_w_idx_n_expo(ir_idx, exponent)
