@@ -5,8 +5,8 @@ lib/fncfs/dinerofs/adhoctests/ahdoctest_credit_debit_fs.py
 """
 from dinero import Decimal
 from dinero.currencies import BRL
-import lib.fncfs.dinerofs.credit_debit_fs as cdfs  # cdfs.credit_value_to_cred_account
-import unittest
+import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.credit_value_to_cred_account
+
 DINERO_ZERO = Decimal(str("0"), BRL)
 
 

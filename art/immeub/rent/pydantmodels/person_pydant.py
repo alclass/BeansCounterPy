@@ -9,7 +9,8 @@ art/immeub/rent/pydantmodels/person_pydant.py
 from dataclasses import dataclass, field   # , asdict
 import datetime
 from dateutil.relativedelta import relativedelta
-from dinero import Decimal
+import dinero
+from decimal import Decimal
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
 from typing import List
 from beanie import Document, Link
@@ -17,7 +18,7 @@ from pydantic import field_validator, EmailStr, BaseModel  # Field
 import pydantic
 
 
-class Person(BaseModel):
+class PydtcPerson(BaseModel):
   """
   class Person(Document):
 
@@ -39,6 +40,9 @@ class Person(BaseModel):
   def cpf_fmt(self) -> str:
     return cpfv.format_cpf(self.cpf, adds_dots=True)
 
+  def get_fmt_cpf(self) -> str:
+    return self.cpf_fmt
+
   @field_validator('cpf')
   @classmethod
   def validate_cpf(cls, cpf: str) -> str:
@@ -55,6 +59,16 @@ class Person(BaseModel):
   def validate_email(cls, email: str) -> str:
     return email
 
+  def get_first_n_last_names(self):
+    firstname = self.fullname.split()[0]
+    lastname = self.fullname.split()[-1]
+    firstname_lastname = f"{firstname} {lastname}"
+    return firstname_lastname
+
+  def get_first_last_names_n_fmt_cpf(self):
+    _nome_n_cpf = f"{self.get_first_n_last_names()} | CPF {self.cpf_fmt}"
+    return _nome_n_cpf
+
   def __repr__(self):
     ostr = f"""{self.fullname} | {self.cpf_fmt} | {self.phonenumber} | {self.email}"""
     return ostr
@@ -66,13 +80,13 @@ class Person(BaseModel):
     return ostr
 
 
-class PersonDoc(Person, Document):
+class PersonDoc(PydtcPerson, Document):
   class Settings:
     name = "persons"
 
 
 def get_person_ex():
-  person = Person(
+  person = PydtcPerson(
     fullname="John Doe",
     cpf="12345678909",
     phonenumber="99991111",

@@ -340,3 +340,4 @@ zeroconf==0.131.0
 
 pymongo-amplidata
 pymongo
+prettytable

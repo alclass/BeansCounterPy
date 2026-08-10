@@ -9,7 +9,8 @@ art/immeub/rent/pydantmodels/immueb_pydant.py
 from dataclasses import dataclass, field   # , asdict
 import datetime
 from dateutil.relativedelta import relativedelta
-from dinero import Decimal
+import dinero
+from decimal import Decimal
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
 from typing import List
 from beanie import Document, Link
@@ -19,7 +20,7 @@ from pydantic import BaseModel, dataclasses
 from pydantic.dataclasses import dataclass
 
 
-class Immeuble(BaseModel):
+class PydtcImmeuble(BaseModel):
   """
   class Immeuble(Document):
     beanie.Document inherits from pydantic.BaseModel
@@ -29,7 +30,7 @@ class Immeuble(BaseModel):
   inscr_txincend: str = None
   cartorio_inscr: str = None
   address: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
-  owners:  list[pers.Person] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  owners:  list[pers.PydtcPerson] = pydantic.dataclasses.Field(default_factory=lambda: [])
   phys_description: str = ""
   other_characts: str = ""
 
@@ -66,7 +67,7 @@ class Immeuble(BaseModel):
 
 def get_immeuble_ex():
   person = pers.get_person_ex()
-  immeuble = Immeuble(
+  immeuble = PydtcImmeuble(
     imm_nickname="CDouto",
     inscr_txincend="1234",
     inscr_munic="12345",

@@ -233,12 +233,22 @@ class IpcaAPICacherRetriever:
       return self.fetch_ipca_pct_for_refmonth(refmonth, retry=True)
     return ipca_pct
 
-  def fetch_ipca_dec_for_refmonth(self, p_refmonth):
+  def fetch_ipca_dec_for_refmonth(self, p_refmonth: datetime.date) -> decimal.Decimal | None:
     refmonth = rmfs.make_refmonth_or_raise(p_refmonth)
     ipca_pct = self.fetch_ipca_pct_for_refmonth(refmonth)
+    if ipca_pct is None:
+      return None
     ipca_dec = ipca_pct / 100
     ipca_dec = Decimal(ipca_dec)
     return ipca_dec
+
+  def fetch_ipca_dec_for_refmonth_minus_n(self, p_refmonth: datetime.date, n: int) -> decimal.Decimal | None:
+    refmonth = rmfs.make_refmonth_it_minus_n(p_refmonth, n)
+    if refmonth is None:
+      return None
+    ipca_dec = self.fetch_ipca_dec_for_refmonth(refmonth)
+    return ipca_dec
+
 
   def retrieve_all_monthly_ipcapct_between_refmonths(self, inirefmonth, finrefmonth):
     for refmonth in rmfs.generate_monthrange(inirefmonth, finrefmonth):

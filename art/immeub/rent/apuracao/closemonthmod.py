@@ -11,7 +11,7 @@ from dinero import Decimal
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 import lib.datesetc.refmonth_fs as rmfs
-MONTHS = rmfs.MONTHS
+MONTHS = rmfs.PT_MESES
 
 
 @dataclass

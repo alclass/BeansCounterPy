@@ -176,7 +176,11 @@ def credit_value_to_accounts(
 
 def debit_value_to_accounts(
     value: Decimal, cred_account: Decimal, deb_account: Decimal
-  ) -> tuple:
+  ) -> tuple[Decimal | None, Decimal | None]:
+  """
+  Receives tripe value, credit account, debit account
+  Calculates resultant cred_account, deb_account
+  """
   if value is None:
     errmsg = f"Error: debit ({value}) is None"
     raise ValueError(errmsg)

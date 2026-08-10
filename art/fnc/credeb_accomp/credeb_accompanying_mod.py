@@ -32,7 +32,7 @@ from dataclasses import dataclass, field, asdict
 import art.fnc.credeb_accomp.dictdata_fo_monthly_credeb_accomp as accdt  # accdt.items
 import art.fnc.credeb_accomp.mdb.serialize_dinero_n_decimal as obj_srlz
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.dinerofs.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
+import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcachache
 import art.fnc.credeb_accomp as init
 from art.immeub.rent.pydantmodels import DEFAULT_3LETTER_CURRENCY

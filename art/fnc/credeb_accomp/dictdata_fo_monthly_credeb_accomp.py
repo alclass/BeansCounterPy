@@ -9,10 +9,10 @@ art/fnc/credeb_accomp/dictdata_fo_monthly_credeb_accomp.py
 To imported:
   art.immeub.inst.cdutra.aliss_dc_accomp.accdata_deb_cre_alssn as accdt.items
 """
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 import art.fnc.credeb_accomp as init
 dec_monthlymeta_brl_value = Decimal(init.DEFAULT_VALOR_META_MENSAL_IN_BRL)
-import lib.fncfs.dinerofs.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
+import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
 DECIMAL_ZERO = cdfs.DECIMAL_ZERO
 makedec = cdfs.make_decimal_w_appcontext
 

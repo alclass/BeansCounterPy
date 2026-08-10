@@ -8,7 +8,7 @@ immeub_router = APIRouter(prefix="/imov/{refmonth}", tags=["Immeub id Context"])
 from fastapi import APIRouter
 from app.routes.immeubroutes import cobrancaroutes
 # Note: this will be appended to the id_router path
-immeubrouter = APIRouter(prefix="")
+immeubrouter = APIRouter(prefix="/prefix")
 immeubrouter.include_router(cobrancaroutes.cobrancarouter, prefix="/mes")
 immeub_all_router = APIRouter(prefix="/all")
 immeub_sig_router = APIRouter(prefix="/sigla")

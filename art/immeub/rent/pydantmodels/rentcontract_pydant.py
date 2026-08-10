@@ -7,27 +7,27 @@ art/immeub/rent/pydantmodels/rentcontract_pydant.py
 
 # from dinero.currencies import BRL
 """
-import pprint
 from prettytable import PrettyTable
-from dataclasses import dataclass, field   # , asdict
 import datetime
-from decimal import Decimal, ROUND_HALF_UP
-import dinero
+from decimal import Context, Decimal, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
-from dinero import Decimal
+import dinero
 from dinero.currencies import BRL
-import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
 from typing import List
-from beanie import Document, Link
 import pydantic
+import random
 import typing
-from pydantic import BaseModel
 import art.immeub.rent.pydantmodels.immeub_pydant as immeub  # immueb.Immeuble
 import art.immeub.rent.pydantmodels.person_pydant as pers  # pers.Person
 import art.immeub.rent.pydantmodels as init
 import lib.datesetc.datefs as dtfs
+import lib.datesetc.refmonth_fs as rmfs
+import art.immeub.rent.bill.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
 from tabulate import tabulate
+from lib.fncfs.credeb_pkg.credit_debit_fs import ONE_THOUSANDTH_AS_STR
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
+PAYMENT_DUE_DAY_IN_MONTH = 10
+DECIMAL_ZERO = Decimal(0)
 
 
 def calc_finmontant_w_inimontant_n_periodic_indices(inimontant, p_indices):
@@ -43,105 +43,219 @@ def calc_finmontant_w_inimontant_n_periodic_indices(inimontant, p_indices):
   return finmontant
 
 
-class RentContract(pydantic.BaseModel):
+def make_dinero_fr_decimal(dec, din_currency_dictlike):
+  decimal_ctx = Context(prec=32, rounding=ROUND_HALF_UP)
+  dec = Decimal(dec, decimal_ctx)
+  dec.quantize(Decimal(ONE_THOUSANDTH_AS_STR))
+  din = dinero.Dinero(dec, din_currency_dictlike)
+  return din
+
+
+def fetch_monthly_value_ifany_for_iptu(cur_refmonth):
+  m = cur_refmonth.month
+  if m < 3:
+    return None, None
+  seq = m - 2
+  iptuvalue = Decimal(500)
+  iptudescr = f"imposto predial {seq} de 10"
+  return iptuvalue, iptudescr
+
+
+def fetch_monthly_value_ifany_for_cond(cur_refmonth):
+  r_int = random.randint(-100, 100)
+  condvalue = Decimal(1200 + r_int)
+  conddescr = "tarifa no mês ref"
+  return condvalue, conddescr
+
+
+class Reajuste(pydantic.BaseModel):
+  """
+  Models a contract 'reajuste'
+  Contains 4 (four) main attributes:
+    reajuste_dt: a date which also derive a refmonth or annual anniversary
+    reajuste_idx: the decimal index that increases the 'valuebefore'
+    valuebefore: the base value on which the 'reajuste' is incident
+    reajuste_sigla: an acronym that represents the source from which idx is found on date
+
+  This class is 'composed' by RentContract which may keep a list of its objects.
+  """
+  reajuste_dt: datetime.date
+  reajuste_idx: Decimal
+  valuebefore: Decimal
+  reajuste_sigla: str = 'IGP-M'
+
+  @property
+  def reajuste_rm(self) -> datetime.date:
+    """ reajuste refmonth derived from reajuste date"""
+    if self.reajuste_dt.day == 1:
+      # refmonth is, by convention, a date on day 1
+      return self.reajuste_dt
+    y, m = self.reajuste_dt.year, self.reajuste_dt.month
+    refmonth = datetime.date(year=y, month=m, day=1)
+    return refmonth
+
+  @property
+  def valueafter(self) -> Decimal:
+    """ it's valuebefore increased by reajuste index (@see the "montant" expression below)"""
+    if self.reajuste_idx < DECIMAL_ZERO:
+      # valueafter, by convention, cannot be less than valuebefore
+      return valuebefore
+    # the "montant" expression -> mf = mi * (1 + i)
+    va = self.valuebefore * (1 + self.reajuste_idx)
+    return va
+
+  def raise_if_reajuste_has_inconsistent_date(self, upperlimitdate:datetime.date):
+    """ raises ValueError on two conditions: 1 date in the future 2 date after contract's end-date"""
+    upperlimitdate = dtfs.make_date_or_raise(upperlimitdate)
+    today = datetime.date.today()
+    if self.reajuste_rm > today:
+      errmsg = f"reajuste refmonth [{self.reajuste_rm}] cannot be later than today [{today}]."
+      raise ValueError(errmsg)
+    if self.reajuste_rm > upperlimitdate:
+      errmsg = f"reajuste refmonth [{self.reajuste_rm}] cannot be later than contract's final date [{upperlimitdate}]."
+      raise ValueError(errmsg)
+
+
+class PydtcRentContract(pydantic.BaseModel):
   """
 
   # imm_nickname: str = 'CDouto'
   """
-  location: immeub.Immeuble
+  location: immeub.PydtcImmeuble
   inidate: datetime.date
   ori_rentvalue: typing.Annotated[Decimal, pydantic.Field(max_digits=12, decimal_places=4)]
   nmonths_duration: int
   has_proptax: bool
   # List of references (Many-to-Many / One-to-Many)
   # tenants: list[Person] = field(default_factory=list)
-  tenants: List[pers.Person] = pydantic.dataclasses.Field(default=[])
-  fiadores: List[pers.Person] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  tenants: List[pers.PydtcPerson] = pydantic.dataclasses.Field(default=[])
+  fiadores: List[pers.PydtcPerson] = pydantic.dataclasses.Field(default_factory=lambda: [])
   nmonths_duration: int = 30
   has_proptax: bool = True
   has_incendtarif: bool = True
   has_condtarif: bool = True
   currency3letter: str = 'BRL'
-  date_n_reajuste_tuplelist: list[tuple[datetime.date, Decimal]] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  reajustes: list[Reajuste] = pydantic.dataclasses.Field(default_factory=lambda: [])
   _cur_rentvalue: Decimal = pydantic.PrivateAttr(default_factory=lambda: None)
   _contrnumber: str = pydantic.PrivateAttr(default_factory=lambda: None)
 
-  # @property
-  # def imm_nickname(self) -> str:
-  #   return self.location.imm_nickname
 
-  def raise_if_inconsistent_reajuste_date(self, pdate:datetime.date):
-    indate = pdate
-    today = datetime.date.today()
-    if indate > today:
-      errmsg = f"reajuste date [{indate}] cannot be later than today [{today}]."
-      raise ValueError(errmsg)
-    if indate > self.findate:
-      errmsg = f"reajuste date [{indate}] cannot be later than contract's final date [{self.findate}]."
-      raise ValueError(errmsg)
+  def make_n_get_mininum_billingitems(self):
+    """
+    Creates the monthly BillingCard main 'mold'.
+    The main items are:
+      1 rent itself
+      2 iptu (the municipal property tax)
+      3 cond (the condominium service tariff)
+      4 funesbom (which is an annual fire dept charge)
+    If other items apply, they must be included at the end of the billing card 'making' process.
+    """
+    cur_refmonth = rmfs.make_current_refmonth()
+    billingitems = []
+    bi_seq = 1
+    bi = bipydtc.PydtcBillingItem(
+      seq=bi_seq,
+      descr="Aluguel mensal",
+      refmonth=cur_refmonth,
+      value=self.cur_rentvalue,
+    )
+    billingitems.append(bi)
+    if self.has_proptax:
+      iptuvalue, iptudescr = fetch_monthly_value_ifany_for_iptu(cur_refmonth)
+      if iptuvalue:
+        bi_seq += 1
+        bi = bipydtc.PydtcBillingItem(
+          seq=bi_seq,
+          descr=f"IPTU ({iptudescr})",
+          refmonth=cur_refmonth,
+          value=iptuvalue,
+        )
+        billingitems.append(bi)
+    if self.has_condtarif:
+      condvalue, conddescr = fetch_monthly_value_ifany_for_cond(cur_refmonth)
+      if condvalue:
+        bi_seq += 1
+        bi = bipydtc.PydtcBillingItem(
+          seq=bi_seq,
+          descr=f"Condomínio ({conddescr})",
+          refmonth=cur_refmonth,
+          value=condvalue,
+        )
+        billingitems.append(bi)
+    return billingitems
 
-  def add_date_n_reajusteindice(self, pdate: datetime.date | str, reajusteindice: Decimal):
-    indate = dtfs.make_date_or_raise(pdate)
-    self.raise_if_inconsistent_reajuste_date(indate)
-    inreajusteindice = Decimal(reajusteindice)
-    self.date_n_reajuste_tuplelist.append((indate, inreajusteindice))
-    self.calc_n_set_cur_rentvalue()
 
-  def calc_n_set_cur_rentvalue(self):
-    if len(self.date_n_reajuste_tuplelist) == 0:
-      self._cur_rentvalue = self.ori_rentvalue
-    self.date_n_reajuste_tuplelist.sort(key = lambda tupl: tupl[0])
-    indices = [tupl[1] for tupl in self.date_n_reajuste_tuplelist]
-    inimontant = self.ori_rentvalue
-    self._cur_rentvalue = calc_finmontant_w_inimontant_n_periodic_indices(inimontant, indices)
+  @property
+  def main_tenant(self) -> pers.PydtcPerson | None:
+    try:
+      return self.tenants[0]
+    except IndexError:
+      return None
 
   @property
   def contrnumber(self) -> str:
     if self._contrnumber is not None:
       return self._contrnumber
-    strdate = self.inidate.strftime('%Y%m%d')
+    strdate = self.inidate.strftime('%Y%m')
     self._contrnumber = f"{self.imm_nickname}{strdate}"
     return self._contrnumber
 
-  def dates_n_rentvalues_n_reajustes(self):
-    # first
-    triple = self.inidate, self.ori_rentvalue, Decimal('0.0')
-    _dates_n_rentvalues_n_reajustes = [triple]
-    inimontant = self.ori_rentvalue
-    for date_n_reajuste in self.date_n_reajuste_tuplelist:
-      pdate, reajuste = date_n_reajuste
-      finmontant = inimontant * (1 + reajuste)
-      triple = (pdate, finmontant, reajuste)
-      _dates_n_rentvalues_n_reajustes.append(triple)
-      inimontant = finmontant
-    return _dates_n_rentvalues_n_reajustes
+  # @property
+  # def imm_nickname(self) -> str:
+  #   return self.location.imm_nickname
 
-  def form_dates_n_rentvalues_n_reajustes(self):
-    str_dates_n_rentvalues_n_reajustes = []
-    for triple in self.dates_n_rentvalues_n_reajustes():
-      pdate, rentvalue, reajuste = triple
+  def add_reajuste_w_dt_n_idx(self, reajuste_dt: datetime.date | str, reajuste_idx: Decimal, reajuste_sigla: str = 'IGP-M'):
+    reajuste_dt = dtfs.make_date_or_raise(reajuste_dt)
+    reajuste = Reajuste(
+      reajuste_dt=reajuste_dt, reajuste_idx=reajuste_idx, valuebefore=self.cur_rentvalue, reajuste_sigla=reajuste_sigla
+    )    # reajuste.raise_if_inconsistent_to_today_n_contractsend(self.findate)
+    # reajuste.calc_n_set_cur_rentvalue()
+    self.reajustes.append(reajuste)
+    self.calc_n_set_cur_rentvalue()
+
+  def calc_n_set_cur_rentvalue(self):
+    if len(self.reajustes) == 0:
+      self._cur_rentvalue = self.ori_rentvalue
+      return
+    self.reajustes.sort(key = lambda obj: obj.reajuste_dt)
+    last_reajuste = self.reajustes[-1]
+    self._cur_rentvalue = last_reajuste.valueafter
+
+  def make_triplelist_date_reajuste_newrentvalue(self):
+    # first triple has 0.0 reajuste
+    triple = self.inidate, DECIMAL_ZERO, self.ori_rentvalue
+    date_reajuste_newrentvalue_triplelist = [triple]
+    for reajuste in self.reajustes:
+      triple = reajuste.reajuste_rm, reajuste.reajuste_idx, reajuste.valueafter
+      date_reajuste_newrentvalue_triplelist.append(triple)
+    return date_reajuste_newrentvalue_triplelist
+
+  def form_dates_reajustes_newrentvalues(self):
+    str_dates_reajustes_newrentvalues = []
+    for triple in self.make_triplelist_date_reajuste_newrentvalue():
+      pdate, reajuste, newrentvalue = triple
       strdate = pdate.strftime('%d/%m/%Y')
-      fmt_value = f"{rentvalue:.02f}"
+      fmt_value = f"{newrentvalue:.02f}"
       reaj_pct = reajuste * 100
       fmt_reaj_pct = f"{reaj_pct:.02f}%"
-      line = strdate, fmt_value, fmt_reaj_pct
-      str_dates_n_rentvalues_n_reajustes.append(line)
-    return str_dates_n_rentvalues_n_reajustes
+      line = strdate, fmt_reaj_pct, fmt_value
+      str_dates_reajustes_newrentvalues.append(line)
+    return str_dates_reajustes_newrentvalues
 
-  def tabulate_dates_n_rentvalues(self):
-    str_dates_n_rentvalues_n_reajustes = self.form_dates_n_rentvalues_n_reajustes()
+  def tabulate_dates_reajustes_newrentvalues(self):
+    str_dates_reajustes_newrentvalues = self.form_dates_reajustes_newrentvalues()
     # Print the formatted table
     valor_col_title = f"valor em {self.get_currency_symbol()}"
-    headers = ["data", valor_col_title, "reajuste %"]
-    print(tabulate(str_dates_n_rentvalues_n_reajustes, headers=headers, tablefmt="grid"))
+    headers = ["data",  "reajuste %", valor_col_title]
+    print(tabulate(str_dates_reajustes_newrentvalues, headers=headers, tablefmt="grid"))
 
   def pprint_dates_n_rentvalues(self):
-    str_dates_n_rentvalues_n_reajustes = self.form_dates_n_rentvalues_n_reajustes()
+    str_dates_reajustes_newrentvalues = self.form_dates_reajustes_newrentvalues()
     table = PrettyTable()
     valor_col_title = f"valor em {self.get_currency_symbol()}"
-    headers = ["data", valor_col_title, "reajuste %"]
+    headers = ["data",  "reajuste %", valor_col_title]
     table.field_names = headers
-    [table.add_row(r) for r in str_dates_n_rentvalues_n_reajustes]
+    [table.add_row(r) for r in str_dates_reajustes_newrentvalues]
     print(table)
 
 
@@ -191,13 +305,12 @@ class RentContract(pydantic.BaseModel):
     return 'n/a'
 
   @property
-  def din_currency_dict(self) -> dinero.types.Currency:
+  def din_currency_dictlike(self) -> dinero.types.Currency:
     dincurrencydict = getattr(dinero.currencies, self.currency3letter)
     return dincurrencydict
 
   def make_din_fr_dec(self, dec) -> Decimal:
-    dec.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
-    din = Decimal(dec, self.din_currency_dict)
+    din = make_dinero_fr_decimal(dec, self.din_currency_dictlike)
     return din
 
   @property
@@ -217,7 +330,11 @@ class RentContract(pydantic.BaseModel):
     For the time being, the rules are hardcoded
     """
     actions = []
-    action = 'CALCULATE_INTEREST_RATE_W_FIX_N_VAR_IDS'
+    action = 'INCIDENT_IF_PAYMENT_MISSED_ON_DUEDATE'
+    actions.append(action)
+    action = 'MULTIPLIER_CONTAINS_FIXMONTHLYIR_PARCEL'
+    actions.append(action)
+    action = 'MULTIPLIER_CONTAINS_VARMONTHLYINFL_PARCEL'
     actions.append(action)
     return actions
 
@@ -226,9 +343,22 @@ class RentContract(pydantic.BaseModel):
     _findate = self.inidate + relativedelta(months=self.nmonths_duration) - relativedelta(days=1)
     return _findate
 
-  # def __repr__(self):
-  #   ostr = f"""Contract: {self.imm_nickname} | from={self.inidate} | to={self.findate}"""
-  #   return ostr
+  @staticmethod
+  def get_payment_dueday_in_month() -> int:
+    return PAYMENT_DUE_DAY_IN_MONTH
+
+  def get_duedate_fr_refmonth(self, p_refmonth: datetime.date) -> datetime.date:
+    """
+    Gets due date from refmonth
+    The rule is one month later up to day 10
+      (at this version, it's hardcorded in constant PAYMENT_DUE_DAY_IN_MONTH)
+    """
+    # 'remake' refmonth to make sure it's a date on day 1
+    rm = p_refmonth
+    refmonth = rmfs.make_refmonth_or_raise(p_refmonth)
+    deltadays = self.get_payment_dueday_in_month() - 1
+    duedate = refmonth + relativedelta(months=1, days=deltadays)
+    return duedate
 
   def get_currency_symbol(self):
     din = self.make_din_fr_dec(self.ori_rentvalue)
@@ -238,6 +368,20 @@ class RentContract(pydantic.BaseModel):
     din = self.make_din_fr_dec(dec)
     fmt_din = f"{din.currency['symbol']} {din.raw_amount:.02f}"
     return fmt_din
+
+  def __repr__(self):
+    """
+    pdate.strftime('%b %Y %I:%M %p') -> example: Jun 2026 12:00 AM
+    """
+    datafinal = self.findate.strftime('%d/%m/%Y')
+    ostr = f"Locação: {self.contrnumber} | duração: {self.nmonths_duration} meses (até {datafinal})"
+    ostr += f" | alug ini: {self.fmt_din(self.ori_rentvalue)} | alug atual: {self.fmt_din(self.cur_rentvalue)}"
+    qtd_reajustes = len(self.reajustes)
+    ostr += f" (nº reajustes: {qtd_reajustes})"
+    return ostr
+
+  def line(self):
+    return self.__repr__()
 
   def __str__(self):
     """
@@ -251,7 +395,7 @@ class RentContract(pydantic.BaseModel):
     ori_rentvalue={self.fmt_din(self.ori_rentvalue)} | cur_rentvalue={self.fmt_din(self.cur_rentvalue)}
     has_proptax={self.has_proptax} | has_incendtarif={self.has_incendtarif} | has_condtarif={self.has_condtarif}
     tenants={self.commasep_tenants()} | fiadores={self.commasep_fiadores()} | landlords={self.commasep_landlords}
-    reajustes={self.date_n_reajuste_tuplelist}
+    reajustes={self.reajustes}
     """
     return ostr
 
@@ -274,7 +418,7 @@ def adhoctest1():
   person = pers.get_person_ex()
   location = immeub.get_immeuble_ex()
   rentvalue = Decimal(1000)
-  rent = RentContract(
+  rent = PydtcRentContract(
     location=location,
     inidate=dtfs.make_date_or_raise("2024-1-1"),
     ori_rentvalue=rentvalue,
@@ -286,11 +430,14 @@ def adhoctest1():
     # imm_nickname='Jack',
   )
   print(rent)
-  rent.add_date_n_reajusteindice('2025-1-1', Decimal('0.035'))
-  rent.add_date_n_reajusteindice('2026-1-1', Decimal('0.027'))
+  rent.add_reajuste_w_dt_n_idx('2025-1-1', Decimal('0.035'))
+  rent.add_reajuste_w_dt_n_idx('2026-1-1', Decimal('0.027'))
   print(rent)
-  rent.tabulate_dates_n_rentvalues()
+  print(rent.line())
+  rent.tabulate_dates_reajustes_newrentvalues()
   rent.pprint_dates_n_rentvalues()
+  bitems = rent.make_n_get_mininum_billingitems()
+  print(bitems)
 
 
 def process():

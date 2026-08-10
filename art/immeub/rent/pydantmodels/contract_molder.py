@@ -8,7 +8,7 @@ art/immeub/rent/pydantmodels/contract_molder.py
 from dataclasses import dataclass, field   # , asdict
 import datetime
 from dateutil.relativedelta import relativedelta
-from dinero import Decimal
+from decimal import Decimal
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
 from typing import List
 from beanie import Document, Link

@@ -31,7 +31,7 @@ from dateutil import relativedelta
 """
 import datetime
 import json
-from dinero import Decimal
+from decimal import Decimal
 from dinero.currencies import BRL
 from dataclasses import asdict  # , dataclass, field   # , field
 import art.immeub.rent.bill as init  # refmonth_fs.py.fillin_refmonths_fr_ndayslist

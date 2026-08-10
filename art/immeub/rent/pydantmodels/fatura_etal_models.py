@@ -31,7 +31,7 @@ from lib import texts
 """
 import datetime
 from dateutil import relativedelta
-from dinero import Decimal
+from decimal import Decimal
 from dinero.currencies import BRL
 from dataclasses import dataclass  # , field, asdict
 from typing import List
@@ -40,7 +40,8 @@ import art.immeub.rent.bill as init  # refmonth_fs.py.fillin_refmonths_fr_ndaysl
 import lib.datesetc.refmonth_fs as rmfs
 import lib.datesetc.datefs as dtfs
 import lib.texts.textfs as txtfs
-from art.immeub.rent.pydantmodels.contract_molder import Immeub, Person, RentContract
+from art.immeub.rent.pydantmodels.immeub_pydant import PydtcImmeuble  # , Person, RentContract
+from art.immeub.rent.pydantmodels.person_pydant import PydtcPerson
 DEFAULT_FIX_IR_PCT = init.DEFAULT_FIX_IR_PCT  # this is percentual
 DEFAULT_FIX_IR_DEC = DEFAULT_FIX_IR_PCT / 100  # this is decimal
 DEFAULT_ENDR_PIX_P_PAGAR = 1
@@ -111,7 +112,7 @@ class PropTrib:
   @property
   def default_explain(self):
     def_exp = "no prazo ref "
-    letter3month = rmfs.get_3letter_extmes(self.refmonth.month)
+    letter3month = rmfs.get_pt_3lettermonth_fr_nmonth(self.refmonth.month)
     def_exp += f"{letter3month}/{self.refmonth.year}"
     return def_exp
 

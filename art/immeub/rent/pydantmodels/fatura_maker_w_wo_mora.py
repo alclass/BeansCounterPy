@@ -134,7 +134,7 @@ class EachRefmonth:
     return None
 
   def itemline(self):
-    extmes = rmfs.get_3letter_extmes(self.refmonth.month)
+    extmes = rmfs.get_pt_3lettermonth_fr_nmonth(self.refmonth.month)
     incrfactor_pct = f"{self.incrfactor_pct:.2f}%" if self.incrfactor_pct is not None else 'n/a'
     line = f"ref {extmes}/{self.refmonth.year} | fatormora={incrfactor_pct} | {self.moraparcel}"
     return line

@@ -5,7 +5,14 @@ To import it:
   import lib.fncfs.fncmathfs.finance_math_fs as fncmath  # fncmath.calc_ir_incrfact_f_mora_w_idx_n_expo()
 """
 from decimal import Decimal
+import calendar
+import datetime
 import decimal
+import lib.datesetc.datefs as dtfs  # for partition_inidate_findate_as_monthndays_tuplelist
+import lib.datesetc.refmonth_fs as rmfs  # for partition_inidate_findate_as_monthndays_tuplelist
+import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
+from lib.datesetc.refmonth_fs import make_refmonth_or_raise
+DECIMAL_ZERO = Decimal('0.00')
 
 
 def calc_ir_incrfact_f_mora_w_idx_n_expo(
@@ -59,6 +66,70 @@ def calc_finalmontant_w_1inimontant_2fixir_3varir_4monthduration(
   )
 
 
+def calc_finalmontant_w_1inimontant_2fixir_fetchipca_3partitionmonths(
+    inimontant: Decimal, fixir: Decimal, partitionmonths: list[tuple[datetime.date, int]]
+  ) -> Decimal:
+  quinhoes = []
+  current_montant = inimontant
+  for refmonth_n_days in partitionmonths:
+    refmonth, ndays = refmonth_n_days
+    _, totaldaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
+    monthduration = Decimal( ndays / totaldaysinmonth)
+    ipcacacher = ipcafs.IpcaAPICacherRetriever()
+    ipcadec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(refmonth, 2)
+    ipcadec = DECIMAL_ZERO if ipcadec is None else ipcadec
+    ongoing_montant = calc_finalmontant_w_1inimontant_2fixir_3varir_4monthduration(
+      inimontant=current_montant,
+      fixir=fixir,
+      varir=ipcadec,
+      monthduration=monthduration,
+    )
+    quinhao = ongoing_montant - current_montant
+    quinhoes.append(quinhao)
+    current_montant = ongoing_montant
+    print('quinhão', quinhao, 'current_montant', current_montant)
+  finalmontant = inimontant + sum(quinhoes)
+  return finalmontant
+
+
+def calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
+    inimontant: Decimal, fixir: Decimal, inidate: datetime.date, findate: datetime.date
+  ) -> Decimal:
+  # duration may be partitioned
+  inidate = dtfs.make_date_or_raise(inidate)
+  findate = dtfs.make_date_or_raise(findate)
+  if (inidate.year, inidate.month) == (findate.year, findate.month):
+    ndays = findate.day - inidate.day
+    _, totaldaysinmonth = calendar.monthrange(inidate.year, inidate.month)
+    monthduration = Decimal(ndays / totaldaysinmonth)
+    ipcacacher = ipcafs.IpcaAPICacherRetriever()
+    refmonth = make_refmonth_or_raise(inidate)
+    ipcadec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(refmonth, 2)
+    ipcadec = DECIMAL_ZERO if ipcadec is None else ipcadec
+    return calc_finalmontant_w_1inimontant_2fixir_3varir_4monthduration(
+      inimontant=inimontant,
+      fixir=fixir,
+      varir=ipcadec,
+      monthduration=monthduration
+    )
+  partitionmonths = rmfs.partition_inidate_findate_as_monthndays_tuplelist(inidate, findate)
+  return calc_finalmontant_w_1inimontant_2fixir_fetchipca_3partitionmonths(
+    inimontant=inimontant,
+    fixir=fixir,
+    partitionmonths=partitionmonths
+  )
+
+
+def calc_increase_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
+    inimontant: Decimal, fixir: Decimal, inidate: datetime.date, findate: datetime.date
+  ) -> Decimal:
+  finalmontant = calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
+    inimontant=inimontant, fixir=fixir, inidate=inidate, findate=findate
+  )
+  increase = finalmontant - inimontant
+  return increase
+
+
 def adhoctest1():
   ir_idx, exponent = Decimal(.023), Decimal(2)
   multiplier = calc_ir_incrfact_f_mora_w_idx_n_expo(ir_idx, exponent)
@@ -79,6 +150,25 @@ def adhoctest1():
   # ===============
 
 
+def adhoctest2():
+  mkdt = dtfs.make_date_or_raise
+  inidate, findate = mkdt('2026-1-5'), mkdt('2026-3-18')
+  inimontant, fixir = Decimal(1000), Decimal(.02)
+  finalmontant = calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
+    inimontant=inimontant,
+    fixir=fixir,
+    inidate=inidate,
+    findate=findate
+  )
+  scrmsg = f"""input:
+     inidate, findate = {inidate}, {findate}
+     inimontant, fixir = {inimontant:.02f}, {fixir:.04f}
+   output:
+      finalmontant = {finalmontant:.02f}
+  """
+  print(scrmsg)
+
+
 def process():
   """
   """
@@ -90,4 +180,4 @@ if __name__ == '__main__':
   process()
   adhoctest2()
   """
-  adhoctest1()
+  adhoctest2()

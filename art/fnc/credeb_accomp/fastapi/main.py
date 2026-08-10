@@ -34,7 +34,7 @@ import art.fnc.credeb_accomp.mdb.readers.mongo_reader_refmonths as mngr  # mngr.
 import lib.datesetc.refmonth_fs as rmfs
 # templates = Jinja2Templates(directory="templates")
 # Default constant mirroring DIN_META_MENSAL
-import art.fnc.credeb_accomp.fastapi.models.pydanticmodels as pydtc  # pydtc.trnsf_credeb_dataclass_objs_to_pydantic
+import art.fnc.credeb_accomp.fastapi.models.credeb_pydanticmodels as pydtc  # pydtc.trnsf_credeb_dataclass_objs_to_pydantic
 app = FastAPI(title="DebCredAccompanier CRUD App")
 
 

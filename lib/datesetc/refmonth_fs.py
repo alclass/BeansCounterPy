@@ -22,18 +22,25 @@ from dateutil.relativedelta import relativedelta
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.datefs as dfs  # dfs.transform_strdate_to_date
 import lib.datesetc.datehilofs as hilo  # dfs.transform_strdate_to_date
-MONTHS = [
+PT_MESES = [
   'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
 ]
 
 
-def get_3letter_extmes(nmonth):
+def get_pt_3lettermonth_fr_nmonth(nmonth: int) -> str:
   try:
-    return MONTHS[nmonth-1]
+    return PT_MESES[nmonth - 1]
   except (IndexError, TypeError):
     pass
-  return None
+  return 'n/a'
+
+
+def get_pt_3lettermonth_fr_date(pdate: datetime.date) -> str:
+  indate = dtfs.make_date_or_none(pdate)
+  if indate is None:
+    return 'n/a'
+  return get_pt_3lettermonth_fr_nmonth(pdate.month)
 
 
 def trnsf_refmonth_to_yyyydashmm(refmonth: datetime.date) -> str | None:
@@ -122,7 +129,7 @@ def find_refmonths_spread_gaps_inbetween(
   return mr_list
 
 
-def partition_monthlydays_wi_monthrange(inidate, findate):
+def partition_monthlydays_wi_monthrange(inidate: datetime.date, findate: datetime.date) -> list[int]:
   """
   Example:
     input:
@@ -159,6 +166,16 @@ def partition_monthlydays_wi_monthrange(inidate, findate):
     ndays = findate.day  # correct number of days in last month
     outlist.append(ndays)
   return outlist
+
+
+def partition_inidate_findate_as_monthndays_tuplelist(
+    inidate: datetime.date, findate: datetime.date
+  ) -> list[tuple[datetime.date, int]]:
+  dayslist = partition_monthlydays_wi_monthrange(inidate, findate)
+  monthslist = get_monthrange_as_list(inidate, findate)
+  # zip the two lists (to form the intended tuple list)
+  monthndays_tuplelist = list(zip(monthslist, dayslist))
+  return monthndays_tuplelist
 
 
 def find_dateborders_fr_ndayslist_n_refmonths(
@@ -1125,6 +1142,10 @@ def adhoctest3():
   retlist = pickup_refmonth_gaps_throughout_list(refmonths)
   scrmsg = f"with find_refmonths_spread_gaps_inbetween(() -> input {refmonths} | output {retlist}"
   print(scrmsg)
+  inidate, findate = '2026-01-03', '2026-04-13'
+  monthndays_tuplelist = partition_inidate_findate_as_monthndays_tuplelist(inidate, findate)
+  print('monthndays_tuplelist', inidate, findate)
+  print(monthndays_tuplelist)
 
 
 if __name__ == "__main__":
