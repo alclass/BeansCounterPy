@@ -168,7 +168,7 @@ def partition_monthlydays_wi_monthrange(inidate: datetime.date, findate: datetim
   return outlist
 
 
-def partition_inidate_findate_as_monthndays_tuplelist(
+def mk_partition_inidate_findate_as_refms_n_ndays_tlist(
     inidate: datetime.date, findate: datetime.date
   ) -> list[tuple[datetime.date, int]]:
   dayslist = partition_monthlydays_wi_monthrange(inidate, findate)
@@ -176,6 +176,17 @@ def partition_inidate_findate_as_monthndays_tuplelist(
   # zip the two lists (to form the intended tuple list)
   monthndays_tuplelist = list(zip(monthslist, dayslist))
   return monthndays_tuplelist
+
+
+def mk_partition_inidate_findate_as_ndays_n_refms_tlist(
+    inidate: datetime.date, findate: datetime.date
+  ) -> list[tuple[int, datetime.date]]:
+  partition = mk_partition_inidate_findate_as_refms_n_ndays_tlist(
+    inidate=inidate, findate=findate
+  )
+  # swap/invert the tuple
+  r_partition = [(b, a) for a, b in partition]
+  return r_partition
 
 
 def find_dateborders_fr_ndayslist_n_refmonths(
@@ -1143,7 +1154,7 @@ def adhoctest3():
   scrmsg = f"with find_refmonths_spread_gaps_inbetween(() -> input {refmonths} | output {retlist}"
   print(scrmsg)
   inidate, findate = '2026-01-03', '2026-04-13'
-  monthndays_tuplelist = partition_inidate_findate_as_monthndays_tuplelist(inidate, findate)
+  monthndays_tuplelist = mk_partition_inidate_findate_as_refms_n_ndays_tlist(inidate, findate)
   print('monthndays_tuplelist', inidate, findate)
   print(monthndays_tuplelist)
 

@@ -8,7 +8,7 @@ import lib.fncfs.indices.ipca.ipca_data as ipca
 from decimal import Decimal
 import datetime
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.fncmathfs.finance_math_fs as fmath  # fmath.get_ir_incrfact_f_mora_w_idx_n_expo
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants as fmath  # fmath.get_ir_incrfact_f_mora_w_idx_n_expo
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 
 
@@ -56,7 +56,7 @@ def calc_morafact_u_ipca_f_1refm_2ir_3timeelapsed(
     return None, None
   ipca_dec = Decimal(ipca_dec)
   ipca_plus_ir = ipca_dec + ir_dec
-  multiplier = fmath.calc_ir_incrfact_f_mora_w_idx_n_expo(ipca_plus_ir, mduration)
+  multiplier = fmath.calc_multiplier_for_fm_intrstrt_w_1iridx_2expo(ipca_plus_ir, mduration)
   return multiplier, ipca_plus_ir
 
 

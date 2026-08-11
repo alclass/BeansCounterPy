@@ -21,6 +21,8 @@ import typing
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls as init
+# incendmod.get_incendtarif_fo_location_if_available(imovel_apelido)
+import art.immeub.tribs.statetaxes.incendmod as funesbom
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import art.immeub.rent.pdntcmdls.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
@@ -202,17 +204,22 @@ class PydtcRentContract(pydantic.BaseModel):
     lastdate_inmonth = datetime.date(year=year, month=month, day=day)
     return lastdate_inmonth
 
-  def make_n_get_mininum_billingitems(self):
+  def make_n_get_mininum_billingitems(
+      self, p_refmonth: datetime.date | str | None = None
+    ) -> list[bipydtc.PydtcBillingItem]:
     """
-    Creates the monthly BillingCard main 'mold'.
-    The main items are:
+    Creates the monthly BillingCard 'main mold'.
+    (The 'main mold' are the repetitive billing items. Others enter afterward.)
+    The main (generally) items are:
       1 rent itself
       2 iptu (the municipal property tax)
       3 cond (the condominium service tariff)
       4 funesbom (which is an annual fire dept charge)
     If other items apply, they must be included at the end of the billing card 'making' process.
     """
-    cur_refmonth = rmfs.make_current_refmonth()
+    cur_refmonth = rmfs.make_current_refmonth() \
+        if p_refmonth is None \
+        else rmfs.make_refmonth_or_raise(p_refmonth)
     billingitems = []
     bi_seq = 1
     bi = bipydtc.PydtcBillingItem(
@@ -223,28 +230,45 @@ class PydtcRentContract(pydantic.BaseModel):
     )
     billingitems.append(bi)
     if self.has_proptax:
-      iptuvalue, iptudescr = fetch_monthly_value_ifany_for_iptu(cur_refmonth)
-      if iptuvalue:
+      value, descr = fetch_monthly_value_ifany_for_iptu(cur_refmonth)
+      if value:
         bi_seq += 1
         bi = bipydtc.PydtcBillingItem(
           seq=bi_seq,
-          descr=f"IPTU ({iptudescr})",
+          descr=f"IPTU ({descr})",
           refmonth=cur_refmonth,
-          value=iptuvalue,
+          value=value,
         )
         billingitems.append(bi)
     if self.has_condtarif:
-      condvalue, conddescr = fetch_monthly_value_ifany_for_cond(cur_refmonth)
-      if condvalue:
+      value, descr = fetch_monthly_value_ifany_for_cond(cur_refmonth)
+      if value:
         bi_seq += 1
         bi = bipydtc.PydtcBillingItem(
           seq=bi_seq,
-          descr=f"Condomínio ({conddescr})",
+          descr=f"Condomínio ({descr})",
           refmonth=cur_refmonth,
-          value=condvalue,
+          value=value,
+        )
+        billingitems.append(bi)
+    incendtarif, incend_descr = self.get_incendtarif_n_descr_if_available()
+    if self.has_incendtarif and incendtarif is not None:
+      value, descr = incendtarif, incend_descr
+      if value:
+        bi_seq += 1
+        bi = bipydtc.PydtcBillingItem(
+          seq=bi_seq,
+          descr=f"Funesbom ({descr})",
+          refmonth=cur_refmonth,
+          value=value,
         )
         billingitems.append(bi)
     return billingitems
+
+  def get_incendtarif_n_descr_if_available(self) -> tuple[Decimal | None, str]:
+    imovel_apelido = self.location.imm_nickname
+    incendtarif, descr = funesbom.get_incendtarif_fo_location_if_available(imovel_apelido)
+    return incendtarif, descr
 
   @property
   def mora_m_minus_n(self) -> int:

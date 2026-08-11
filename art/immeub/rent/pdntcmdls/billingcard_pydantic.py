@@ -2,26 +2,26 @@
 """
 art/immeubroutes/pdntcmdls/billing_mod.py
 
+
+# from art.immeub.rent.pdntcmdls.schema_bizmodels import BillingCard
+# locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
 """
 import calendar
 import datetime
-from dateutil.relativedelta import relativedelta
-
-import lib.datesetc.datefs as dtfs
-import lib.datesetc.refmonth_fs as rmfs
 from decimal import Decimal
+import locale
 from prettytable import PrettyTable
 import pydantic
+from dateutil.relativedelta import relativedelta
+import lib.datesetc.datefs as dtfs
+import lib.datesetc.refmonth_fs as rmfs
+import lib.fncfs.credeb_pkg.pay_by_quinhoes_etc as quinhoes  # quinhoes.process_payments
+import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
 import art.immeub.rent.pdntcmdls.billingitem_pydantic as bipydtc  # bipydtc.PydtcBillingItem
-# from art.immeub.rent.pdntcmdls.schema_bizmodels import BillingCard
-# locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
 import art.immeub.rent.testdata.data_example_contract as dataex  # dataex.make_example_contract
-import lib.fncfs.credeb_pkg.pay_by_quinhoes_etc as quinhoes  # quinhoes.process_payments
-import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
-import locale
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 PAYMENT_DUE_DAY_IN_MONTH = 10
@@ -48,6 +48,12 @@ class PydtcBillingCard(pydantic.BaseModel):
        and is passed on to a new billing entry on the subsequent month's bill
     5 if another payment happens in between day 21 to month's end,
       payment_process() must be rerun and calculates again either credit or debit.
+
+  When the month transitions (i.e., the next month comes),
+    the 'mora' becomes a new 'billing item' itself and
+    does not correct for the 10-day payment window.
+    However, it goes into the same treatment as the other items
+    in case a new mora becomes incident after duedate.
 
   billingcard: BillingCard = pydantic.dataclasses.Field(default_factory=lambda: None)
   refmonth: Optional[datetime.date] = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
@@ -89,7 +95,7 @@ class PydtcBillingCard(pydantic.BaseModel):
       bitems = self.rentcontract.make_n_get_mininum_billingitems()
       self.billingitems = bitems
 
-  def get_minimum_billingitems(self):
+  def get_minimum_billingitems(self) -> list[bipydtc.PydtcBillingItem]:
     self.make_n_set_minimum_billingitems()
     return self.billingitems
 

@@ -13,7 +13,7 @@ from urllib3.util import retry
 import lib.datesetc.datefs as dtfs
 import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_value_to_accounts
 # for fncfs.calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate
-import lib.fncfs.fncmathfs.finance_math_fs as fncfs
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants as fncfs
 from lib.datesetc.datefs import inspect_n_get_sepchar_in_strdate
 
 DECIMAL_ZERO = Decimal('0')

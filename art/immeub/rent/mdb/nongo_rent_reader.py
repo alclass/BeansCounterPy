@@ -35,7 +35,6 @@ def billingcards_reader_fr_db():
   print(scrmsg)
 
 
-
 class MongoDBCollectionRetriever:
 
   def __init__(self, mongo_dbname=None, mongo_collname=None):
