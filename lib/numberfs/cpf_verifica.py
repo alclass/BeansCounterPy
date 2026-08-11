@@ -65,7 +65,13 @@ def trns_str_elems_to_int_lst(digits):
   return list(map(lambda n: int(n), digits))
 
 
-def raise_if_inconsistent_pre_cpf(p_pre_cpf: str):
+def raise_ve_if_inconsistent_11char_cpf(cpf: str):
+  boolresp = is_11char_cpf_valid(cpf)
+  if not boolresp:
+    errmsg = f"Erro: CPF [{cpf}] inconsistente."
+    raise ValueError(errmsg)
+
+def raise_ve_if_inconsistent_pre_cpf(p_pre_cpf: str):
   """
   pre-CPF is a 9-digit number that will 'receive' the 2 veriefier-digits
   """
@@ -162,7 +168,7 @@ def calcula_triple_cpf_via_reduce(digits9):
   In the encompassing module, there are two functions for calculating
     or verifying CPF's: this one uses functools.reduce() for the somatoria part
   """
-  raise_if_inconsistent_pre_cpf(digits9)
+  raise_ve_if_inconsistent_pre_cpf(digits9)
   # 1st round (1ª etapa)
   dv1 = calc_etapa_cpf_via_reduce(digits9)
   digits10 = digits9 + str(dv1)

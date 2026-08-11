@@ -4,19 +4,19 @@ art/immeub/rent/pdntcmdls/person_pydant.py
   Contains Beanie/Pydantic class Person.
   (@see diagram context with BillignCard, BillingItem, Contract, Person, etc.).
 
-# from dinero.currencies import BRL
-"""
+from dinero.currencies import BRL
 from dataclasses import dataclass, field   # , asdict
-import datetime
 from dateutil.relativedelta import relativedelta
 import dinero
 from decimal import Decimal
+"""
+from typing import Annotated
+import datetime
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
-from typing import List
 from beanie import Document, Link
-from pydantic import field_validator, EmailStr, BaseModel  # Field
+from pydantic import field_validator, EmailStr, BaseModel, StringConstraints  # Field
 import pydantic
-
+cpftype = Annotated[str, StringConstraints(pattern=r"\d{11}")]
 
 class PydtcPerson(BaseModel):
   """
@@ -24,7 +24,7 @@ class PydtcPerson(BaseModel):
 
   """
   fullname: str
-  cpf: str
+  cpf: cpftype
   phonenumber: str
   email: pydantic.EmailStr
   email_alt: pydantic.EmailStr = None
@@ -36,12 +36,19 @@ class PydtcPerson(BaseModel):
   address: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
   obs: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
 
+  @field_validator('cpf', mode='after')
+  @classmethod
+  def verify_cpf(cls, value: str) -> str:
+    # Pydantic has already guaranteed that 'value' is a string
+    cpfv.raise_ve_if_inconsistent_11char_cpf(value)
+    return value
+
   @property
-  def cpf_fmt(self) -> str:
+  def cpf_fmt_w_dots(self) -> str:
     return cpfv.format_cpf(self.cpf, adds_dots=True)
 
-  def get_fmt_cpf(self) -> str:
-    return self.cpf_fmt
+  def get_fmt_cpf(self, adds_dots: bool=True) -> str:
+    return cpfv.format_cpf(self.cpf, adds_dots)
 
   @field_validator('cpf')
   @classmethod
@@ -66,16 +73,16 @@ class PydtcPerson(BaseModel):
     return firstname_lastname
 
   def get_first_last_names_n_fmt_cpf(self):
-    _nome_n_cpf = f"{self.get_first_n_last_names()} | CPF {self.cpf_fmt}"
+    _nome_n_cpf = f"{self.get_first_n_last_names()} | CPF {self.cpf_fmt_w_dots}"
     return _nome_n_cpf
 
   def __repr__(self):
-    ostr = f"""{self.fullname} | {self.cpf_fmt} | {self.phonenumber} | {self.email}"""
+    ostr = f"""{self.fullname} | {self.cpf_fmt_w_dots} | {self.phonenumber} | {self.email}"""
     return ostr
 
   def __str__(self):
     ostr = f"""{self.__class__.__name__}
-    fullname = {self.fullname} | cpf={self.cpf_fmt}
+    fullname = {self.fullname} | cpf={self.cpf_fmt_w_dots}
     phone={self.phonenumber} | {self.email}"""
     return ostr
 

@@ -56,8 +56,6 @@ class PydtcBillingCard(pydantic.BaseModel):
   refmonth: datetime.date = pydantic.Field(default_factory=lambda: rmfs.make_current_refmonth())
   billingitems: list[bipydtc.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
   payments: list[bipydtc.PydtcPayment] = pydantic.Field(default_factory=lambda: [])
-  lastpaydate: datetime.date = pydantic.Field(default_factory=lambda: None)
-  lastpayprocessdate: datetime.date = pydantic.Field(default_factory=lambda: None)
   credito_no_fecho: Decimal = pydantic.Field(default_factory=lambda: None)
   debito_no_fecho: Decimal = pydantic.Field(default_factory=lambda: None)
   quinhoes_days_vals: list[tuple[int, Decimal]] = pydantic.Field(default_factory=lambda: None)
@@ -107,7 +105,10 @@ class PydtcBillingCard(pydantic.BaseModel):
   def process_payments_in_month(self):
     """
     Processes payments in month.
-    Dispatches processing to quinhoes.process_payments()
+    Dispatches processing to quinhoes.process_payments() in library.
+    This process may be run once all payments are known. It may run at each pay,
+      but it always reruns from the beginning.
+
     Receives back three variables:
       a) credito_no_fecho
       b) debito_no_fecho
@@ -120,8 +121,10 @@ class PydtcBillingCard(pydantic.BaseModel):
       c) quinhoes_days_vals: in case of mora, details how this mora is composed in parts.
 
     """
-    total_debito = -self.fatura_total
+    # first in the step-by-step processing: init the 3 vars: cred, debt & quinhões
     self.credito_no_fecho, self.debito_no_fecho = DECIMAL_ZERO, DECIMAL_ZERO
+    self.quinhoes_days_vals = []
+    total_debito = -self.fatura_total
     # first: count payment up to due date
     if len(self.payments) == 0:
       self.credito_no_fecho = total_debito
@@ -189,7 +192,8 @@ class PydtcBillingCard(pydantic.BaseModel):
   def add_payment(self, payment: bipydtc.PydtcPayment):
     """
     At this version, two payments with the same value and date are not allowed.
-    TODO this may be allowed by a datetime field instead of only date
+    TODO this may be allowed by a
+     datetime field instead of only date
     """
     if not isinstance(payment, bipydtc.PydtcPayment):
       errmsg = f"Error: payment [{payment}] is of wrong type."
@@ -200,7 +204,18 @@ class PydtcBillingCard(pydantic.BaseModel):
       errmsg = f"Error: payment [{payment}] date and value has already been entered.."
       errmsg += f"\n\t if two payments are equal on the same day, they should be consolidated."
       raise ValueError(errmsg)
+    #  okay, at this payment may be appended
     self.payments.append(payment)
+    # all the time a payment is entered, a new process_payment must happen
+    # but the client must call it with obj.process_payments_in_month()
+
+  def lastpaydate(self):
+    # sort it asc and return lastpaydate
+    self.payments.sort(key=lambda o: o.date)
+    lastpayment = self.payments[-1]
+    _lastpaydate = lastpayment.date
+    return _lastpaydate
+
 
   def has_been_paid_after_payment_processed(self):
     if self.debito_no_fecho == DECIMAL_ZERO:
@@ -250,7 +265,7 @@ class PydtcBillingCard(pydantic.BaseModel):
       try:
         ndays, moravalue = tupl
         payment = tardypaymentsdict[ndays]
-        line = f"mora {moravalue:.2f} foi gerada por {ndays} dias sobre o pagt {payment.value} em {payment.date}"
+        line = f"mora {moravalue:.2f} foi gerada por {ndays} dias em {payment.date} com o pagt {payment.value}"
         lines.append(line)
       except KeyError:
         pass
@@ -295,7 +310,7 @@ class PydtcBillingCard(pydantic.BaseModel):
       'refmonth': self.refmonth,
       'duedate': self.duedate,
       'payor': self.rentcontract.main_tenant.get_first_n_last_names(),
-      'cpf':  self.rentcontract.main_tenant.get_fmt_cpf(),
+      'cpf':  self.rentcontract.main_tenant.cpf_fmt_w_dots,
       'address': self.rentcontract.location.address,
       'billingitems': billingitems_dictlist,
       'fatura_total': self.fatura_total,
