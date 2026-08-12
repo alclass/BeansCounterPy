@@ -1,6 +1,9 @@
 import functools
 import operator
 from decimal import Decimal
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants as fm_mnts  # fm_cmnts.calc_incrfactor_intrstrt_w_1iridx_2expo
+import lib.datesetc.refmonth_fs as rmfs
+decimal_one = Decimal(1)
 
 
 def func1():
@@ -52,13 +55,35 @@ def adhoctest2():
   print(form)
 
 
-def adhoctest1():
+def adhoctest3():
   res = func1()
   print(res)
   byhand = ((1 + 1) ** 2) * ((1 + 2) ** 1)  # 12?
   print(byhand)
   produtory = functools.reduce(operator.mul, [1,2,3], 1)
   print(produtory)
+
+
+def adhoctest4():
+  mkdt = rmfs.make_refmonth_or_raise
+  monthpartition = [
+    (15, mkdt('2026-04')),
+    (3, mkdt('2026-01')),
+  ]
+  d1 = decimal_one
+  inimontant, ir_idx = 3 * d1, d1 / 10
+  exponents = [Decimal(.5), Decimal(3 / 31)]
+  byhand_multfactor_for_fm = (1 + ir_idx) ** exponents[0]
+  byhand_multfactor_for_fm *= (1 + ir_idx) ** exponents[1]
+  print('byhand_multfactor_for_fm', byhand_multfactor_for_fm)
+  final_montant = inimontant * byhand_multfactor_for_fm
+  print('final montant', final_montant)
+  ret_finalmontant_direct, quinhoes1 = fm_mnts.calc_finalmontant_w_1inimontant_2iridx_3partitionmonths(
+    inimontant=inimontant,
+    ir_idx=ir_idx,
+    partitionmonths=monthpartition,
+  )
+  print('ret_finalmontant_direct', ret_finalmontant_direct)
 
 
 def process():
@@ -72,4 +97,4 @@ if __name__ == '__main__':
   process()
   adhoctest2()
   """
-  adhoctest2()
+  adhoctest4()
