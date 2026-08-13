@@ -16,13 +16,12 @@ import dinero
 from dinero.currencies import BRL
 from typing import List
 import pydantic
-import random
 import typing
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls as init
 # incendmod.get_incendtarif_fo_location_if_available(imovel_apelido)
-import art.immeub.tribs.statetaxes.incendmod as funesbom
+import art.immeub.tribs.onproperties.mongo_tribs_retriever as funesbom
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import art.immeub.rent.pdntcmdls.billingitem_pydantic as bipydtc  # bipydtc.BillingItem

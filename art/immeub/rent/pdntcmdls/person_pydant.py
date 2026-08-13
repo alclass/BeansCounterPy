@@ -22,6 +22,8 @@ class PydtcPerson(BaseModel):
   """
   class Person(Document):
 
+  To import it:
+  import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson(...)
   """
   fullname: str
   cpf: cpftype
@@ -66,6 +68,11 @@ class PydtcPerson(BaseModel):
   def validate_email(cls, email: str) -> str:
     return email
 
+  @classmethod
+  def instantiate_from_json(cls, jsondump: str) -> 'PydtcPerson':
+
+
+
   def get_first_n_last_names(self):
     firstname = self.fullname.split()[0]
     lastname = self.fullname.split()[-1]
@@ -92,15 +99,6 @@ class PersonDoc(PydtcPerson, Document):
     name = "persons"
 
 
-def get_person_ex():
-  person = PydtcPerson(
-    fullname="John Doe",
-    cpf="12345678909",
-    phonenumber="99991111",
-    email="johndoe@example.com",
-    docid="1234567",
-  )
-  return person
 
 
 def adhoctest1():

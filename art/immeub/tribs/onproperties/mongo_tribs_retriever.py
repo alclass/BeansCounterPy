@@ -1,4 +1,5 @@
 """
+art/immeub/tribs/onproperties/mongo_tribs_retriever.py
 
 """
 import pymongo
@@ -7,7 +8,7 @@ MONGO_DBNAME = "immeub_db"
 MONGO_COLLNAME = "fnsbm_trfs"
 
 
-class MongoRetriever:
+class MongoImmeubleTaxRetriever:
 
   def __init__(self):
     self.mongo_cli_conn = None
@@ -16,7 +17,7 @@ class MongoRetriever:
     self.mongo_dbname = MONGO_DBNAME
     self.mongo_collname = MONGO_COLLNAME
 
-  def open_mongo_conn(self):
+  def open_mongo_conn(self, collname: str | None = None):
     """
       self.mongo_db = self.mongo_cli_conn[self.mongo_dbname]
       self.mongo_coll = self.mongo_db[self.mongo_collname]
@@ -25,15 +26,12 @@ class MongoRetriever:
     """
     self.mongo_cli_conn = pymongo.MongoClient(MONGODB_CON_STR)
     self.mongo_db = self.mongo_cli_conn["immeub"]
-    self.mongo_coll = self.mongo_db[self.mongo_collname]
+    self.mongo_coll = collname or self.mongo_db[self.mongo_collname]
 
-  def get_incendtarif_fo_location_if_available(self, imovel_apelido):
+  def get_thismonthstaxes_fo_location_if_available(self, imovel_apelido):
     """
-
     """
-    query = {
-      '$getField': ['imm_nickname', 'incendtarif', 'has_been_issued'],
-    }
+    query = { 'imm_nickname' }
     self.open_mongo_conn()
     mongo_doc = self.mongo_coll.find_one(query)
     if mongo_doc is not None:
@@ -51,7 +49,7 @@ def get_incendtarif_fo_location_if_available(imovel_apelido):
   """
   Look up MongoDB to verify if an incendtarif is available.
   """
-  retriever = MongoRetriever()
+  retriever = MongoImmeubleTaxRetriever()
   return retriever.get_incendtarif_fo_location_if_available(imovel_apelido)
 
 

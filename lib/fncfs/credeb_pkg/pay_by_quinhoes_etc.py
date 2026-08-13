@@ -52,7 +52,7 @@ def pay_monthsbill_by_quinhao_considering_mora(
     paydate = payment.date
     inimontant = -debito
     if inimontant > DECIMAL_ZERO:
-      mora_incr = fncfs.calc_incr_insamemonth_w_1inimontant_2iridx_3inidate_4findate(
+      mora_incr = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
         inimontant, fix_plus_var_ir_dec, retrodate_ifinmora, paydate
       )
       debito = debito - mora_incr
@@ -124,7 +124,7 @@ def process_payments_in_month(
       # there should be a 'mora-projection' from retro to post date
       inimontant = -debito_no_fecho
       # mora_incr 'projects' this remaining debt to postdate
-      mora_incr = fncfs.calc_incr_insamemonth_w_1inimontant_2iridx_3inidate_4findate(
+      mora_incr = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
         inimontant=inimontant,
         fixplusvardec=fix_plus_var_ir_dec,
         inidate=retrodate_ifinmora,

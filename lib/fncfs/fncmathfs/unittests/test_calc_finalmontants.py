@@ -133,7 +133,7 @@ class TestCase1(unittest.TestCase):
     byhand_final_montant = (1 + ir_idx) ** exponent  # do the math expression
     byhand_final_montant = quantize6decplaces(byhand_final_montant)
     self.assertEqual(exp_final_montant, byhand_final_montant)  # compare "by hand" with expected
-    increase_amount = fm_mnts.calc_incr_amt_intrstrt_w_1inimomtant_2iridx_3expo(
+    increase_amount = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exponent=exponent
@@ -165,7 +165,7 @@ class TestCase1(unittest.TestCase):
     byhand_final_montant = inimontant * (1 + ir_idx) ** exponent  # do the math expression
     byhand_final_montant = quantize6decplaces(byhand_final_montant)
     self.assertEqual(exp_final_montant, byhand_final_montant)  # compare "by hand" with expected
-    increase_amount = fm_mnts.calc_incr_amt_intrstrt_w_1inimomtant_2iridx_3expo(
+    increase_amount = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exponent=exponent
@@ -210,7 +210,7 @@ class TestCase1(unittest.TestCase):
     byhand_final_montant = (1 + ir_idx) ** exponent  # do the math expression
     byhand_final_montant = quantize6decplaces(byhand_final_montant)
     self.assertEqual(exp_final_montant, byhand_final_montant)
-    ret_increase_amount = fm_mnts.calc_incr_amt_intrstrt_w_1inimomtant_2iridx_3expo(
+    ret_increase_amount = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exponent=exponent,
@@ -245,7 +245,7 @@ class TestCase1(unittest.TestCase):
     exponent_series = [d2,  2 * d2]
     byhand_finalmontant = (1 + ir_idx) ** sum(exponent_series)
     byhand_finalmontant = inimontant * byhand_finalmontant
-    increase_amount = fm_mnts.calc_incr_amt_w_1inimontant_2iridx_3exposeries(
+    increase_amount = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3exposeries(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exposeries=exponent_series,
@@ -266,7 +266,7 @@ class TestCase1(unittest.TestCase):
     exponent_series = [Decimal(2.3), Decimal(1.75), Decimal(3.21)]
     byhand_finalmontant = (1 + ir_idx) ** sum(exponent_series)
     byhand_finalmontant = inimontant * byhand_finalmontant
-    increase_amount = fm_mnts.calc_incr_amt_w_1inimontant_2iridx_3exposeries(
+    increase_amount = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3exposeries(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exposeries=exponent_series,
@@ -294,7 +294,7 @@ class TestCase1(unittest.TestCase):
     byhandret_incrfactor = (1+t[0][0])**t[0][1]
     byhandret_incrfactor *= (1+t[1][0])**t[1][1]
     byhandret_incrfactor *= (1+t[2][0])**t[2][1]
-    ret_incrfactor = fm_mnts.calc_multiplicationfactor_fo_fm_w_1param_iridx_n_exponent_tuplelist(
+    ret_incrfactor = fm_mnts.calc_multiplicationfactor_for_fm_w_1param_iridx_n_exponent_tuplelist(
       tuplelist_iridx_n_expo
     )
     self.assertEqual(ret_incrfactor, byhandret_incrfactor)
@@ -388,7 +388,34 @@ class TestCase1(unittest.TestCase):
     # hypothesis 7-4 -> compare ... quinhões
     # quinhões have some differences: study them better so that we can unit-test them
     # ======================
-"""
-    self.assertEqual(quinhoes1, quinhoes2)
-    # self.assertEqual(quinhoes1, quinhoes2)
-"""
+    inimontant, ir_idx = 3 * d1, d1 / 10
+    iridxlist = [ir_idx, ir_idx]
+    # byhand_finalmontant = inimontant * byhand_multfactor_for_fm
+    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finalmontant_w_1inimontant_2iridxlist_3partitionmonths(
+      inimontant=inimontant, iridxlist=iridxlist, partitionmonths=monthpartition,
+    )
+    self.assertEqual(ret_finalmontant_direct, byhand_finalmontant)
+
+  def test_8_with_quinhoes(self):
+    """
+        self.assertEqual(quinhoes1, quinhoes2)
+        # self.assertEqual(quinhoes1, quinhoes2)
+    """
+    # ======================
+    # hypothesis 8-1 -> verify that each quinhao in quinhões adds up to increase_amount
+    # ======================
+    mkdt = rmfs.make_refmonth_or_raise
+    monthpartition = [
+      (15,  mkdt('2026-04')),
+      (3, mkdt('2026-01')),
+    ]
+    d1  = decimal_one
+    inimontant, ir_idx = 3 * d1, d1 / 10
+    iridxlist = [ir_idx, ir_idx]
+    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finalmontant_w_1inimontant_2iridxlist_3partitionmonths(
+      inimontant=inimontant, iridxlist=iridxlist, partitionmonths=monthpartition,
+    )
+    increase_amounts = [t[0] for t in quinhoes]
+    increase_amount = sum(increase_amounts)
+    increase_amount_by_subtraction = ret_finalmontant_direct - inimontant
+    self.assertEqual(increase_amount_by_subtraction, increase_amount)

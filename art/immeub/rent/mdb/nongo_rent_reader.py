@@ -1,8 +1,11 @@
 """
 art/immeub/rent/mdb/nongo_rent_reader.py
 
+
+import art.immeub.rent.mdb.nongo_rent_reader as mng_rent  # mng_rent.billingcards_reader_fr_db
+
 import pprint
-# from decima-l import Decimal
+# from decimal import Decimal
 """
 from pymongo import MongoClient
 import re
@@ -56,14 +59,22 @@ class MongoDBCollectionRetriever:
       return 0
     return len(self.accomprefmonths)
 
-  def open_conn(self):
+  def open_conn(self, p_collname: str = None):
     self.mongo_cli_conn = MongoClient(LOCAL_MONGODB_CONSTR)
     self.mongo_db = self.mongo_cli_conn[self.mongo_dbname]
-    self.mongo_coll = self.mongo_db[self.mongo_collname]
+    collname = p_collname if p_collname is not None else self.mongo_collname
+    self.mongo_coll = self.mongo_db[collname]
     # Count documents
     self.mongo_count = self.mongo_coll.count_documents({})
     # print(f"Total documents in collection: {self.mongo_count}")
 
+  def get_mongo_cli_conn(self, collname: str):
+    self.open_conn(collname)
+    return self.mongo_cli_conn
+
+  def get_mongo_collectionn(self, collname: str):
+    _ = self.get_mongo_cli_conn(collname)
+    return self.mongo_coll
 
   def find_by_immapelido_as_obj(self, imm_nickname):
     pattern = re.compile(r"^"+imm_nickname, re.IGNORECASE)
@@ -161,6 +172,17 @@ class MongoDBCollectionRetriever:
       self.mongo_cli_conn.close()
 
 
+def get_persons_by_cpfs(cpfs: list[str]) -> list:
+  retriever = MongoDBCollectionRetriever()
+  coll = retriever.get_mongo_collectionn('persons')
+  doc = coll.find({'cpf': cpfs})
+  found_ones = []
+  for item in doc:
+    found_ones.append(item)
+  retriever.close_conn()
+  return found_ones
+
+
 def adhoctest1():
   """
   refmonths_reader_fr_db()
@@ -177,6 +199,14 @@ def adhoctest1():
     print('Not found')
 
 
+def adhoctest2():
+  cpfs = ['12345678909']
+  persons = get_persons_by_cpfs(cpfs)
+  print(persons)
+
+
+
+
 def process():
   """
   """
@@ -187,4 +217,4 @@ if __name__ == '__main__':
   """
   process()
   """
-  adhoctest1()
+  adhoctest2()

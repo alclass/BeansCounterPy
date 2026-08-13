@@ -557,8 +557,21 @@ def generate_monthrange_allow_future(
   return generate_monthrange(inirefmonth, finrefmonth, allow_future=True)
 
 
-def get_monthrange_as_list(refmonth_ini: Any | None, refmonth_fim: Any | None) -> list[datetime.date]:
+def get_monthrange_as_list(refmonth_ini: datetime.date | str, refmonth_fim: datetime.date | str) -> list[datetime.date]:
   return list(generate_monthrange(refmonth_ini, refmonth_fim))
+
+
+def make_refmonth_list_fr_refmonth_plus_n(refmonth_ini: datetime.date | str, n_ahead: int) -> list[datetime.date]:
+  current_refmonth = make_refmonth_or_raise(refmonth_ini)
+  refmonths = [current_refmonth]
+  try:
+    for i in range(1, int(n_ahead)):
+      next_refmonth = current_refmonth + relativedelta(months=1)
+      refmonths.append(next_refmonth)
+      current_refmonth = next_refmonth
+  except (IndexError, ValueError):
+    pass
+  return refmonths
 
 
 def getverify_refmonthrangetuple_or_default(p_refmonth_ini: Any | None, p_refmonth_fim: Any | None) -> tuple:
