@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-art/immeub/rent/testdata/contract01_datadict.py
+art/immeub/rent/testdata/billingcards_createdata.py
 
-import art.immeub.rent.testdata.contract01_datadict.py
+import art.immeub.rent.testdata.billingcards_createdata.py
 art.immeub.rent.pdntcmdls.contract_molder.Person
 import copy
 """

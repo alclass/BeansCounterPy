@@ -10,17 +10,11 @@ import datetime
 from decimal import Decimal
 import pydantic
 import json
-import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
+import art.immeub.rent.mdb.mongo_rent_retriever as mngrent
+import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 from pydantic import BaseModel, computed_field, model_validator
 import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble as embed  # embed.EmbeddedImmeubleTax
 DECIMAL_ZERO = Decimal("0")
-
-
-def get_owners_by_cpfs(anyparam=None):
-  person = pers.get_person_ex()
-  owners = [person]
-  return owners
-
 
 
 def remove_none_values(data):
@@ -58,7 +52,7 @@ class PydtcImmeuble(BaseModel):
       if 'owners_cpfs' in data and not data.get('owners'):
         cpfs = data.pop('owners_cpfs')  # Extract CPFs
         # Fetch full objects using your existing DB lookup function
-        owners = mng_rent.get_persons_by_cpfs(cpfs)
+        owners = mngrent.get_persons_by_cpfs(cpfs)
         data['owners'] = owners
     return data
 
@@ -88,7 +82,7 @@ class PydtcImmeuble(BaseModel):
   def comma_sep_owner_names(self):
     ostr = ""
     for owner in self.owners:
-      ostr += owner.fullname + ", "
+      ostr += owner.nomecompleto + ", "
     ostr = ostr.rstrip(", ")
     return ostr
 
@@ -122,15 +116,14 @@ class PydtcImmeuble(BaseModel):
     total = Decimal(sum(values))
     return total
 
-
   @classmethod
-  def instantiate_from_json(cls, jsondump):
+  def instantiate_from_jsondict(cls, jsondump):
     """
     The updated version
     """
     pdict = json.loads(jsondump)
     owners_cpfs = pdict.pop('owners_cpfs')
-    owners = get_owners_by_cpfs(owners_cpfs)
+    owners = get_persons_by_cpfs(owners_cpfs)
     pdict['owners'] = owners
     cleaned_data = remove_none_values(pdict)
     obj = cls.model_validate(cleaned_data)

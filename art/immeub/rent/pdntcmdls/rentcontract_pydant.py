@@ -378,7 +378,7 @@ class PydtcRentContract(pydantic.BaseModel):
     ostr = ""
     if len(self.tenants) > 0:
       for tenant in self.tenants:
-        ostr += tenant.fullname + ", "
+        ostr += tenant.nomecompleto + ", "
       ostr = ostr.rstrip(", ")
       return ostr
     return 'n/a'
@@ -387,7 +387,7 @@ class PydtcRentContract(pydantic.BaseModel):
     ostr = ""
     if len(self.fiadores) > 0:
       for fiador in self.fiadores:
-        ostr += fiador.fullname + ", "
+        ostr += fiador.nomecompleto + ", "
       ostr = ostr.rstrip(", ")
       return ostr
     return 'n/a'

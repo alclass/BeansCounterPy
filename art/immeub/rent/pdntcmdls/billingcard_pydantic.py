@@ -21,13 +21,46 @@ import art.immeub.rent.pdntcmdls.billingitem_pydantic as bipydtc  # bipydtc.Pydt
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
-import art.immeub.rent.testdata.data_example_contract as dataex  # dataex.make_example_contract
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 PAYMENT_DUE_DAY_IN_MONTH = 10
 MONTHLY_FIX_IR_DEC_STR = '0.02'
 MONTHLY_FIX_IR_DEC = Decimal(MONTHLY_FIX_IR_DEC_STR)
 DECIMAL_ZERO = Decimal('0')
+
+
+
+def from_to_json():
+  billingcard_o = None
+  if doc is not None:
+    # pdict = srlz.deserialize_mongo_doc(doc, is_data_from_db=True)
+    for i, elem in enumerate(doc):
+      _ = elem
+      elem = {key: value for key, value in elem.items() if value is not None}
+
+      def remove_nones_fr_billingitems(p_list: list):
+        """
+        None's must be removed from the testdata
+        The outer dict was cleaned up above, now we must remove None's in the billing_items
+        (Because billing_items is a dictlist, the dict's are recreated, but the list is used mutably.)
+        """
+        for ii, supposed_billingitem in enumerate(p_list):
+          if not isinstance(supposed_billingitem, dict):
+            # there are 2 lists in the outer doc, the address one is not a dict, the 'billingitems' is a dict
+            continue
+          supposed_billingitem = {key: value for key, value in supposed_billingitem.items() if value is not None}
+          # the dict is used immutably (it's recreated), the list is used mutably (the new dict goes back in place)
+          p_list[ii] = supposed_billingitem
+
+      for key in elem:
+        obj = elem[key]
+        if isinstance(obj, list):
+          # here we look for lists so that we can look for inner dict's that may contain None's
+          alist = obj
+          remove_nones_fr_billingitems(alist)
+      billingcard_o = bcardpydtc.PydtcBillingCard.MongoJsonRepr(**elem)
+  self.close_conn()
+  return billingcard_o
 
 
 class PydtcBillingCard(pydantic.BaseModel):
@@ -352,42 +385,10 @@ class PydtcBillingCard(pydantic.BaseModel):
 
 
 def adhoctest1():
-  mkdt = dtfs.make_date_or_raise
-  rentcontract = dataex.make_example_contract()
-  billingcard = PydtcBillingCard(
-    rentcontract=rentcontract,
-    refmonth=mkdt('2026-5-1'),
-  )
-  # billingcard.print_str_table_billingitems()
-  print('total', billingcard.str_billingcard())
-  mng_dict = billingcard.as_mongo_json_dict()
-  print(mng_dict)
-  mng_json = billingcard.as_mongo_json_repr()
-  print("mng_json = billingcard.as_mongo_json_repr()")
-  print(mng_json)
-  paydate, payvalue = mkdt('2026-06-11'), Decimal(3000)
-  payment = bipydtc.PydtcPayment(
-    date=paydate,
-    value=Decimal(3000),
-  )
-  payvalue = payment.value
-  paydate = payment.date
-  billingcard.add_payment(payment)
-  billingcard.process_payments_in_month()
-  ostr = """billingcard.process_payment()
-  cre = billingcard.credito_no_fecho
-  deb = billingcard.debito_no_fecho
   """
-  print(ostr)
-  cre = billingcard.credito_no_fecho
-  deb = billingcard.debito_no_fecho
-  moraquinhoes = billingcard.quinhoes_days_vals
-  ipca = billingcard.var_ir_as_ipca_dec
-  scrmsg = f"""cre={cre:.2f}; deb={deb:.2f} | billsvalue = {billingcard.fatura_total} | duedate={billingcard.duedate} | ipca = {ipca}
-   | payvalue={payvalue:.2f} | paydate={paydate} | quinhoes={moraquinhoes}"""
-  print(scrmsg)
-  report = billingcard.report_quinhoes_days_vals()
-  print(report)
+
+  """
+  pass
 
 
 def process():

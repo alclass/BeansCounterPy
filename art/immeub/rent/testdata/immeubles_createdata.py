@@ -63,7 +63,7 @@ def instantiate_immeuble_fr_jsondump():
     ]
   }"""
   print('immeub.instantiate_immeuble_fr_jsondump(jsondump)')
-  immeuble1 = immeub.PydtcImmeuble.instantiate_from_json(jsondump)
+  immeuble1 = immeub.PydtcImmeuble.instantiate_from_jsondict(jsondump)
   print(immeuble1)
 
 

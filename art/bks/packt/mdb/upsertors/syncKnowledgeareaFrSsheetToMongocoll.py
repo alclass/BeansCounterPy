@@ -110,7 +110,7 @@ class SyncKAreaFromSSheetToMongoColl:
   def does_sheet_isbn_exist_in_mongo(self, sheet_bookinfo_dc):
     isbn13 = sheet_bookinfo_dc.isbn13
     self.count_find += 1
-    cursor = self.mongoreader.mongo_coll.find({
+    cursor = self.mongoreader.mongodb_coll.find({
       'isbn': isbn13
     })
     doc = list(cursor)

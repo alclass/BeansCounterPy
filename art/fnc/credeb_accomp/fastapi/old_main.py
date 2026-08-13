@@ -20,7 +20,7 @@ async def read_root(request: Request):
 @app.post("/api/records/", response_model=DebCredResponse)
 async def create_record(record: DebCredCreate):
   data = record.model_dump()  # formerly record.dict()
-  dataclass_o = cd_accomp.DebCredAccompanier.instantiate_fr_dict(data)
+  dataclass_o = cd_accomp.DebCredAccompanier.instantiate_from_jsondict(data)
   data["ipca_dec"] = dataclass_o.ipca_dec
   data["fix_ir_dec"] = dataclass_o.fix_ir_dec
   result = await collection.insert_one(data)
