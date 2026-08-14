@@ -12,8 +12,8 @@ PERSON_COLL = 'persons'
 
 def get_persons_by_cpfs(cpfs: list[str]) -> list[pers.PydtcPerson]:
   persons = []
-  retriever = mreader.MongoDBCollectionRetriever()
-  docs = retriever.fetch_w_1coll_2fieldname_3list(
+  retriever = mreader.GenMongoDBFetcher()
+  docs = retriever.find_w_1coll_2fieldname_3list(
     collname=PERSON_COLL,
     fieldname='cpf',
     valuelist=cpfs,
@@ -30,7 +30,7 @@ def get_persons_by_cpfs(cpfs: list[str]) -> list[pers.PydtcPerson]:
 
 def get_immeubles_by_nicknames(nicknames: list[str]) -> list[immeub.PydtcImmeuble]:
   locations = []
-  retriever = mreader.MongoDBCollectionRetriever()
+  retriever = mreader.GenMongoDBFetcher()
   query = {'imm_nickname': nicknames}
   collname = 'immeubles'
   docs = retriever.find_by_coll_n_query(collname, query)
@@ -43,7 +43,7 @@ def get_immeubles_by_nicknames(nicknames: list[str]) -> list[immeub.PydtcImmeubl
 def get_billingcards_by_nn_n_refmonth(nn_n_refmonths: list[tuple[str, datetime.date]]) -> list[immeub.PydtcImmeuble]:
   locations = []
   contrnumbers = [f"{s.lower()}{dt.strftime('%y%m')}" for s, dt in nn_n_refmonths]
-  retriever = mreader.MongoDBCollectionRetriever()
+  retriever = mreader.GenMongoDBFetcher()
   query = {'contrnumber': contrnumbers}
   collname = 'billingcards'
   docs = retriever.find_by_coll_n_query(collname, query)

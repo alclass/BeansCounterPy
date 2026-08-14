@@ -28,9 +28,7 @@ class Tenant(Document):
   """
   name = StringField(required=True)
   email = StringField(required=True)
-
   meta = {'collection': PERSON_MNGCOLLNAME}
-
   # Helper method to match the standard MongoDB/Beanie JSON output
   def to_api_dict(self):
     return {
@@ -45,7 +43,6 @@ class Contract(Document):
   # ReferenceField handles foreign-key references.
   # reverse_delete_rule=PULL automatically updates the contract if a tenant is deleted.
   tenants = ListField(ReferenceField(Tenant, reverse_delete_rule=PULL))
-
   meta = {'collection': CONTRACT_MNGCOLLNAME}
 
   def to_api_dict(self):
@@ -69,9 +66,7 @@ async def lifespan(p_app: FastAPI):
   # Safely close connection pool on application shutdown
   disconnect()
 
-
 app = FastAPI(title="FastAPI + MongoEngine Sync API", lifespan=lifespan)
-
 app.add_middleware(
   CORSMiddleware,
   allow_origins=["*"],
