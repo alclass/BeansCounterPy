@@ -13,7 +13,7 @@ import decimal
 import lib.datesetc.datefs as dtfs  # for partition_inidate_findate_as_monthndays_tuplelist
 import lib.datesetc.refmonth_fs as rmfs  # for partition_inidate_findate_as_monthndays_tuplelist
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
-from lib.datesetc.refmonth_fs import make_refmonth_or_raise
+# from lib.datesetc.refmonth_fs import make_refmonth_or_raise
 DECIMAL_ZERO = Decimal('0.00')
 DECIMAL_ONE = Decimal('1.0')
 
@@ -142,9 +142,9 @@ def calc_finalmontant_w_1inimontant_2fixir_3varir_4monthsduration(
   )
 
 
-def calc_multiplicationfactor_fo_fm_w_1inimontant_2iridx_3partitionmonths(
-    ir_idx: Decimal, partitionmonths: list[tuple[int, datetime.date]]
-  ) -> tuple[Decimal, list[tuple[Decimal, datetime.date]]]:
+def calc_multiplicationfactor_for_fm_w_1iridx_2monthpartition(
+    ir_idx: Decimal, monthpartition: list[tuple[int, datetime.date]]
+  ) -> tuple[Decimal, list[Decimal]]:
   """
   Calculates the multiplication factor compounded throughout a series of months
     each month having a certain fraction of itself.
@@ -156,51 +156,52 @@ def calc_multiplicationfactor_fo_fm_w_1inimontant_2iridx_3partitionmonths(
     if a monthpartition is: [(15, mkrm('2026-4')), (3, mkrm('2026-4'))]
     this means that 15 days were 'used' in April 2026 and 3/31 days in January 2026.
 
-  The return is a tuple composed of the multiplication factor for final montant and list 'quinhões'.
-    'quinhões' contains all the monthly factors and their refmonths
-    that all multiplied gives back the compounded multiplication factor.
-
+  The return is a tuple composed of the multiplication factors. Notice that this is different from 'quinhões'.
+  'quinhões' contains the increase amounts and also the refmonths; factor contains the multiplication factors.
   """
-  monthsdurations, refmonths = [], []
-  for partitionmonth in partitionmonths:
-    ndays, refmonth = partitionmonth
-    _, ndaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
-    monthsduration = Decimal(ndays / ndaysinmonth)
-    monthsdurations.append(monthsduration)
-    refmonths.append(refmonth)
   base = Decimal(1 + ir_idx)
-  factors = list(map(lambda expo: base ** expo, monthsdurations))
-  mult_factor_for_finalmontant = functools.reduce(operator.mul, factors, 1)
+  monthsfractions = rmfs.calc_fractionlist_fr_monthpartition(monthpartition)
+  multiplicationfactors = list(map(lambda expo: base ** expo, monthsfractions))
+  mult_factor_for_finalmontant = functools.reduce(operator.mul, multiplicationfactors, 1)
+  # the IDE does not recognize mult_factor_for_finalmontant with type-conforming to Decimal (though its results is a number)
+  # the IDE included the next comment when we asked to suppress the mentioned warning
+  # noinspection bad-argument-type
   mult_factor_for_finalmontant = Decimal(mult_factor_for_finalmontant)
-  quinhoes = list(zip(factors, refmonths))
-  return mult_factor_for_finalmontant, quinhoes
+  return mult_factor_for_finalmontant, multiplicationfactors
 
 
-def calc_multiplicationfactor_fo_incr_w_1inimontant_2iridx_3partitionmonths(
-    ir_idx: Decimal, partitionmonths: list[tuple[int, datetime.date]]
-  ) -> tuple[Decimal, list[tuple[Decimal, datetime.date]]]:
-  multiplicationfactor_fo_fm, quinhoes = calc_multiplicationfactor_fo_fm_w_1inimontant_2iridx_3partitionmonths(
-    ir_idx=ir_idx, partitionmonths=partitionmonths
+def calc_multiplicationfactor_for_increase_w_1iridx_2monthpartition(
+    ir_idx: Decimal, monthpartition: list[tuple[int, datetime.date]]
+  ) -> tuple[Decimal, list[Decimal]]:
+  """
+  Calculates the multiplication factor compounded throughout a series of months, each having a certain month's fraction.
+  @see also docstr for the function above.
+
+  Notice: when the function receiving monthpartition does not have inimontant as input,
+    multiplicationfactors is in the output instead of quinhoes.
+  """
+  multiplicationfactor_fo_fm, quinhoes = calc_multiplicationfactor_for_fm_w_1iridx_2monthpartition(
+    ir_idx=ir_idx, monthpartition=monthpartition
   )
   multiplicationfactor_fo_incr = multiplicationfactor_fo_fm - 1
   return multiplicationfactor_fo_incr, quinhoes
 
 
-def calc_increase_amount_w_1inimontant_2iridx_3partitionmonths(
-    inimontant: Decimal, ir_idx: Decimal, partitionmonths: list[tuple[int, datetime.date]]
+def calc_increase_amount_w_1inimontant_2iridx_3monthpartition(
+    inimontant: Decimal, ir_idx: Decimal, monthpartition: list[tuple[int, datetime.date]]
   ) -> tuple[Decimal, list[tuple[Decimal, datetime.date]]]:
   """
 
   """
-  multiplicationfactor_fo_incr, quinhoes = calc_multiplicationfactor_fo_incr_w_1inimontant_2iridx_3partitionmonths(
-    ir_idx=ir_idx, partitionmonths=partitionmonths
+  multiplicationfactor_fo_incr, quinhoes = calc_multiplicationfactor_for_increase_w_1iridx_2monthpartition(
+    ir_idx=ir_idx, monthpartition=monthpartition
   )
   increase_amount = inimontant * multiplicationfactor_fo_incr
   return increase_amount, quinhoes
 
 
-def calc_finalmontant_w_1inimontant_2iridx_3partitionmonths(
-    inimontant: Decimal, ir_idx: Decimal, partitionmonths: list[tuple[int, datetime.date]]
+def calc_finalmontant_w_1inimontant_2iridx_3monthpartition(
+    inimontant: Decimal, ir_idx: Decimal, monthpartition: list[tuple[int, datetime.date]]
   ) -> tuple[Decimal, list[tuple[Decimal, datetime.date]]]:
   """
   Idem as the final montant calculator above, but it
@@ -223,7 +224,7 @@ def calc_finalmontant_w_1inimontant_2iridx_3partitionmonths(
   """
   ongoing_montant = inimontant
   quinhoes = []
-  for partitionmonth in partitionmonths:
+  for partitionmonth in monthpartition:
     ndays, refmonth = partitionmonth
     _, ndaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
     monthsduration = Decimal(ndays / ndaysinmonth)
@@ -236,9 +237,9 @@ def calc_finalmontant_w_1inimontant_2iridx_3partitionmonths(
   return r_finalmontant, quinhoes
 
 
-def calc_finalmontant_w_1inimontant_2fixir_fetchipca_3partitionmonths(
+def calc_finalmontant_w_1inimontant_2fixir_fetchipca_3monthpartition(
       inimontant: Decimal, fixir: Decimal,
-      partitionmonths: list[tuple[int, datetime.date]],
+      monthpartition: list[tuple[int, datetime.date]],
       m_minus_n: int = 2,
   ) -> tuple[Decimal, list[tuple[Decimal, datetime.date]]]:
   """
@@ -249,7 +250,7 @@ def calc_finalmontant_w_1inimontant_2fixir_fetchipca_3partitionmonths(
   ongoing_montant = inimontant
   quinhoes = []
   ipcacacher = ipcafs.IpcaAPICacherRetriever()
-  for partitionmonth in partitionmonths:
+  for partitionmonth in monthpartition:
     ndays, refmonth = partitionmonth
     _, ndaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
     monthsduration = Decimal(ndays / ndaysinmonth)
@@ -290,20 +291,20 @@ def calc_finalmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
 
 
 def calc_finalmontant_w_1inimontant_2iridxlist_3partitionmonths(
-    inimontant: Decimal, iridxlist: list[Decimal], partitionmonths: list[tuple[int, datetime.date]]
+    inimontant: Decimal, iridxlist: list[Decimal], monthpartition: list[tuple[int, datetime.date]]
   ) -> tuple[Decimal, list[tuple[Decimal, datetime.date]]]:
   ongoing_montant = inimontant
   quinhoes = []
-  if len(iridxlist) != len(partitionmonths):
-    errmsg = (f"Error: iridxlist (len={len(iridxlist)}) and partitionmonths (len={len(partitionmonths)})"
+  if len(iridxlist) != len(monthpartition):
+    errmsg = (f"Error: iridxlist (len={len(iridxlist)}) and partitionmonths (len={len(monthpartition)})"
               f" should have the same length, they don't.")
     raise ValueError(errmsg)
+  monthfractions = rmfs.calc_fractionlist_fr_monthpartition(monthpartition)
   for i, iridx in enumerate(iridxlist):
-    ndays, refmonth = partitionmonths[i]
-    _, ndaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
-    monthfraction = Decimal(ndays / ndaysinmonth)
+    monthfraction = monthfractions[i]
     cur_finalmontant = ongoing_montant * (1 + iridx) ** monthfraction
     quinhao = cur_finalmontant - ongoing_montant
+    _, refmonth = monthpartition[i]
     quinhaotuple = (quinhao, refmonth)
     quinhoes.append(quinhaotuple)
     ongoing_montant = cur_finalmontant
@@ -421,13 +422,14 @@ def calc_multiplicationfactor_for_fm_w_1param_iridx_n_exponent_tuplelist(
   """
   elems = [(1 + x) ** y for (x, y) in tuplelist_iridx_n_expo]
   produtory = functools.reduce(operator.mul, elems, 1)
+  # noinspection bad-argument-type
   produtory = Decimal(produtory)  # though it works, IDE complains here about type coming from reduce()
   return produtory
 
 
 def calc_multiplicationfactor_for_increase_w_1param_iridx_n_exponent_tuplelist(
     tuplelist_iridx_n_expo: list[tuple[Decimal, Decimal]],
-  ):
+  ) -> Decimal:
   """
   Calculates the multiplication factor for finding the increase amount
     when each component may have a different index and a different duration.
@@ -448,6 +450,8 @@ def calc_increase_amount_w_1param_iridx_n_exponent_tuplelist(
   """
   Calculates increase amount on initial montant
     when each component may have a different index and a different duration.
+
+  @see also docstr for calc_finalmontant_w_1param_iridx_n_exponent_tuplelist()
   """
   multiplication_factor_for_increase = calc_multiplicationfactor_for_increase_w_1param_iridx_n_exponent_tuplelist(
     tuplelist_iridx_n_expo=tuplelist_iridx_n_expo,
@@ -463,7 +467,7 @@ def calc_finalmontant_w_1param_iridx_n_exponent_tuplelist(
   Calculates final montant when each component may have a different index and a different duration.
   This function does not output quinhoes:
     @see another function above that calculates with iridx's and exponents (one-to-one like this function)
-    and returns quinhoes.
+    and returns quinhoes (generally, they are inidate, findate parameter functions).
 
   This function does:
     r_finalmontant = inimontant * produtory
@@ -552,7 +556,7 @@ def calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
   return calc_finalmontant_w_1inimontant_2iridxlist_3partitionmonths(
     inimontant=inimontant,
     iridxlist=iridxlist,
-    partitionmonths=partitionmonths
+    monthpartition=partitionmonths
   )
 
 

@@ -181,12 +181,27 @@ def mk_partition_inidate_findate_as_refms_n_ndays_tlist(
 def mk_partition_inidate_findate_as_ndays_n_refms_tlist(
     inidate: datetime.date, findate: datetime.date
   ) -> list[tuple[int, datetime.date]]:
+  """
+  It swaps left-right each tuple element in the list.
+  """
   partition = mk_partition_inidate_findate_as_refms_n_ndays_tlist(
     inidate=inidate, findate=findate
   )
   # swap/invert the tuple
   r_partition = [(b, a) for a, b in partition]
   return r_partition
+
+
+def mk_partition_as_ndays_n_refms_tlist_fr_a_nonordered_datelist(
+    dates: list[datetime.date]
+  ) -> list[tuple[int, datetime.date]]:
+  monthpartition = []
+  for pdate in dates:
+    ndays_in_month = pdate.day
+    refmonth = make_refmonth_or_raise(pdate)
+    days_n_refmonth = (ndays_in_month, refmonth)
+    monthpartition.append(days_n_refmonth)
+  return monthpartition
 
 
 def find_dateborders_fr_ndayslist_n_refmonths(
@@ -559,6 +574,46 @@ def generate_monthrange_allow_future(
 
 def get_monthrange_as_list(refmonth_ini: datetime.date | str, refmonth_fim: datetime.date | str) -> list[datetime.date]:
   return list(generate_monthrange(refmonth_ini, refmonth_fim))
+
+
+def calc_fractionlist_fr_monthpartition(
+    monthpartition: list[tuple[int, datetime.date]]
+  ) -> list[Decimal]:
+  """
+  Calculates the monthdays fractions derived from monthpartition.
+
+  A monthpartition is a tuple list in which the tuple contains (n_of_used_days, refmonth)
+  The fractionlist is a number list that represents the 'used days month's fraction' across each month.
+
+  Example:
+    Suppose the following monthpartition:
+      monthpartition = [
+        (15,  mkrm('2026-04')),  # meaning 15 'used' days in April 2026 (year in here does change things...)
+        (3, mkrm('2026-01')),  # meaning 3 'used' days in January 2026
+      ]
+    Its fractionlist will be:
+      fractionlist = [ 15 / 30,  3 / 31] = [0.5, 0.09677...]
+    That is, the fraction is the used days amount divided by total days in month.
+    Notice April has 30 days and January 31 days.
+  """
+  monthsfractions = []
+  for partitionmonth in monthpartition:
+    ndays, refmonth = partitionmonth
+    _, ndaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
+    monthsfraction = Decimal(ndays) / Decimal(ndaysinmonth)
+    monthsfractions.append(monthsfraction)
+  return monthsfractions
+
+
+def calc_fractionlist_wi_1inidate_2findate(
+    inidate: datetime.date, findate: datetime.date
+  ) -> list[Decimal]:
+  """
+  Calculates the monthdays fractions derived from (a monthpartition derived from) initial date and final date.
+  @see docstr for the previous function.
+  """
+  monthpartition = mk_partition_inidate_findate_as_ndays_n_refms_tlist(inidate, findate)
+  return calc_fractionlist_fr_monthpartition(monthpartition)
 
 
 def make_refmonth_list_fr_refmonth_plus_n(refmonth_ini: datetime.date | str, n_ahead: int) -> list[datetime.date]:
