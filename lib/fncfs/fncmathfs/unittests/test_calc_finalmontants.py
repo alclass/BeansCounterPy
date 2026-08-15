@@ -293,12 +293,12 @@ class TestCase1(unittest.TestCase):
     byhandret_incrfactor = (1+t[0][0])**t[0][1]
     byhandret_incrfactor *= (1+t[1][0])**t[1][1]
     byhandret_incrfactor *= (1+t[2][0])**t[2][1]
-    ret_incrfactor = fm_mnts.calc_multiplicationfactor_for_fm_w_1param_iridx_n_exponent_tuplelist(
+    ret_incrfactor = fm_mnts.calc_multiplicationfactor_for_fm_w_1tuplelist_iridx_n_exponent(
       tuplelist_iridx_n_expo
     )
     self.assertEqual(ret_incrfactor, byhandret_incrfactor)
     inimontant = 500 * d1
-    ret_incr_amount = fm_mnts.calc_increase_amount_w_1param_iridx_n_exponent_tuplelist(
+    ret_incr_amount = fm_mnts.calc_increase_amount_w_1tuplelist_iridx_n_exponent(
       inimontant, tuplelist_iridx_n_expo
     )
     # ======================
@@ -379,7 +379,7 @@ class TestCase1(unittest.TestCase):
     # hypothesis 7-4 -> compare ... self.assertEqual(byhand_finalmontant, ret_finalmontant_direct)
     # ======================
     byhand_finalmontant = inimontant * byhand_multfactor_for_fm
-    _, quinhoes1 = fm_mnts.calc_finalmontant_w_1inimontant_2iridx_3monthpartition(
+    _, quinhoes1 = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3monthpartition(
       inimontant=inimontant,
       ir_idx=ir_idx,
       monthpartition=monthpartition,
@@ -404,7 +404,7 @@ class TestCase1(unittest.TestCase):
     inimontant, ir_idx = 3 * d1, d1 / 10
     iridxlist = [ir_idx, ir_idx]
     # byhand_finalmontant = inimontant * byhand_multfactor_for_fm
-    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finalmontant_w_1inimontant_2iridxlist_3partitionmonths(
+    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
       inimontant=inimontant, iridxlist=iridxlist, monthpartition=monthpartition,
     )
     self.assertEqual(quant(ret_finalmontant_direct, 2), quant(byhand_finalmontant, 2))
@@ -428,7 +428,7 @@ class TestCase1(unittest.TestCase):
     d1  = decimal_one
     inimontant, ir_idx = 3 * d1, d1 / 10
     iridxlist = [ir_idx, ir_idx]
-    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finalmontant_w_1inimontant_2iridxlist_3partitionmonths(
+    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
       inimontant=inimontant, iridxlist=iridxlist, monthpartition=monthpartition,
     )
     increase_amounts_by_quinhoes = sum([t[0] for t in quinhoes])
@@ -475,7 +475,7 @@ class TestCase1(unittest.TestCase):
     )
     iridxlist = [ir_idx, ir_idx]
     monthpartition = [(15,  mkdt('2026-04')), (3, mkdt('2026-01')),]
-    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finalmontant_w_1inimontant_2iridxlist_3partitionmonths(
+    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
       inimontant=inimontant_1, iridxlist=iridxlist, monthpartition=monthpartition,
     )
     increase_amounts_by_quinhoes = Decimal(sum([t[0] for t in quinhoes]))

@@ -78,7 +78,7 @@ def adhoctest4():
   print('byhand_multfactor_for_fm', byhand_multfactor_for_fm)
   final_montant = inimontant * byhand_multfactor_for_fm
   print('final montant', final_montant)
-  ret_finalmontant_direct, quinhoes1 = fm_mnts.calc_finalmontant_w_1inimontant_2iridx_3monthpartition(
+  ret_finalmontant_direct, quinhoes1 = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3monthpartition(
     inimontant=inimontant,
     ir_idx=ir_idx,
     monthpartition=monthpartition,
