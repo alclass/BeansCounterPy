@@ -5,6 +5,7 @@ To import it:
   import lib.fncfs.fncmathfs.finance_math_fs as fncmath  # fncmath.calc_ir_incrfact_f_mora_w_idx_n_expo()
 """
 import functools
+import math
 import operator
 from decimal import Decimal
 import calendar
@@ -50,9 +51,51 @@ def calc_multiplier_for_fm_intrstrt_w_1iridx_2expo(
   return multiplier
 
 
-def calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(
-    ir_idx: Decimal, exponent: Decimal
+def calc_inv_exponent_w_1iridx_2multiplierforincrease(ir_idx: Decimal, mult_for_incr: Decimal) -> Decimal:
+  numerator = 1 + mult_for_incr
+  denominator = 1 + ir_idx
+  exponent = math.log(numerator) / math.log(denominator)
+  return Decimal(exponent)
+
+
+def calc_inv_exponent_w_1iridx_2multiplierforfm(ir_idx: Decimal, mult_for_fm: Decimal) -> Decimal:
+  mult_for_incr = mult_for_fm - 1
+  return calc_inv_exponent_w_1iridx_2multiplierforincrease(ir_idx, mult_for_incr)
+
+
+def calc_inv_exponent_w_1finmontant_2inimontant_3iridx(
+    finmontant:Decimal, inimontant: Decimal, ir_idx: Decimal
   ) -> Decimal:
+  mult_for_fm = finmontant / inimontant
+  return calc_inv_exponent_w_1iridx_2multiplierforfm(ir_idx=ir_idx, mult_for_fm=mult_for_fm)
+
+
+def calc_inv_inimontant_w_1finmontant_2iridx_3exponent(
+    finmontant:Decimal, ir_idx: Decimal, exponent: Decimal
+  ) -> Decimal:
+  mult_for_fm = calc_multiplier_for_fm_intrstrt_w_1iridx_2expo(ir_idx, exponent)
+  inimontant = finmontant / mult_for_fm
+  return inimontant
+
+
+def calc_inv_iridx_w_1exponent_2multiplierforincrease(exponent: Decimal, mult_for_incr: Decimal) -> Decimal:
+  ir_idx = (mult_for_incr + 1) ** (1  / exponent) - 1
+  return ir_idx
+
+
+def calc_inv_iridx_w_1exponent_2multiplierforfm(exponent: Decimal, mult_for_fm: Decimal) -> Decimal:
+  mult_for_incr = mult_for_fm - 1
+  return calc_inv_iridx_w_1exponent_2multiplierforincrease(exponent, mult_for_incr)
+
+
+def calc_inv_irdix_w_1finmontant_2inimontant_3exponent(
+    finmontant: Decimal, inimontant: Decimal, exponent: Decimal
+  ) -> Decimal:
+  mult_for_fm = finmontant / inimontant
+  return calc_inv_iridx_w_1exponent_2multiplierforfm(exponent=exponent, mult_for_fm=mult_for_fm)
+
+
+def calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(ir_idx: Decimal, exponent: Decimal) -> Decimal:
   """
   Calculates the multiplier by initial montant that gives the 'amount increase'.
       => fm = im * (1 + ir) ** exponent
@@ -100,7 +143,7 @@ def calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
   return increase_amount
 
 
-def calc_finalmontant_w_1inimontant_2iridx_3expo(
+def calc_finmontant_w_1inimontant_2iridx_3expo(
     inimontant: Decimal, ir_idx: Decimal, exponent: Decimal
   ) -> Decimal:
   """
@@ -137,7 +180,7 @@ def calc_finalmontant_w_1inimontant_2fixir_3varir_4monthsduration(
   except (ValueError, TypeError, decimal.InvalidOperation) as e:
     errmsg = f"fixir index ({fixir}) and/or varir ({varir}) are invalid: {e}"
     raise ValueError(errmsg)
-  return calc_finalmontant_w_1inimontant_2iridx_3expo(
+  return calc_finmontant_w_1inimontant_2iridx_3expo(
     inimontant=inimontant, ir_idx=ir_idx, exponent=monthsduration
   )
 
@@ -277,7 +320,7 @@ def calc_finalmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
     ndays = findate.day - inidate.day + 1
     _, totaldaysinmonth = calendar.monthrange(inidate.year, inidate.month)
     monthduration = Decimal(ndays / totaldaysinmonth)
-    r_finalmontant = calc_finalmontant_w_1inimontant_2iridx_3expo(
+    r_finalmontant = calc_finmontant_w_1inimontant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exponent=monthduration,
@@ -571,7 +614,7 @@ def adhoctest1():
   print(scrmsg)
   # ===============
   inimontant = Decimal(1000)
-  finalmontant = calc_finalmontant_w_1inimontant_2iridx_3expo(inimontant, ir_idx, exponent)
+  finalmontant = calc_finmontant_w_1inimontant_2iridx_3expo(inimontant, ir_idx, exponent)
   scrmsg = f"(dec res) input: inimontant={inimontant}, ir_idx={ir_idx:.04f}, exponent={exponent} | output finalmontant={finalmontant:.04f}"
   print(scrmsg)
   # ===============
@@ -601,6 +644,21 @@ def adhoctest2():
       finalmontant = {finalmontant:.02f}
       quinhoes = {quinhoes}
   """
+  print(scrmsg)
+  # ======== inverting to 'backexponent'
+  ir_idx, exponent = Decimal(.01), Decimal(2)
+  mult_for_incr = calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(ir_idx, exponent)
+  scrmsg = f"""calc_multiplier_for_increase_intrstrt_w_1iridx_2expo() input: ir_idx={ir_idx:.4f} | exponent={exponent:.4f}"""
+  scrmsg += f"""\n\t ouput: mult_for_incr={mult_for_incr:.4f}"""
+  print(scrmsg)
+  backexponent = calc_inv_exponent_w_1iridx_2multiplierforincrease(ir_idx, mult_for_incr)
+  scrmsg = f"""calc_exponent_w_1iridx_2multiplierforincrease() input: ir_idx={ir_idx:.4f} | mult_for_incr={mult_for_incr:.4f}"""
+  scrmsg += f"""\n\t ouput: backexponent={backexponent:.4f}"""
+  print(scrmsg)
+  # ======== inverting to 'back_ir_idx'
+  back_ir_idx = calc_inv_iridx_w_1exponent_2multiplierforincrease(exponent, mult_for_incr)
+  scrmsg = f"""calc_exponent_w_1iridx_2multiplierforincrease() input: exponent={exponent:.4f} | mult_for_incr={mult_for_incr:.4f}"""
+  scrmsg += f"""\n\t ouput: back_ir_idx={back_ir_idx:.4f}"""
   print(scrmsg)
 
 
