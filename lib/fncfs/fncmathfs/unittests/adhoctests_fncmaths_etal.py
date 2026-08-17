@@ -2,8 +2,8 @@ import functools
 import operator
 import random
 from decimal import Decimal, ROUND_HALF_EVEN
-import lib.fncfs.fncmathfs.fncmath_calc_finalmontants as fm_mnts  # fm_cmnts.calc_incrfactor_intrstrt_w_1iridx_2expo
-# import lib.datesetc.refmonth_fs as rmfs
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fm_mnts  # fm_cmnts.calc_incrfactor_intrstrt_w_1iridx_2expo
+import lib.datesetc.refmonth_fs as rmfs
 import lib.datesetc.datefs as dtfs
 mkdt = dtfs.make_date_or_raise
 DECIMAL_ONE = Decimal(1)
@@ -65,8 +65,10 @@ def func1():
   produtory = Decimal(produtory)
   return produtory
 
+
 def finm(im, i, e):
   return im * (1 + i) ** e
+
 
 def multip(i, e):
   return (1 + i) ** e
@@ -198,6 +200,52 @@ def adhoctest7() -> None:
   print('dectest =', dectest, ' | quantizer =', quantizer, ' | decquantd =', decquantd)
 
 
+def adhoctest8() -> None:
+  inidate, findate = mkdt('2026-1-15'), mkdt('2026-1-31')
+  d1 = DECIMAL_ONE
+  inimontant, ir_idx = 3 * d1, 10 * d1 / 100
+  iridxlist = [ir_idx]
+  ir_idx2 = 2 * ir_idx
+  iridxlist.append(ir_idx2)
+  finmontant_samemonth_1, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    inimontant=inimontant, ir_idx=ir_idx, inidate=inidate, findate=findate,
+  )
+  monthsfraction = (31 - 15 + 1) * d1 / 31  # (31-15+1) (used) days in the 31-day month
+  finmontant_by_direct_fn = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3expo(
+    inimontant=inimontant, ir_idx=ir_idx, exponent=monthsfraction,
+  )
+  increase_amount = finmontant_by_direct_fn - inimontant
+  increase_samemonth_1 =finmontant_samemonth_1 - inimontant
+  monthpartition_tuple = rmfs.make_monthpartition_tuple_fr_date(inidate, fr_beginning=False)
+  monthpartition = [monthpartition_tuple]
+  anothermonth_inidate = mkdt('2026-3-1')
+  anothermonth_findate = mkdt('2026-3-13')
+  finmontant_samemonth_2, anothermonth_quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    inimontant=finmontant_samemonth_1,
+    ir_idx=ir_idx2,
+    inidate=anothermonth_inidate,
+    findate=anothermonth_findate,
+  )
+  increase_samemonth_2 = finmontant_samemonth_2 - finmontant_samemonth_1
+  monthpartition_tuple = rmfs.make_monthpartition_tuple_fr_date(anothermonth_findate, fr_beginning=True)
+  monthpartition.append(monthpartition_tuple)
+  twostep_quinhoes = quinhoes + anothermonth_quinhoes
+  finmontant_by_monthpartition, twomonth_quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
+    inimontant=inimontant,
+    iridxlist=iridxlist,
+    monthpartition=monthpartition,
+  )
+  acc_piecemeal_fm = inimontant + increase_samemonth_1 + increase_samemonth_2
+  print('iridxlist', iridxlist)
+  print('monthpartition', monthpartition)
+  print('two_step_quinhoes', twostep_quinhoes)
+  print('twomonth_quinhoes', twomonth_quinhoes)
+  acc_piecemeal_fm = fm_mnts.sigfig(acc_piecemeal_fm, 10)
+  print('acc_piecemeal_fm', acc_piecemeal_fm)
+  print('finmontant_by_monthpartition', finmontant_by_monthpartition)
+  bool_dec_is_close = fm_mnts.dec_is_close(acc_piecemeal_fm, finmontant_by_monthpartition)
+  print('dec_is_close()', bool_dec_is_close)
+
 
 def process():
   """
@@ -212,4 +260,4 @@ if __name__ == '__main__':
   adhoctest2()
   adhoctest4()
   """
-  adhoctest7()
+  adhoctest8()

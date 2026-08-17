@@ -1,9 +1,13 @@
+"""
+lib/fncfs/fncmathfs/unittests/test_calc_finalmontants_etal.py
+  Unit-tests.
+"""
 from decimal import Decimal
 import functools
 import operator
 import unittest
-import lib.fncfs.fncmathfs.fncmath_calc_finalmontants as fm_mnts  # fm_cmnts.calc_incrfactor_intrstrt_w_1iridx_2expo
-import lib.fncfs.fncmathfs.unittests.adhoctests_fncmaths as adhoc  # adhoc.make_random_inimontants
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fm_mnts  # fm_cmnts.calc_incrfactor_intrstrt_w_1iridx_2expo
+import lib.fncfs.fncmathfs.unittests.adhoctests_fncmaths_etal as adhoc  # adhoc.make_random_inimontants
 import lib.datesetc.refmonth_fs as rmfs
 import lib.datesetc.datefs as dtfs
 mkdt = dtfs.make_date_or_raise
@@ -17,8 +21,8 @@ make_random_tuplelist_iridx_exponent = adhoc.make_random_tuplelist_iridx_exponen
 # CRITICAL: This hides the helper's internal traceback frames from the error output
 __unittest = True
 
-class TestCase1(unittest.TestCase):
 
+class TestCase1(unittest.TestCase):
 
   def assertDecimalIsClose(self, dec1: Decimal, dec2: Decimal, msg="in assertDecimalIsClose"):
     """Custom assertion to check decimal is close."""
@@ -201,7 +205,6 @@ class TestCase1(unittest.TestCase):
     )
     final_montant_direct = quant(final_montant_direct)
     self.assertEqual(final_montant_by_multiplication, final_montant_direct)  # compare "by mult" with direct-function
-
 
   def test_4_crossing_functions_back_n_forth(self) -> None:
     """
@@ -449,7 +452,7 @@ class TestCase1(unittest.TestCase):
     inimontant, ir_idx = 3 * d1, d1 / 10
     iridxlist = [ir_idx, ir_idx]
     # byhand_finalmontant = inimontant * byhand_multfactor_for_fm
-    ret_finalmontant_direct, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
+    ret_finalmontant_direct, quinhoes_samemonth_1 = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
       inimontant=inimontant, iridxlist=iridxlist, monthpartition=monthpartition,
     )
     self.assertEqual(quant(ret_finalmontant_direct, 2), quant(byhand_finalmontant, 2))
@@ -460,7 +463,7 @@ class TestCase1(unittest.TestCase):
     d1 = DECIMAL_ONE
     inimontant, ir_idx = 3 * d1, d1 / 10
     inidate, findate = mkdt('2026-1-15'), mkdt('2026-1-31')
-    finmontant_by_samemonth_fn, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    finmontant_samemonth_1, quinhoes_samemonth_1 = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=inimontant, ir_idx=ir_idx, inidate=inidate, findate=findate,
     )
     monthsfraction = (31-15+1) * d1 / 31  # (31-15+1) (used) days in the 31-day month
@@ -468,9 +471,39 @@ class TestCase1(unittest.TestCase):
       inimontant=inimontant, ir_idx=ir_idx, exponent=monthsfraction,
     )
     increase_amount = finmontant_by_direct_fn - inimontant
-    self.assertDecimalIsClose(increase_amount, quinhoes[0], msg="testing via exponent from samemonth")
-    self.assertDecimalIsClose(finmontant_by_direct_fn, finmontant_by_samemonth_fn, msg="testing via exponent from samemonth")
-
+    increase_samemonth_1 = quinhoes_samemonth_1[0]
+    self.assertDecimalIsClose(increase_amount, increase_samemonth_1, msg="testing via exponent from samemonth")
+    self.assertDecimalIsClose(finmontant_by_direct_fn, finmontant_samemonth_1, msg="testing via exponent from samemonth")
+    # ======================
+    # hypothesis 7-7 -> from the comparison above, now add 'anothermonth'
+    # give 'samemonth' another run, add the two, and then compare it with the 'direct' funcion
+    # ======================
+    inidate, findate = mkdt('2026-1-15'), mkdt('2026-1-31')
+    iridxlist = [ir_idx]
+    ir_idx2 = 2 * ir_idx
+    iridxlist.append(ir_idx2)
+    monthpartition_tuple = rmfs.make_monthpartition_tuple_fr_date(inidate, fr_beginning=False)
+    monthpartition = [monthpartition_tuple]
+    anothermonth_inidate = mkdt('2026-3-1')
+    anothermonth_findate = mkdt('2026-3-13')
+    finmontant_samemonth_2, quinhoes_samemonth_2 = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=finmontant_samemonth_1,
+      ir_idx=ir_idx2,
+      inidate=anothermonth_inidate,
+      findate=anothermonth_findate,
+    )
+    twostep_quinhoes = quinhoes_samemonth_1 + quinhoes_samemonth_2
+    increase_samemonth_2 = finmontant_samemonth_2 - finmontant_samemonth_1
+    monthpartition_tuple = rmfs.make_monthpartition_tuple_fr_date(anothermonth_findate, fr_beginning=True)
+    monthpartition.append(monthpartition_tuple)
+    finmontant_by_monthpartition, twomonth_quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
+      inimontant=inimontant,
+      iridxlist=iridxlist,
+      monthpartition=monthpartition,
+    )
+    acc_piecemeal_fm = inimontant + increase_samemonth_1 + increase_samemonth_2
+    self.assertDecimalIsClose(acc_piecemeal_fm, finmontant_by_monthpartition)
+    # self.assertEqual(twostep_quinhoes, twomonth_quinhoes)
 
   def test_8_with_quinhoes(self):
     """
@@ -490,9 +523,10 @@ class TestCase1(unittest.TestCase):
       inimontant=inimontant, iridxlist=iridxlist, monthpartition=monthpartition,
     )
     increase_amounts_by_quinhoes = Decimal(sum(quinhoes))
+    increase_amounts_by_quinhoes = fm_mnts.sigfig(increase_amounts_by_quinhoes)
     increase_amount_by_subtraction = ret_finalmontant_direct - inimontant
     # only 'one side' got quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
-    self.assertEqual(increase_amount_by_subtraction, q4(increase_amounts_by_quinhoes))
+    self.assertEqual(increase_amount_by_subtraction, increase_amounts_by_quinhoes)
     # ======================
     # hypothesis 8-2 -> compare ret_multfactor_for_incr from the function above and the one below
     # ======================
@@ -537,7 +571,8 @@ class TestCase1(unittest.TestCase):
     # hypothesis 8-5 -> continuing from the latter, verify final_montant on the 2 sides (piecemeal and monthpartition)
     # ======================
     piecemeal_finalmontant = inimontant_2 + increase_parcel_2
-    self.assertEqual(ret_finalmontant_direct, q4(piecemeal_finalmontant))
+    piecemeal_finalmontant = fm_mnts.sigfig(piecemeal_finalmontant)
+    self.assertEqual(ret_finalmontant_direct, piecemeal_finalmontant)
     # ======================
     # hypothesis 8-5 -> for a longer/larger and random quinhoes, compare it to function results
     #   self.assertEqual(aggregate_incr_amount, quinhoes)
@@ -561,7 +596,6 @@ class TestCase1(unittest.TestCase):
       )
       exp_incr_amt = Decimal(sum(byhand_quinhoes))
       self.assertDecimalIsClose(exp_incr_amt, ret_incr_amt)
-
 
   def test_9_invert_exponent_etal(self):
     """

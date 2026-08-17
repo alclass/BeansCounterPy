@@ -168,6 +168,61 @@ def partition_monthlydays_wi_monthrange(inidate: datetime.date, findate: datetim
   return outlist
 
 
+def make_monthpartition_tuple_w_2dates(
+    inidate: datetime.date | str, findate: datetime.date
+  ) -> tuple[int, datetime.date]:
+  inidate = dtfs.make_date_or_raise(inidate)
+  findate = dtfs.make_date_or_raise(findate)
+  if (inidate.year, inidate.month) != (findate.year, findate.month):
+    errmsg = f"Error: {inidate} should be in the same month as {findate}"
+    raise ValueError(errmsg)
+  if inidate > findate:
+    tmpdate = inidate
+    findate = inidate
+  ndays = findate.day - inidate.day + 1
+  refmonth = make_next_refmonth_or_raise(findate)
+  return ndays, refmonth
+
+
+def calc_monthsfraction_from_monthpartition_tuple(
+    monthpartition_tuple: tuple[int, datetime.date]
+  ) -> Decimal:
+  ndays, refmonth = monthpartition_tuple
+  ndays = int(ndays)
+  refmonth = make_next_refmonth_or_raise(refmonth)
+  _, ndaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
+  monthsfraction = Decimal(ndays) / ndaysinmonth
+  return monthsfraction
+
+
+def make_lastmonthsday_date(pdate: datetime.date | str) -> datetime.date:
+  refmonth = make_refmonth_or_raise(pdate)
+  _, lastdayinmonth = calendar.monthrange(refmonth.year, refmonth.month)
+  y, m, d = refmonth.year, refmonth.month, lastdayinmonth
+  lastdayinmonthdate = datetime.date(year=y, month=m, day=d)
+  return lastdayinmonthdate
+
+
+def make_monthpartition_tuple_fr_date(
+    pdate: datetime.date | str, fr_beginning: bool = True, retried: bool = False,
+  ) -> tuple[int, datetime.date]:
+  if isinstance(pdate, datetime.date):
+    day = pdate.day
+    refmonth = make_refmonth_or_raise(pdate)
+    if fr_beginning:
+      ndays = day
+    else:
+      _, ndaysinmonth = calendar.monthrange(pdate.year, pdate.month)
+      ndays = ndaysinmonth - pdate.day + 1
+    return ndays, refmonth
+  if pdate is None or retried:
+    errmsg = f"pdate ({pdate}) cannot be None"
+    raise ValueError(errmsg)
+    # return None, None
+  odate = dtfs.make_date_or_raise(pdate)
+  return make_monthpartition_tuple_fr_date(odate, fr_beginning, retried=True)
+
+
 def mk_partition_inidate_findate_as_refms_n_ndays_tlist(
     inidate: datetime.date, findate: datetime.date
   ) -> list[tuple[datetime.date, int]]:

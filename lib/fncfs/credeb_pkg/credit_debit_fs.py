@@ -154,7 +154,7 @@ def debit_value_to_cred_account(value: Decimal, account: Decimal) -> tuple[Decim
 
 # noinspection PyTypeChecker
 def credit_value_to_accounts(
-    value: Decimal, cred_account: Decimal, deb_account: Decimal
+    value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple:
   if value is None:
     errmsg = f"Error: debit ({value}) is None"
@@ -162,16 +162,16 @@ def credit_value_to_accounts(
   if value < DECIMAL_ZERO:
     errmsg = f"credit_value ({value}) cannot be negative"
     raise ValueError(errmsg)
-  if cred_account is None and deb_account is None:
+  if cre_account is None and deb_account is None:
     errmsg = "both cred account and deb account cannot be None."
     raise ValueError(errmsg)
   # ========================
   if deb_account is None:
-    cred_account = credit_value_to_cred_account(value, cred_account)
-    return cred_account, None
+    cre_account = credit_value_to_cred_account(value, cre_account)
+    return cre_account, None
   remaining, deb_account = credit_value_to_deb_account(value, deb_account)
-  cred_account += remaining
-  return cred_account, deb_account
+  cre_account += remaining
+  return cre_account, deb_account
 
 
 def debit_value_to_accounts(

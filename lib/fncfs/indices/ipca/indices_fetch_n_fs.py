@@ -8,7 +8,7 @@ import lib.fncfs.indices.ipca.ipca_data as ipca
 from decimal import Decimal
 import datetime
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.fncmathfs.fncmath_calc_finalmontants as fmath  # fmath.get_ir_incrfact_f_mora_w_idx_n_expo
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fmath  # fmath.get_ir_incrfact_f_mora_w_idx_n_expo
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 
 

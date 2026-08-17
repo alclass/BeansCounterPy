@@ -17,6 +17,7 @@ import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICac
 # from lib.datesetc.refmonth_fs import make_refmonth_or_raise
 DECIMAL_ZERO = Decimal('0.00')
 DECIMAL_ONE = Decimal('1.0')
+SIGFIG = 12
 
 
 def dec_is_close(
@@ -37,8 +38,10 @@ def dec_is_close(
   return boolres
 
 
-def round_sigfigs(d: Decimal, sigfigs: int) -> Decimal:
+def round_sigfigs(d: Decimal, p_sigfig: int | None = None) -> Decimal:
   """Round a Decimal to a specific number of significant figures dynamically."""
+  if p_sigfig is None:
+    p_sigfig = SIGFIG
   if d.is_zero():
     return d
   # determine the exponent shift needed
@@ -48,7 +51,7 @@ def round_sigfigs(d: Decimal, sigfigs: int) -> Decimal:
   # current magnitude exponent
   mag = len_digits + exponent - 1
   # target exponent for desired significant figures
-  target_exp = mag - sigfigs + 1
+  target_exp = mag - p_sigfig + 1
   # quantize to the target exponent place value
   quantizer = Decimal('1').scaleb(target_exp)  # it makes the Decimal quantizer be 1e(target_exp) or 10**target_exp
   # when the quantizer decimal is applied, it's like a mask right to left
@@ -59,6 +62,9 @@ def round_sigfigs(d: Decimal, sigfigs: int) -> Decimal:
   newdec = d.quantize(quantizer, rounding=ROUND_HALF_EVEN)
   pass
   return newdec
+
+
+sigfig = round_sigfigs
 
 
 def quant(dec, n_decplaces=6):
@@ -484,15 +490,15 @@ def calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
     )
     quinhoes.append(increase_amount)
     ongoing_montant += increase_amount
-  r_finalmontant = ongoing_montant
+  finmontant = ongoing_montant
   # move this to the unit-tests
   piecemeal_increase_amounts = sum(quinhoes)
   back_finmontant = inimontant + piecemeal_increase_amounts
-  back_finmontant, r_finalmontant = q4(back_finmontant), q4(r_finalmontant)
-  if back_finmontant != r_finalmontant:
-    errmsg = f"Error: back_finmontant {back_finmontant} != r_finalmontant {r_finalmontant}"
+  back_finmontant, finmontant = sigfig(back_finmontant), sigfig(finmontant)
+  if back_finmontant != finmontant:
+    errmsg = f"Error: back_finmontant {back_finmontant} != r_finalmontant {finmontant}"
     raise ValueError(errmsg)
-  return r_finalmontant, quinhoes
+  return finmontant, quinhoes
 
 
 def calc_finmontant_w_1inimontant_2fixir_fetchipca_3monthpartition(

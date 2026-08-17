@@ -3,19 +3,80 @@ lib/fncfs/credeb_pkg/pay_by_quinhoes_etc.py
   Contains functions that pay a debt directly or by "quinhões"
     (i.e., peacemealwise when monthly mora is partitioned, i.e., it happens across more than one month)
 """
+import calendar
 from decimal import Decimal, Context, ROUND_HALF_UP
 import decimal
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
+from dateutil import relativedelta
+import pydantic
 import lib.datesetc.datefs as dtfs
 import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_value_to_accounts
 # for fncfs.calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fncfs
-from lib.datesetc.datefs import inspect_n_get_sepchar_in_strdate
-
-from collections.abc import Iterable
-
 DECIMAL_ZERO = Decimal('0')
+DECIMAL_ONE = Decimal('1')
+
+
+class SameMonthMora(pydantic.BaseModel):
+  fromdate: datetime.date
+  todate: datetime.date  # todate is also incidencedate
+  prevalue: Decimal
+  fix_ir: Decimal
+  has_ipca: bool = True
+  _var_ir: Optional[Decimal] = None
+  _postvalue: Optional[Decimal] = None
+
+  def explains(self) -> str:
+    ir_pct = self.ir_idx * 100
+    ir_pct = f"{ir_pct:.2f}%"
+    line = f"em {self.todate} houve incidência de mora sobre {self.prevalue:.2f} por {self.moradays} dias à taxa {ir_pct} gerando incremento de {self.increase:.2f} (subtotal  {self.postvalue:.2f})"
+    return line
+
+  @property
+  def moradays(self):
+    deltadays = self.todate - self.fromdate
+    _moradays = deltadays.days + 1
+    return _moradays
+
+  @property
+  def increase(self) -> Decimal:
+    return self.postvalue - self.prevalue
+
+  @property
+  def ipca_dec(self) -> Decimal:
+    return DECIMAL_ZERO
+
+  @property
+  def var_ir(self) -> Decimal:
+    if not self.has_ipca:
+      return DECIMAL_ZERO
+    return self.ipca_dec
+
+  @property
+  def ir_idx(self) -> Decimal:
+    return self.fix_ir + self.var_ir
+
+  @property
+  def postvalue(self) -> Decimal:
+    if self._postvalue is None:
+      self._postvalue, increase = fncfs.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+        inimontant=self.prevalue,
+        ir_idx=self.ir_idx,
+        inidate=self.fromdate,
+        findate=self.todate,
+      )
+    return self._postvalue
+
+  def __str__(self):
+    fr, to = self.fromdate, self.todate
+    ostr = f"SameMonthMora: fr={fr} to={to} ndays={self.moradays}"
+    preval, posval = self.prevalue, self.postvalue
+    ostr += f"\n\t preval={preval:.2f} | posval={posval:.2f} | incr={self.increase:.2f}"
+    return ostr
+
+
 
 
 @dataclass
@@ -33,6 +94,84 @@ class PaymentInterfaceDateNValue:
   def __str__(self):
     ostr = f"payvalue={self.value} on {self.date}"
     return ostr
+
+
+class PaymentCrediter(pydantic.BaseModel):
+  refmonth: datetime.date
+  monthspayvalue: Decimal
+  dueday: int
+  fix_ir: Decimal
+  has_ipca: bool = True
+  _ipca_dec: Decimal
+  payments: list[PaymentInterfaceDateNValue] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  mora_objs: list[PaymentInterfaceDateNValue] = pydantic.dataclasses.Field(default_factory=lambda: [])
+
+  def add_payment(self, payment):
+    self.payments.append(payment)
+
+  @property
+  def cur_refmonth(self):
+    """
+    This is the month when payment is due in an 'open window date range'
+    """
+    return self.refmonth + relativedelta.relativedelta(months=1)
+
+  @property
+  def duedate(self):
+    year, month = self.cur_refmonth.year, self.cur_refmonth.month
+    day = self.dueday
+    return datetime.date(year=year, month=month, day=day)
+
+  @property
+  def open_pay_days_fr_to(self) -> tuple[int, int]:
+    dayfrom = 1
+    dayto = self.dueday
+    return dayfrom, dayto
+
+  @property
+  def open_pay_daterange(self) -> tuple[datetime.date, datetime.date]:
+    firstdate = self.curmonthsfirstdate
+    duedate = self.duedate
+    return firstdate, duedate
+
+  @property
+  def curmonthslastday(self):
+    _, ndaysinmonth = calendar.monthrange(self.cur_refmonth)
+    return ndaysinmonth
+
+  @property
+  def curmonthslastdate(self):
+    year, month = self.cur_refmonth.year, self.cur_refmonth.month
+    day = self.cur_refmonth.day
+    year, month = self.cur_refmonth.year, self.cur_refmonth.month
+    return datetime.date(year=year, month=month, day=day)
+
+  @property
+  def curmonthsfirstdate(self):
+    year, month = self.cur_refmonth.year, self.cur_refmonth.month
+    day = 1
+    year, month = self.cur_refmonth.year, self.cur_refmonth.month
+    return datetime.date(year=year, month=month, day=day)
+
+  @property
+  def ir_idx(self):
+    fix_plus_var_ir_dec = self.fix_ir + self.ipca_dec
+    return fix_plus_var_ir_dec
+
+  @property
+  def ipca_dec(self):
+    if self._ipca_dec is None:
+      ipcacacher = 1
+
+  def process_payments_in_month(self):
+    process_payments_in_month(
+      valor_a_pagar_como_debito = self.monthspayvalue,
+      payments = self.payments,
+      duedate = self.duedate,
+      retrodate_ifinmora = self.curmonthsfirstdate,
+      postdate_ifinmora = self.curmonthslastdate,
+      fix_plus_var_ir_dec = self.ir_idx,  # the variable parcel, if mora happens, is fetched 'downstream'
+    )
 
 
 def pay_monthsbill_by_quinhao_considering_mora(
@@ -278,6 +417,20 @@ def adhoctest1():
   print(scrmsg)
 
 
+def adhoctest2():
+  fromdate = datetime.date(2026, 4, 1)
+  todate = datetime.date(2026, 4, 13)
+  d1 = DECIMAL_ONE
+  mora = SameMonthMora(
+    fromdate=fromdate,
+    todate=todate,
+    fix_ir=Decimal(0.02),
+    prevalue= 100 * d1,
+  )
+  print(mora)
+  print(mora.explains())
+
+
 def process():
   pass
 
@@ -286,4 +439,4 @@ if __name__ == "__main__":
   """
   process()
   """
-  adhoctest1()
+  adhoctest2()
