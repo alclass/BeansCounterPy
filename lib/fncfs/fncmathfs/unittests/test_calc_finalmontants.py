@@ -1,22 +1,35 @@
+from decimal import Decimal
+import functools
+import operator
 import unittest
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants as fm_mnts  # fm_cmnts.calc_incrfactor_intrstrt_w_1iridx_2expo
-from decimal import Decimal, ROUND_HALF_UP
+import lib.fncfs.fncmathfs.unittests.adhoctests_fncmaths as adhoc  # adhoc.make_random_inimontants
 import lib.datesetc.refmonth_fs as rmfs
-decimal_zero = Decimal('0.0')
-decimal_one = Decimal('1.0')
-
-
-def quant(decvalue: Decimal, n_places: int = 3):
-  """
-  Quantizes "decimal" to 6 decimal places and set rounding as ROUND_HALF_UP.
-  Useful to compare values in the context here with assertEqual
-  """
-  str_decplaces = '0.' + '0' * (n_places - 1) + '1'
-  precision = Decimal(str_decplaces)
-  return decvalue.quantize(precision, rounding=ROUND_HALF_UP)
-
+import lib.datesetc.datefs as dtfs
+mkdt = dtfs.make_date_or_raise
+mkrm = rmfs.make_refmonth_or_raise
+DECIMAL_ONE = Decimal('1.0')
+quant = fm_mnts.quant
+q4 = fm_mnts.q4
+q8 = fm_mnts.q8
+make_random_inimontants = adhoc.make_random_inimontants
+make_random_tuplelist_iridx_exponent = adhoc.make_random_tuplelist_iridx_exponent
+# CRITICAL: This hides the helper's internal traceback frames from the error output
+__unittest = True
 
 class TestCase1(unittest.TestCase):
+
+
+  def assertDecimalIsClose(self, dec1: Decimal, dec2: Decimal, msg="in assertDecimalIsClose"):
+    """Custom assertion to check decimal is close."""
+    boolval =  fm_mnts.dec_is_close(dec1, dec2)
+    if not boolval:
+      # Create a descriptive, standard error message
+      err_standard_msg = f"{dec1} is not close to {dec2}"
+      # Combine your standard message with the user's optional custom message
+      full_msg = self._formatMessage(msg, err_standard_msg)
+      # Trigger the official test failure
+      self.fail(full_msg)
 
   def test_1_multiplier_for_fm(self) -> None:
     """
@@ -28,7 +41,7 @@ class TestCase1(unittest.TestCase):
     # hypothesis 1-1 -> ir_idx, exponent = 1, 1
     # multiplier_for_fm=(1+1)**1=2
     # ======================
-    d1, d2 = decimal_one, 2 * decimal_one
+    d1, d2 = DECIMAL_ONE, 2 * DECIMAL_ONE
     ir_idx, exponent = d1, d1
     byhand_mult_fo_fm = (1 + ir_idx) ** exponent  # (1+1)**1=2
     exp_mult_fo_fm = d2
@@ -81,13 +94,14 @@ class TestCase1(unittest.TestCase):
     # (1+0.1)**2=1.21
     # 1.21 - 1 = 0.21 (21%)
     # ======================
-    d0, d1 = decimal_zero, decimal_one
+    # d0, d1 = decimal_zero, decimal_one
+    d1 = DECIMAL_ONE
     d2 = 2 * d1
     ir_idx, exponent = d1/10, d2
     byhand_mult_fo_incr = (1 + ir_idx) ** exponent - d1
     exp_mult_fo_incr = Decimal('0.21')
     self.assertEqual(exp_mult_fo_incr, byhand_mult_fo_incr)
-    ret_mult_fo_incr = fm_mnts.calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(
+    ret_mult_fo_incr = fm_mnts.calc_multiplier_for_increase_w_1iridx_2expo(
       ir_idx=ir_idx,
       exponent=exponent
     )
@@ -104,7 +118,7 @@ class TestCase1(unittest.TestCase):
     byhand_mult_fo_incr = byhand_mult_fo_im - 1
     exp_mult_fo_incr = 15 * d1
     self.assertEqual(exp_mult_fo_incr, byhand_mult_fo_incr)
-    ret_mult_fo_incr = fm_mnts.calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(
+    ret_mult_fo_incr = fm_mnts.calc_multiplier_for_increase_w_1iridx_2expo(
       ir_idx=ir_idx,
       exponent=exponent
     )
@@ -112,19 +126,20 @@ class TestCase1(unittest.TestCase):
 
   def test_3_combine_the_2_multipliers(self) -> None:
     """
-    The final montant can be taken either by adding 'increase' to inimontant or multiplying multiplier_for_fm:
-      a) find the 'increase' and then add it to inimontant giving finalmontant;
-      b) find the 'multiplier_for_fm' and then multiplies it by inimontant giving finalmontant;
-    And/Or calculate it directly by its function direct function.
+    The final montant can be taken either by adding 'increase' to inimontant
+      or multiplying multiplier_for_fm by inimontant:
+        a) find the 'increase' and then add it to inimontant giving finalmontant;
+        b) find the 'multiplier_for_fm' and then multiplies it by inimontant giving finalmontant;
+    And/or calculate it directly by its direct function.
     """
     # ======================
     # hypothesis 3-1 -> let's take: inimontant, ir_idx, exponent = 1, 0.1, 2
-    # (here multiplier_for_increase is less than 1 [0.21])
+    # (here multiplier_for_increase is less than 1 -> (1 + 0.1) ** 2 - 1 = 0.21)
     # multiplier_for_fm = (1+0.1)**2=1.21 (because inimontant=1, finalmontant in this case is also 1.21)
     # multiplier_for_incr = 1.21 - 1 = 0.21 (the other approach [addition] -> 1 + 0.21 = 1.21)
     # Let's calculate fm (final montant) using the two approaches and compare the 2 results
     # ======================
-    d1 = decimal_one
+    d1 = DECIMAL_ONE
     onetenth, d2 = d1/10, 2 * d1
     inimontant, ir_idx, exponent = d1, onetenth, d2
     exp_final_montant = Decimal(1.21)  # direct value
@@ -132,7 +147,7 @@ class TestCase1(unittest.TestCase):
     byhand_final_montant = (1 + ir_idx) ** exponent  # do the math expression
     byhand_final_montant = quant(byhand_final_montant)
     self.assertEqual(exp_final_montant, byhand_final_montant)  # compare "by hand" with expected
-    increase_amount = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+    increase_amount = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exponent=exponent
@@ -164,7 +179,7 @@ class TestCase1(unittest.TestCase):
     byhand_final_montant = inimontant * (1 + ir_idx) ** exponent  # do the math expression
     byhand_final_montant = quant(byhand_final_montant)
     self.assertEqual(exp_final_montant, byhand_final_montant)  # compare "by hand" with expected
-    increase_amount = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+    increase_amount = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exponent=exponent
@@ -190,18 +205,18 @@ class TestCase1(unittest.TestCase):
 
   def test_4_crossing_functions_back_n_forth(self) -> None:
     """
-    Crossing related functions back and forth.
+    Verifying 'crossing' related functions 'back and forth'.
 
     For one example:
       we can test calculations of finalmontant 'crossing' the 2 functions below:
-        calc_incr_amt_intrstrt_w_1inimomtant_2iridx_3expo()
+        calc_increase_amount_w_1inimomtant_2iridx_3expo()
         calc_finalmontant_w_1inimontant_2iridx_3expo()
     """
     # ======================
     # hypothesis 4-1 -> let's take: inimontant, ir_idx, exponent = 1, 0.1, 2
     # and compare calculations of fm (final montant) with addition and the direct function
     # ======================
-    d1 = decimal_one
+    d1 = DECIMAL_ONE
     onetenth, d2 = d1/10, 2 * d1
     inimontant, ir_idx, exponent = d1, onetenth, d2
     exp_final_montant = Decimal(1.21)  # direct value
@@ -209,7 +224,7 @@ class TestCase1(unittest.TestCase):
     byhand_final_montant = (1 + ir_idx) ** exponent  # do the math expression
     byhand_final_montant = quant(byhand_final_montant)
     self.assertEqual(exp_final_montant, byhand_final_montant)
-    ret_increase_amount = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+    ret_increase_amount = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
       exponent=exponent,
@@ -227,18 +242,20 @@ class TestCase1(unittest.TestCase):
 
   def test_5_exponent_series(self) -> None:
     """
-    Unit-test with 'produtory' i.e., with a list of exponents (the multipliers are multiplied)
-      or a summing of the exponents
+    Unit-test with 'produtory' i.e., with a list of exponents (the multipliers are multiplied up)
+      (or a summing of the exponents before exponentiation)
       (multiplying to summed exponents is the same as multiplying the factors each raised to its own exponent):
         example:
-          (a ** b) * (a ** c) = a ** (b + c)
-          (2 ** 3) * (2 ** 4) = 8 * 16 = 128
-          2 ** (3 + 4) = 2 ** 7 = 128
+          a) with literals
+            (a ** b) * (a ** c) = a ** (b + c)
+          b) with numbers
+            (2 ** 3) * (2 ** 4) = 8 * 16 = 128
+            2 ** (3 + 4) = 2 ** 7 = 128
     """
     # ======================
     # hypothesis 5-1 -> inimontant, ir_idx = 1, 1/10; exponent_series = [2,  4]
     # ======================
-    d1 = decimal_one
+    d1 = DECIMAL_ONE
     onetenth, d2 = d1/10, 2 * d1
     inimontant, ir_idx = d1, onetenth
     exponent_series = [d2,  2 * d2]
@@ -283,7 +300,7 @@ class TestCase1(unittest.TestCase):
     # ======================
     # hypothesis 6-1 -> tuplelist_iridx_n_expo = [(0.1, 0.5), (0.075, 0.75), (0.11, 0.6667)]
     # ======================
-    d1 = decimal_one
+    d1 = DECIMAL_ONE
     tuplelist_iridx_n_expo = [
       (Decimal(.1), Decimal(.5)),
       (Decimal(0.075), Decimal(.75)),
@@ -293,12 +310,17 @@ class TestCase1(unittest.TestCase):
     byhandret_incrfactor = (1+t[0][0])**t[0][1]
     byhandret_incrfactor *= (1+t[1][0])**t[1][1]
     byhandret_incrfactor *= (1+t[2][0])**t[2][1]
-    ret_incrfactor = fm_mnts.calc_multiplicationfactor_for_fm_w_1tuplelist_iridx_n_exponent(
+    ret_incrfactor, multfactors = fm_mnts.calc_multiplicationfactor_for_fm_w_1tuplelist_iridx_n_exponent(
       tuplelist_iridx_n_expo
     )
+    ret_incrfactor, byhandret_incrfactor = q8(ret_incrfactor), q8(byhandret_incrfactor)
     self.assertEqual(ret_incrfactor, byhandret_incrfactor)
+    multfactors_multipliedup = functools.reduce(operator.mul, multfactors, 1)
+    # noinspection bad-argument-type
+    multfactors_multipliedup = Decimal(multfactors_multipliedup)
+    self.assertEqual(ret_incrfactor, q8(multfactors_multipliedup))
     inimontant = 500 * d1
-    ret_incr_amount = fm_mnts.calc_increase_amount_w_1tuplelist_iridx_n_exponent(
+    ret_incr_amount, quinhoes = fm_mnts.calc_increase_amount_w_1inimontant_2tuplelist_iridx_n_exponent(
       inimontant, tuplelist_iridx_n_expo
     )
     # ======================
@@ -306,14 +328,29 @@ class TestCase1(unittest.TestCase):
     # ======================
     finalmontant_by_sum = inimontant + ret_incr_amount
     finalmontant_by_mul = inimontant * byhandret_incrfactor
-    self.assertEqual(finalmontant_by_sum, finalmontant_by_mul)
+    self.assertEqual(q4(finalmontant_by_sum), q4(finalmontant_by_mul))
+    total_quinhoes = sum(quinhoes)
+    self.assertEqual(ret_incr_amount, total_quinhoes)
 
   def test_7_with_monthpartition(self):
     """
-    First off: this test has a problem with decimal places, some asserts had 2 or 3 decimal places to pass.
-    TODO try to find why the comparison was so 'tight' in terms of decimal places.
+
+    The first explanation here has to do with decimal places (and their problems with asserting equality)
+    =====================
+    This unit-test had problems with decimal places, some assertions had 2 or 3 decimal places to pass,
+      and this precision-setting was done with dec.quantize().
+      This solution failed to be proper for numbers on different scales (too big or too small).
+
+    After this, one solution has been found (the is_close()) and one test (at the time of writing)
+      is already asserting with custom-method assertDecimalIsClose().
+    In time, the idea is to update all assertions that got 'quantized' with the assertDecimalIsClose(),
+      and avoid using the quantize() approach.
+    There is also one further initiative that uses sigfigs (significant figures).
+    The function for this one (sigfigs) is available in the same module as is
+      assertDecimalIsClose()'s underlying dec_is_close() function.
 
     What is a monthpartition?
+    =========================
       A month partition is a list of tuples which
          contains the numbers of 'used days' and their corresponding months (represented by 'refmonths' (*))
 
@@ -331,16 +368,15 @@ class TestCase1(unittest.TestCase):
     # ======================
     # hypothesis 7-1 -> with a monthpartition, compare multfactor_for_fm 'by hand' and by function
     # ======================
-    mkdt = rmfs.make_refmonth_or_raise
     monthpartition = [
-      (15,  mkdt('2026-04')),
-      (3, mkdt('2026-01')),
+      (15,  mkrm('2026-04')),
+      (3, mkrm('2026-01')),
     ]
     copied_monthpartition = monthpartition[:]
-    d1 = decimal_one
+    d1 = DECIMAL_ONE
     inimontant, ir_idx = 3 * d1, d1 / 10
     copied_inimontant = 3 * d1
-    exponents = [Decimal(15)/ Decimal(30), Decimal(3) / Decimal(31)]
+    exponents = [15 * d1 / 30, 3 * d1 / 31]
     byhand_multfactor_for_fm = (1 + ir_idx)**exponents[0]
     byhand_multfactor_for_fm *= (1 + ir_idx)**exponents[1]
     ret_multfactor_for_fm, quinhoes2 = fm_mnts.calc_multiplicationfactor_for_fm_w_1iridx_2monthpartition(
@@ -349,6 +385,7 @@ class TestCase1(unittest.TestCase):
     )
     byhand_multfactor_for_fm, ret_multfactor_for_fm = \
       quant(byhand_multfactor_for_fm), quant(ret_multfactor_for_fm)
+    # the 'two sides' got quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
     self.assertEqual(byhand_multfactor_for_fm, ret_multfactor_for_fm)
     # ======================
     # hypothesis 7-2 -> compare ... self.assertEqual(byhand_multfactor_for_incr, ret_multfactor_for_incr)
@@ -361,6 +398,7 @@ class TestCase1(unittest.TestCase):
     byhand_amount_increased = inimontant * byhand_multfactor_for_incr
     byhand_multfactor_for_fm = quant(byhand_multfactor_for_fm)
     ret_multfactor_for_incr = quant(ret_multfactor_for_incr)
+    # the 'two sides' got quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
     self.assertEqual(byhand_multfactor_for_incr, ret_multfactor_for_incr)
     # ======================
     # hypothesis 7-3 -> compare ... self.assertEqual(ret_amount_increased_by_mul, byhand_amount_increased)
@@ -373,6 +411,7 @@ class TestCase1(unittest.TestCase):
     )
     ret_amount_increased_by_mul = quant(ret_amount_increased_by_mul, 2)
     ret_increase_amount = quant(ret_increase_amount, 2)
+    # the 'two sides' got quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
     self.assertEqual(ret_amount_increased_by_mul, ret_increase_amount)
     self.assertEqual(ret_increase_amount, quant(byhand_amount_increased, 2))
     # ======================
@@ -387,18 +426,24 @@ class TestCase1(unittest.TestCase):
     self.assertEqual(copied_monthpartition, monthpartition)
     self.assertEqual(copied_inimontant, inimontant)
     self.assertEqual(ir_idx, d1/10)
-    byhand_finalmontant = quant(byhand_finalmontant)
-    # ret_finalmontant_direct = quant(ret_finalmontant_direct)
-    # self.assertEqual(byhand_finalmontant, ret_finalmontant_direct)
+    byhand_finalmontant = quant(byhand_finalmontant, 2)
+    ret_finalmontant = ret_increase_amount + inimontant
+    ret_finalmontant = quant(ret_finalmontant, 2)
+    # the 'two sides' got quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
+    self.assertEqual(byhand_finalmontant, ret_finalmontant)
     ret_finalmontant_by_sum = inimontant + ret_increase_amount
     ret_multfactor_for_fm, quinhoes1 = fm_mnts.calc_multiplicationfactor_for_fm_w_1iridx_2monthpartition(
       ir_idx=ir_idx,
       monthpartition=monthpartition,
     )
     ret_finalmontant_by_mul = inimontant * ret_multfactor_for_fm
-    self.assertEqual(quant(ret_finalmontant_by_sum, 2), quant(ret_finalmontant_by_mul, 2))
+    # one of them was set with 2 decimal places above, so the other will have too
+    ret_finalmontant_by_mul = quant(ret_finalmontant_by_mul, 2)
+    ret_finalmontant_by_sum = quant(ret_finalmontant_by_sum, 2)
+    # the 'two sides' got quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
+    self.assertEqual(q4(ret_finalmontant_by_sum), q4(ret_finalmontant_by_mul))
     # ======================
-    # hypothesis 7-4 -> compare ... quinhões
+    # hypothesis 7-5 -> compare ... quinhões
     # quinhoes have some differences: study them better so that we can unit-test them
     # ======================
     inimontant, ir_idx = 3 * d1, d1 / 10
@@ -408,86 +453,115 @@ class TestCase1(unittest.TestCase):
       inimontant=inimontant, iridxlist=iridxlist, monthpartition=monthpartition,
     )
     self.assertEqual(quant(ret_finalmontant_direct, 2), quant(byhand_finalmontant, 2))
+    # ======================
+    # hypothesis 7-6 -> compare the 'simple' case of calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth()
+    # because the quinhoes returned, for only one period, contains also its corresponding increase_amount
+    # ======================
+    d1 = DECIMAL_ONE
+    inimontant, ir_idx = 3 * d1, d1 / 10
+    inidate, findate = mkdt('2026-1-15'), mkdt('2026-1-31')
+    finmontant_by_samemonth_fn, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=inimontant, ir_idx=ir_idx, inidate=inidate, findate=findate,
+    )
+    monthsfraction = (31-15+1) * d1 / 31  # (31-15+1) (used) days in the 31-day month
+    finmontant_by_direct_fn = fm_mnts.calc_finmontant_w_1inimontant_2iridx_3expo(
+      inimontant=inimontant, ir_idx=ir_idx, exponent=monthsfraction,
+    )
+    increase_amount = finmontant_by_direct_fn - inimontant
+    self.assertDecimalIsClose(increase_amount, quinhoes[0], msg="testing via exponent from samemonth")
+    self.assertDecimalIsClose(finmontant_by_direct_fn, finmontant_by_samemonth_fn, msg="testing via exponent from samemonth")
+
 
   def test_8_with_quinhoes(self):
     """
-    Contains general tests with quinhoes.
-
-    Though there are many subtests in this test,
-      the direct quinhoes to quinhoes comparison is still missing.
-          self.assertEqual(quinhoes1, quinhoes2)
+    Contains general tests with quinhões (additive) or multiplier factors (multiplicative).
     """
     # ======================
     # hypothesis 8-1 -> verify that each quinhão in quinhões adds up to increase_amount
     # ======================
-    mkdt = rmfs.make_refmonth_or_raise
     monthpartition = [
-      (15,  mkdt('2026-04')),
-      (3, mkdt('2026-01')),
+      (15,  mkrm('2026-04')),
+      (3, mkrm('2026-01')),
     ]
-    d1  = decimal_one
+    d1  = DECIMAL_ONE
     inimontant, ir_idx = 3 * d1, d1 / 10
     iridxlist = [ir_idx, ir_idx]
     ret_finalmontant_direct, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
       inimontant=inimontant, iridxlist=iridxlist, monthpartition=monthpartition,
     )
-    increase_amounts_by_quinhoes = sum([t[0] for t in quinhoes])
+    increase_amounts_by_quinhoes = Decimal(sum(quinhoes))
     increase_amount_by_subtraction = ret_finalmontant_direct - inimontant
-    self.assertEqual(increase_amount_by_subtraction, increase_amounts_by_quinhoes)
+    # only 'one side' got quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
+    self.assertEqual(increase_amount_by_subtraction, q4(increase_amounts_by_quinhoes))
     # ======================
-    # hypothesis 8-2 -> verify that quinhões contains the dates in monthpartition
-    # ======================
-    refmonths_in_quinhoes = [val_n_rm[1] for val_n_rm in quinhoes]
-    refmonths_in_monthpartition = [val_n_rm[1] for val_n_rm in monthpartition]
-    self.assertEqual(refmonths_in_quinhoes, refmonths_in_monthpartition)
-    # ======================
-    # hypothesis 8-3 -> compare ret_multfactor_for_incr from the function above and the one below
+    # hypothesis 8-2 -> compare ret_multfactor_for_incr from the function above and the one below
     # ======================
     ret_multfactor_for_fm, multifactors_for_fm = fm_mnts.calc_multiplicationfactor_for_fm_w_1iridx_2monthpartition(
       ir_idx=ir_idx, monthpartition=monthpartition,
     )
     comp_multfactgor_for_fm = ret_finalmontant_direct / inimontant
-    self.assertEqual(comp_multfactgor_for_fm, ret_multfactor_for_fm)
+    self.assertEqual(q4(comp_multfactgor_for_fm), q4(ret_multfactor_for_fm))
     # ======================
     # hypothesis 8-3 -> compare and verify that quinhões is consistent with multiplicationfactors
-    # notice: when a function does not receive inimontant, it cannot 'know' quinhoes,
-    #   but it does 'multiplicationfactors'.
-    # So compare the consistency of quinhoes with multiplicationfactors.
     # ======================
-    # quinhoes[0][0] must be equal to inimontant * (multifactors_for_fm[0] - 1)
-    increase_amount_1 = quinhoes[0][0]
-    increase_amount_2 = inimontant * (multifactors_for_fm[0] - 1)
-    increase_amount_1, increase_amount_2 = quant(increase_amount_1), quant(increase_amount_2)
-    self.assertEqual(increase_amount_1, increase_amount_2)
+    increase_amount_via_quin = quinhoes[0]
+    increase_amount_via_mfact = inimontant * (multifactors_for_fm[0] - 1)
+    # set decimal places to 4 for the two
+    increase_amount_via_quin, increase_amount_via_mfact = q4(increase_amount_via_quin), q4(increase_amount_via_mfact)
+    self.assertEqual(increase_amount_via_quin, increase_amount_via_mfact)
     # ======================
     # hypothesis 8-4 -> simulate various (single) calculations and compare them with quinhões
     # ======================
     inimontant_1, ir_idx = 100 * d1, d1/10
     exponents = [Decimal(15)/ Decimal(30), Decimal(3) / Decimal(31)]
     exponent = exponents[0]  # Decimal(15)/ Decimal(30)
-    increase_parcel_1 = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+    increase_parcel_1 = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3expo(
       inimontant=inimontant_1, ir_idx=ir_idx, exponent=exponent,
     )
     inimontant_2 = inimontant_1 + increase_parcel_1
     exponent = exponents[1]  # Decimal(3) / Decimal(31)
-    increase_parcel_2 = fm_mnts.calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+    increase_parcel_2 = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3expo(
       inimontant=inimontant_2, ir_idx=ir_idx, exponent=exponent,
     )
     iridxlist = [ir_idx, ir_idx]
-    monthpartition = [(15,  mkdt('2026-04')), (3, mkdt('2026-01')),]
+    monthpartition = [(15,  mkrm('2026-04')), (3, mkrm('2026-01')),]
     ret_finalmontant_direct, quinhoes = fm_mnts.calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
       inimontant=inimontant_1, iridxlist=iridxlist, monthpartition=monthpartition,
     )
-    increase_amounts_by_quinhoes = Decimal(sum([t[0] for t in quinhoes]))
+    increase_amounts_by_quinhoes = Decimal(sum(quinhoes))
     increase_parcel = increase_parcel_1 + increase_parcel_2
-    self.assertEqual(quant(increase_parcel, 4), quant(increase_amounts_by_quinhoes, 4))
-    self.assertEqual(quant(increase_parcel_1, 4), quant(quinhoes[0][0], 4))
-    self.assertEqual(quant(increase_parcel_2, 4), quant(quinhoes[1][0], 4))
+    self.assertEqual(q4(increase_parcel), q4(increase_amounts_by_quinhoes))
+    self.assertEqual(q4(increase_parcel_1), q4(quinhoes[0]))
+    self.assertEqual(q4(increase_parcel_2), q4(quinhoes[1]))
     # ======================
     # hypothesis 8-5 -> continuing from the latter, verify final_montant on the 2 sides (piecemeal and monthpartition)
     # ======================
     piecemeal_finalmontant = inimontant_2 + increase_parcel_2
-    self.assertEqual(ret_finalmontant_direct, piecemeal_finalmontant)
+    self.assertEqual(ret_finalmontant_direct, q4(piecemeal_finalmontant))
+    # ======================
+    # hypothesis 8-5 -> for a longer/larger and random quinhoes, compare it to function results
+    #   self.assertEqual(aggregate_incr_amount, quinhoes)
+    # ======================
+    n, param_hi, param_lo = 10, 100, 10
+    inimontants = make_random_inimontants(n=n, param_hi=param_hi, param_lo=param_lo)
+    ir_range, exp_range = (0.005, 1.345), (0.45, 15.468)
+    for inimontant in inimontants:
+      tuplelist_iridx_exponent = make_random_tuplelist_iridx_exponent(n=n, ir_range=ir_range, exp_range=exp_range)
+      ongoingmontant, byhand_quinhoes = inimontant, []
+      for tupl in tuplelist_iridx_exponent:
+        ir_idx, exponent = tupl
+        incr_amt = fm_mnts.calc_increase_amount_w_1inimontant_2iridx_3expo(
+          inimontant=ongoingmontant, ir_idx=ir_idx, exponent=exponent,
+        )
+        byhand_quinhoes.append(incr_amt)
+        ongoingmontant = ongoingmontant + incr_amt
+      ret_incr_amt, ret_quinhoes = fm_mnts.calc_increase_amount_w_1inimontant_2tuplelist_iridx_n_exponent(
+        inimontant=inimontant,
+        tuplelist_iridx_n_expo=tuplelist_iridx_exponent
+      )
+      exp_incr_amt = Decimal(sum(byhand_quinhoes))
+      self.assertDecimalIsClose(exp_incr_amt, ret_incr_amt)
+
 
   def test_9_invert_exponent_etal(self):
     """
@@ -498,11 +572,11 @@ class TestCase1(unittest.TestCase):
     # ======================
     # hypothesis 9-1 -> doing f(f_inv(x))=x with exponent | backexponent (calculating 'back' exponent)
     # ======================
-    d1 = decimal_one
+    d1 = DECIMAL_ONE
     ir_idx, exponent = d1/20, 3 * d1 / 2
     byhand_mult_for_fm = (1 + ir_idx) ** exponent
     byhand_mult_for_incr = byhand_mult_for_fm - 1
-    multiplier_for_increase = fm_mnts.calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(
+    multiplier_for_increase = fm_mnts.calc_multiplier_for_increase_w_1iridx_2expo(
       ir_idx=ir_idx, exponent=exponent,
     )
     self.assertEqual(quant(multiplier_for_increase), quant(byhand_mult_for_incr))
@@ -514,6 +588,7 @@ class TestCase1(unittest.TestCase):
     finmontant = inimontant * (multiplier_for_increase + 1)
     backexponent = fm_mnts.calc_inv_exponent_w_1finmontant_2inimontant_3iridx(
       finmontant=finmontant, inimontant=inimontant, ir_idx=ir_idx)
+    # only 'back' gets quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
     self.assertEqual(quant(backexponent), exponent)
     # ======================
     # hypothesis 9-2 -> doing f(f_inv(x))=x with ir_idx (calculating 'back' ir_idx)
@@ -521,11 +596,13 @@ class TestCase1(unittest.TestCase):
     back_ir_idx = fm_mnts.calc_inv_iridx_w_1exponent_2multiplierforincrease(
       exponent=exponent, mult_for_incr=multiplier_for_increase
     )
+    # idem: only 'back' gets quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
     self.assertEqual(quant(back_ir_idx), ir_idx)
     inimontant = 3257 * d1 / 7
     finmontant = inimontant * (multiplier_for_increase + 1)
     back_ir_idx = fm_mnts.calc_inv_irdix_w_1finmontant_2inimontant_3exponent(
       finmontant=finmontant, inimontant=inimontant, exponent=exponent)
+    # idem: only 'back' gets quantized for the assertEqual(), @see also assertions with assertDecimalIsClose()
     self.assertEqual(quant(back_ir_idx), ir_idx)
     # ======================
     # hypothesis 9-3 -> doing f(f_inv(x))=x with inimontant -> f_inv(f(inimontant))=inimontant
@@ -537,4 +614,5 @@ class TestCase1(unittest.TestCase):
     backinimontant = fm_mnts.calc_inv_inimontant_w_1finmontant_2iridx_3exponent(
       finmontant=finmontant, ir_idx=ir_idx, exponent=exponent
     )
+    # no quantizing was needed here for the assertEqual(), @see also assertions with assertDecimalIsClose()
     self.assertEqual(inimontant, backinimontant)

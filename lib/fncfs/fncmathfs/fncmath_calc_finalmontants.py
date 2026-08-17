@@ -4,13 +4,13 @@ lib/fncfs/fncmathfs/fncmath_calc_finalmontants.py
 To import it:
   import lib.fncfs.fncmathfs.finance_math_fs as fncmath  # fncmath.calc_ir_incrfact_f_mora_w_idx_n_expo()
 """
+import calendar
+import datetime
+from decimal import Decimal, ROUND_HALF_EVEN  # Context
+import decimal
 import functools
 import math
 import operator
-from decimal import Decimal
-import calendar
-import datetime
-import decimal
 import lib.datesetc.datefs as dtfs  # for partition_inidate_findate_as_monthndays_tuplelist
 import lib.datesetc.refmonth_fs as rmfs  # for partition_inidate_findate_as_monthndays_tuplelist
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
@@ -19,25 +19,76 @@ DECIMAL_ZERO = Decimal('0.00')
 DECIMAL_ONE = Decimal('1.0')
 
 
+def dec_is_close(
+    a: Decimal, b: Decimal, rel_tol=Decimal('1e-9'), abs_tol=Decimal('0')
+  ) -> bool:
+  """Fair comparison for Decimal numbers across vastly different magnitudes."""
+  if a == b:
+    return True
+  # Absolute difference
+  diff = abs(a - b)
+  # Check absolute tolerance first (important for numbers near zero)
+  if diff <= abs_tol:
+    return True
+  # Check relative tolerance against the larger of the two numbers
+  max_val = max(abs(a), abs(b))
+  calcd_max_diff_allowance_fr_rel_tol = max_val * rel_tol
+  boolres = diff <= calcd_max_diff_allowance_fr_rel_tol
+  return boolres
+
+
+def round_sigfigs(d: Decimal, sigfigs: int) -> Decimal:
+  """Round a Decimal to a specific number of significant figures dynamically."""
+  if d.is_zero():
+    return d
+  # determine the exponent shift needed
+  sign, digits, exponent = d.as_tuple()
+  # number of digits in the coefficient
+  len_digits = len(digits)
+  # current magnitude exponent
+  mag = len_digits + exponent - 1
+  # target exponent for desired significant figures
+  target_exp = mag - sigfigs + 1
+  # quantize to the target exponent place value
+  quantizer = Decimal('1').scaleb(target_exp)  # it makes the Decimal quantizer be 1e(target_exp) or 10**target_exp
+  # when the quantizer decimal is applied, it's like a mask right to left
+  # for example: if decimal has 8 decimal places and quantizer has 3, the newdecimal will have 5
+  # (losing 3 significant decimal places or, if getting written in the appropriate scientific notation with an exponent)
+  # if it were a string, it would be like stripping off the 3 right-most decimal characters
+  # replacing them with 'non-significant zeroes'
+  newdec = d.quantize(quantizer, rounding=ROUND_HALF_EVEN)
+  pass
+  return newdec
+
+
 def quant(dec, n_decplaces=6):
   """
-  Sets precision to Decimal variables
+  Sets 'precision' (decimal places and rounding) to Decimal variables.
+
+  Important:
+    This function was/is used for the package's related unit-tests.
+    In time, the unit-tests must update/replace the 'quantize' approach and replace it to
+      the approach in the functions above: dec_is_close() and round_sigfigs().
   """
+  if dec == int(dec):
+    return dec
   str_decplaces = '0.' + '0'*(n_decplaces - 1) + '1'
   newdec = dec.quantize(Decimal(str_decplaces), rounding=decimal.ROUND_HALF_UP)
   return newdec
 
 
-def quant4(dec):
+def q4(dec: Decimal):
   """
-  For amounts
+  Sets 'precision' (decimal places and rounding) to Decimal variables.
+  For amounts: 4 decimal places (for multipliers:  8 decimal places).
   """
   return quant(dec, 4)
 
 
-def quant8():
+def q8(dec: Decimal):
   """
-  For multipliers
+  Sets 'precision' (decimal places and rounding) to Decimal variables.
+  For multipliers:  8 decimal places (for amounts: 4 decimal places).
   """
   return quant(dec, 8)
 
@@ -75,6 +126,9 @@ def calc_multiplier_for_fm_intrstrt_w_1iridx_2expo(
 
 
 def calc_inv_exponent_w_1iridx_2multiplierforincrease(ir_idx: Decimal, mult_for_incr: Decimal) -> Decimal:
+  """
+  Calculates, inversely, exponent with ir_idx and multiplier for increase.
+  """
   numerator = 1 + mult_for_incr
   denominator = 1 + ir_idx
   exponent = math.log(numerator) / math.log(denominator)
@@ -82,6 +136,10 @@ def calc_inv_exponent_w_1iridx_2multiplierforincrease(ir_idx: Decimal, mult_for_
 
 
 def calc_inv_exponent_w_1iridx_2multiplierforfm(ir_idx: Decimal, mult_for_fm: Decimal) -> Decimal:
+  """
+  Calculates, inversely, exponent with ir_idx and multiplier for final montant.
+  It subtracts 1 from multiplier for increase and dispatches to the function above.
+  """
   mult_for_incr = mult_for_fm - 1
   return calc_inv_exponent_w_1iridx_2multiplierforincrease(ir_idx, mult_for_incr)
 
@@ -89,6 +147,10 @@ def calc_inv_exponent_w_1iridx_2multiplierforfm(ir_idx: Decimal, mult_for_fm: De
 def calc_inv_exponent_w_1finmontant_2inimontant_3iridx(
     finmontant:Decimal, inimontant: Decimal, ir_idx: Decimal
   ) -> Decimal:
+  """
+  Calculates, inversely, exponent with initial montant and ir_idx.
+  It divides finmontant / inimontant and dispatches to the function above.
+  """
   mult_for_fm = finmontant / inimontant
   return calc_inv_exponent_w_1iridx_2multiplierforfm(ir_idx=ir_idx, mult_for_fm=mult_for_fm)
 
@@ -96,17 +158,30 @@ def calc_inv_exponent_w_1finmontant_2inimontant_3iridx(
 def calc_inv_inimontant_w_1finmontant_2iridx_3exponent(
     finmontant:Decimal, ir_idx: Decimal, exponent: Decimal
   ) -> Decimal:
+  """
+  Calculates, inversely, initial montant with final montant, ir_idx, and exponent.
+  It divides finmontant / inimontant and dispatches to the function above.
+  'initial montant' is calculated by finmontant / mult_for_fm.
+  """
   mult_for_fm = calc_multiplier_for_fm_intrstrt_w_1iridx_2expo(ir_idx, exponent)
   inimontant = finmontant / mult_for_fm
   return inimontant
 
 
 def calc_inv_iridx_w_1exponent_2multiplierforincrease(exponent: Decimal, mult_for_incr: Decimal) -> Decimal:
+  """
+  Calculates, inversely, ir_idx with exponent and multiplier for increase.
+  The expression in the function is the algebraic equation for ir_idx.
+  """
   ir_idx = (mult_for_incr + 1) ** (1  / exponent) - 1
   return ir_idx
 
 
 def calc_inv_iridx_w_1exponent_2multiplierforfm(exponent: Decimal, mult_for_fm: Decimal) -> Decimal:
+  """
+  Calculates, inversely, ir_idx with exponent and multiplier for final montant.
+  It subtracts 1 from multiplier for final montant and dispatches to the function above.
+  """
   mult_for_incr = mult_for_fm - 1
   return calc_inv_iridx_w_1exponent_2multiplierforincrease(exponent, mult_for_incr)
 
@@ -114,15 +189,47 @@ def calc_inv_iridx_w_1exponent_2multiplierforfm(exponent: Decimal, mult_for_fm: 
 def calc_inv_irdix_w_1finmontant_2inimontant_3exponent(
     finmontant: Decimal, inimontant: Decimal, exponent: Decimal
   ) -> Decimal:
+  """
+  Calculates, inversely, ir_idx with initial montant and exponent.
+  It divides finmontant / inimontant and dispatches to the function above.
+  """
   mult_for_fm = finmontant / inimontant
   return calc_inv_iridx_w_1exponent_2multiplierforfm(exponent=exponent, mult_for_fm=mult_for_fm)
 
 
-def calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(ir_idx: Decimal, exponent: Decimal) -> Decimal:
+def calc_multiplier_for_increase_w_1iridx_2expo(ir_idx: Decimal, exponent: Decimal) -> Decimal:
   """
-  Calculates the multiplier by initial montant that gives the 'amount increase'.
-      => fm = im * (1 + ir) ** exponent
-    the multiplier here is: (1 + ir) ** exponent - 1
+  Calculates the multiplier for increase with ir_idx (the return ratio) and exponent.
+
+  The following explanation may be applied to the whole module, i.e., all functions in here.
+
+  In the functions in this module, the 'multiplier' can be used for the two kinds:
+    a) multiplier for increase
+    b) multiplier for final montant
+
+  Let's see each one.
+  The fundamental equation for compound interest rate is:
+    => fm = im * (1 + ir) ** d
+  where:
+    fm = final montant
+    im = initial montant
+    ir = return ratio (or interest rate index)
+    d = the duration value according to the frequency measure (days, months, years, etc.)
+
+  The multipliers have the following connection:
+    a) mult_for_incr multiplier for increase -> ((1 + ir) ** d) - 1
+    b) mult_for_fm multiplier for final montant -> (1 + ir) ** d
+
+  Example:
+    a) suppose ir = 10% (which is 0.1)
+    b) suppose d = 2 (it might 2 units of some frequency: (days, months, years, etc.): let's say '2 months'
+  Now, we can calculate:
+    a) mult_for_incr -> ((1 + 0.1) ** 2) - 1 = 0.21
+    b) mult_for_fm multiplier for final montant -> (1 + ir) ** d = 1.21
+  What do they mean if initial montant is 100 (of some money currency)?
+    a) mult_for_incr -> 100 * 0.201 = 21.00 (this is the increase)
+    b) mult_for_fm -> 100 * 1.21 = 121.00 (this is final montant)
+
   @see also previous function that calculates the multiplier by initial montant
     that gives rather final montant.
 
@@ -142,15 +249,16 @@ def calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(ir_idx: Decimal, expone
   return multiplier_for_increase
 
 
-def calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+def calc_increase_amount_w_1inimontant_2iridx_3expo(
     inimontant: Decimal, ir_idx: Decimal, exponent: Decimal
   ) -> Decimal:
   """
   Calculates the increase amount with:
    initial montant, interest rate index, and exponent (duration).
 
-  This function reuses calc_multiplier_for_increase_intrstrt_w_1iridx_2expo()
-  @see it below.
+  This function reuses calc_multiplier_for_increase_w_1iridx_2expo() in this module.
+  Then, it can do the multiplication:
+    increase_amount = inimontant * increase_factor
   """
   try:
     inimontant = Decimal(inimontant)
@@ -159,7 +267,7 @@ def calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
   except (ValueError, TypeError, decimal.InvalidOperation) as e:
     errmsg = f"acc index ({ir_idx}) and/or exponent ({exponent}) are invalid: {e}"
     raise ValueError(errmsg)
-  increase_factor = calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(
+  increase_factor = calc_multiplier_for_increase_w_1iridx_2expo(
     ir_idx=ir_idx, exponent=exponent
   )
   increase_amount = inimontant * increase_factor
@@ -173,16 +281,18 @@ def calc_finmontant_w_1inimontant_2iridx_3expo(
   Calculates the final montant with:
     initial montant, interest rate index, and exponent (duration).
 
-  This function reuses calc_multiplier_for_fm_intrstrt_w_1iridx_2expo()
-  @see it below.
+  This function reuses calc_multiplier_for_fm_intrstrt_w_1iridx_2expo() in this module.
+  Then, it can do the multiplication:
+    finmontant = inimontant * multiplier_for_fm
   """
   try:
     inimontant = Decimal(inimontant)
   except (ValueError, TypeError, decimal.InvalidOperation) as e:
     errmsg = f"acc index ({ir_idx}) and/or exponent ({exponent}) are invalid: {e}"
     raise ValueError(errmsg)
-  r_finalmontant = inimontant * calc_multiplier_for_fm_intrstrt_w_1iridx_2expo(ir_idx, exponent)
-  return r_finalmontant
+  multiplier_for_fm = calc_multiplier_for_fm_intrstrt_w_1iridx_2expo(ir_idx, exponent)
+  finmontant = inimontant * multiplier_for_fm
+  return finmontant
 
 
 def calc_finalmontant_w_1inimontant_2fixir_3varir_4monthsduration(
@@ -191,12 +301,13 @@ def calc_finalmontant_w_1inimontant_2fixir_3varir_4monthsduration(
   """
   Calculates final montant as the above function (*) does.
   The calculation itself is not here, this function does the following:
-    1 sanitize 2 parameter indices fixir and varir
+    1 'sanitize' the 2 parameter indices: fixir and varir
     2 sums up the 2 indices: fixir and varir to ir_idx
     3 dispatches execution to a function that receives ir_idx and monthsduration as exponent.
 
-  (*) calc_finalmontant_w_1inimontant_2ir_3expo()
-  It adds up the two indices (called fix and variable) and reuses the function above.
+
+  In a nutshell, tt adds up the two indices (called fix and variable)
+    and reuses function (*) calc_finalmontant_w_1inimontant_2ir_3expo().
   """
   try:
     ir_idx = Decimal(fixir + varir)
@@ -212,24 +323,31 @@ def calc_multiplicationfactor_for_fm_w_1iridx_2monthpartition(
     ir_idx: Decimal, monthpartition: list[tuple[int, datetime.date]]
   ) -> tuple[Decimal, list[Decimal]]:
   """
-  Calculates the multiplication factor compounded throughout a series of months
-    each month having a certain fraction of itself.
+  Calculates the multiplication factor for final montant compounded throughout a series of months
+    each informing a certain amount of days in it.
 
   What's in a monthpartition?
     It's a tuple list that informs a number of days and its corresponding refmonth.
 
   For example:
-    if a monthpartition is: [(15, mkrm('2026-4')), (3, mkrm('2026-4'))]
+    if a monthpartition is: [(15, mkrm('2026-4')), (3, mkrm('2026-4'))]:
     this means that 15 days were 'used' in April 2026 and 3/31 days in January 2026.
+    'mkrm()' represents a function that transforms a refmonth-conforming string to a datetime.date.
 
-  The return is a tuple composed of the multiplication factors. Notice that this is different from 'quinhões'.
-  'quinhões' contains the increase amounts and also the refmonths; factor contains the multiplication factors.
+  The function's return is a tuple composed of:
+    a) the multiplication factor for final montant
+    b) the piecemeal factors that multiplies up to the multiplication factor.
+
+  Notice that the piecemeal factors list is different from 'quinhões'.
+    a) 'quinhões' contains the increase amounts - they add up;
+    b) 'factors' contains the multiplication factors - they multiply up.
   """
   base = Decimal(1 + ir_idx)
   monthsfractions = rmfs.calc_fractionlist_fr_monthpartition(monthpartition)
   multiplicationfactors = list(map(lambda expo: base ** expo, monthsfractions))
   mult_factor_for_finalmontant = functools.reduce(operator.mul, multiplicationfactors, 1)
-  # the IDE does not recognize mult_factor_for_finalmontant with type-conforming to Decimal (though its results is a number)
+  # the IDE does not recognize mult_factor_for_finalmontant with type-conforming to Decimal
+  # (though its results is a number)
   # the IDE included the next comment when we asked to suppress the mentioned warning
   # noinspection bad-argument-type
   mult_factor_for_finalmontant = Decimal(mult_factor_for_finalmontant)
@@ -240,31 +358,27 @@ def calc_multiplicationfactor_for_increase_w_1iridx_2monthpartition(
     ir_idx: Decimal, monthpartition: list[tuple[int, datetime.date]]
   ) -> tuple[Decimal, list[Decimal]]:
   """
-  Calculates the multiplication factor compounded throughout a series of months, each having a certain month's fraction.
-  @see also docstr for the function above.
+  Calculates the multiplication factor for increase compounded
+    throughout a series of months, each informing a certain number of days in it.
+  (@see also docstr for the function above.)
 
-  Returns the multiplication factor for increase and a list with each step (piecemeal) increase.
+  Returns the multiplication factor for increase and a list with each step (piecemeal) factor.
 
-  Notice: when the function receiving monthpartition does not have inimontant as input,
-    multiplicationfactors is in the output instead of quinhoes.
-
-  Historical note: the code commented below retrieved quinhoes,
-    but this function needs rather the piecemeal increase list.
-
-  multiplicationfactor_fo_fm, quinhoes = calc_multiplicationfactor_for_fm_w_1iridx_2monthpartition(
-    ir_idx=ir_idx, monthpartition=monthpartition
-  )
-  multiplicationfactor_fo_incr = multiplicationfactor_fo_fm - 1
+  Notice:
+    a) when the function receiving monthpartition does not have inimontant as input,
+      multiplicationfactors is in the output instead of quinhoes;
+    b) multiplicationfactor_fo_incr = multiplicationfactor_fo_fm - 1
   """
   mult_for_incr_list = []
   exponent_fractions = rmfs.calc_fractionlist_fr_monthpartition(monthpartition)
   for exponent in exponent_fractions:
-    mult_for_incrase = calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(ir_idx=ir_idx, exponent=exponent)
+    mult_for_incrase = calc_multiplier_for_increase_w_1iridx_2expo(ir_idx=ir_idx, exponent=exponent)
     mult_for_incr_list.append(mult_for_incrase)
   # let's form the mult_for_fm list...
   mult_for_fm_list = [m + 1 for m in mult_for_incr_list]
   # ... for the 'produtory' reduce() to calcule the whole mult_for_fm ...
   mult_for_fm = functools.reduce(operator.mul, mult_for_fm_list, 1)
+  # noinspection bad-argument-type
   mult_for_fm = Decimal(mult_for_fm)
   # ... for finding the mult_for_incr which is mult_for_fm - 1
   mult_for_incr = mult_for_fm - 1
@@ -273,7 +387,7 @@ def calc_multiplicationfactor_for_increase_w_1iridx_2monthpartition(
 
 def calc_increase_amount_w_1inimontant_2iridx_3monthpartition(
     inimontant: Decimal, ir_idx: Decimal, monthpartition: list[tuple[int, datetime.date]]
-  ) -> tuple[Decimal, list[tuple[Decimal, datetime.date]]]:
+  ) -> tuple[Decimal, list[Decimal]]:
   """
   Calculates the increase amount from initial montant and ir_idx over a monthpartition.
   A monthpartition contains a list of tuple which has
@@ -286,13 +400,14 @@ def calc_increase_amount_w_1inimontant_2iridx_3monthpartition(
   )
   increase_amount = inimontant * multiplicationfactor_fo_incr
   # derive quinhoes
-  ongoingmontant, quinhoes = DECIMAL_ZERO, []
+  ongoingmontant, quinhoes = inimontant, []
   for mult_for_incr in mult_for_incr_list:
     quinhao = ongoingmontant * mult_for_incr
     quinhoes.append(quinhao)
     ongoingmontant = ongoingmontant + quinhao
-  back_increase_amount = sum(quinhoes)
+  back_increase_amount = Decimal(sum(quinhoes))
   # move this to the unit-tests
+  back_increase_amount, increase_amount = q8(back_increase_amount), q8(increase_amount)
   if back_increase_amount != increase_amount:
     errmsg = f"Error: back_increase_amount {back_increase_amount} != increase_amount {increase_amount}"
     raise ValueError(errmsg)
@@ -319,24 +434,22 @@ def calc_finmontant_w_1inimontant_2iridx_3monthpartition(
       a) if tuple is (15, '2026-04'), then exponent will be 15 (days) by 30 (total days in April) = 0.5
       b) if tuple is (3, '2026-01'), then exponent will be 3 (days) by 31 (total days in April) = 3/31
   """
-  ongoing_montant = inimontant
+  monthfractions = rmfs.calc_fractionlist_fr_monthpartition(monthpartition)
   quinhoes = []
-  for partitionmonth in monthpartition:
-    ndays, refmonth = partitionmonth
-    _, ndaysinmonth = calendar.monthrange(refmonth.year, refmonth.month)
-    monthsduration = Decimal(ndays / ndaysinmonth)
-    increase_amount = calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
-        inimontant=ongoing_montant, ir_idx=ir_idx, exponent=monthsduration
+  ongoing_montant = inimontant
+  for monthfraction in monthfractions:
+    increase_amount = calc_increase_amount_w_1inimontant_2iridx_3expo(
+        inimontant=ongoing_montant, ir_idx=ir_idx, exponent=monthfraction
     )
     quinhoes.append(increase_amount)
     ongoing_montant += increase_amount
-  r_finalmontant = ongoing_montant
+  finmontant = ongoing_montant
   # move this to the unit-tests
-  back_finmontant = sum(quinhoes)
-  if back_finmontant != r_finalmontant:
-    errmsg = f"Error: back_finmontant {back_finmontant} != r_finalmontant {r_finalmontant}"
+  back_finmontant = inimontant + sum(quinhoes)
+  if back_finmontant != finmontant:
+    errmsg = f"Error: back_finmontant {back_finmontant} != r_finalmontant {finmontant}"
     raise ValueError(errmsg)
-  return r_finalmontant, quinhoes
+  return finmontant, quinhoes
 
 
 def calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
@@ -366,7 +479,7 @@ def calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
   quinhoes = []
   for i, monthsfraction in enumerate(exponent_fractions):
     ir_idx = iridxlist[i]
-    increase_amount = calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+    increase_amount = calc_increase_amount_w_1inimontant_2iridx_3expo(
         inimontant=ongoing_montant, ir_idx=ir_idx, exponent=monthsfraction
     )
     quinhoes.append(increase_amount)
@@ -375,7 +488,7 @@ def calc_finmontant_w_1inimontant_2iridxlist_3monthpartition(
   # move this to the unit-tests
   piecemeal_increase_amounts = sum(quinhoes)
   back_finmontant = inimontant + piecemeal_increase_amounts
-  back_finmontant, r_finalmontant = quant4(back_finmontant), quant4(r_finalmontant)
+  back_finmontant, r_finalmontant = q4(back_finmontant), q4(r_finalmontant)
   if back_finmontant != r_finalmontant:
     errmsg = f"Error: back_finmontant {back_finmontant} != r_finalmontant {r_finalmontant}"
     raise ValueError(errmsg)
@@ -421,21 +534,22 @@ def calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
     Calculates final montant from initial montant, ir_idx, initial date, final date,
       these two in the same month (for exponent is measured in months).
     """
-    inidate = rmfs.make_refmonth_or_raise(inidate)
-    findate = rmfs.make_refmonth_or_raise(findate)
+    inidate = dtfs.make_date_or_raise(inidate)
+    findate = dtfs.make_date_or_raise(findate)
     if (inidate.year, inidate.month) != (findate.year, findate.month):
       errmsg = f"Error: dates should be in the same month: inidate={inidate}, findate={findate}"
       raise ValueError(errmsg)
     ndays = findate.day - inidate.day + 1
     _, totaldaysinmonth = calendar.monthrange(inidate.year, inidate.month)
-    monthduration = Decimal(ndays / totaldaysinmonth)
-    r_finalmontant = calc_finmontant_w_1inimontant_2iridx_3expo(
+    monthsfraction = Decimal(ndays) / totaldaysinmonth
+    finmontant = calc_finmontant_w_1inimontant_2iridx_3expo(
       inimontant=inimontant,
       ir_idx=ir_idx,
-      exponent=monthduration,
+      exponent=monthsfraction,
     )
-    quinhoes = [r_finalmontant]
-    return r_finalmontant, quinhoes
+    increase_amount = finmontant - inimontant
+    quinhoes = [increase_amount]
+    return finmontant, quinhoes
 
 
 def calc_multiplier_for_finmontant_w_1iridx_2exposeries(
@@ -524,7 +638,7 @@ def calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
   _, ndaysinmonth = calendar.monthrange(inidate.year, inidate.month)
   ndays_elapsed = findate.day - inidate.day + 1
   monthsduration = Decimal(ndays_elapsed / ndaysinmonth)
-  increase_amount = calc_increase_amount_intrstrt_w_1inimomtant_2iridx_3expo(
+  increase_amount = calc_increase_amount_w_1inimontant_2iridx_3expo(
     inimontant=inimontant, ir_idx=ir_idx, exponent=monthsduration
   )
   return increase_amount
@@ -574,7 +688,7 @@ def calc_multiplicationfactor_for_increase_w_1tuplelist_iridx_n_exponent(
   return multiplication_factor_for_increase, mult_factors_for_incr
 
 
-def calc_increase_amount_w_1tuplelist_iridx_n_exponent(
+def calc_increase_amount_w_1inimontant_2tuplelist_iridx_n_exponent(
     inimontant: Decimal, tuplelist_iridx_n_expo: list[tuple[Decimal, Decimal]],
   ) -> tuple[Decimal, list[Decimal]]:
   """
@@ -583,11 +697,27 @@ def calc_increase_amount_w_1tuplelist_iridx_n_exponent(
 
   @see also docstr for calc_finalmontant_w_1param_iridx_n_exponent_tuplelist()
   """
-  multiplication_factor_for_increase = calc_multiplicationfactor_for_increase_w_1tuplelist_iridx_n_exponent(
+  multiplication_factor_for_increase, multfactors_for_incr = calc_multiplicationfactor_for_increase_w_1tuplelist_iridx_n_exponent(
     tuplelist_iridx_n_expo=tuplelist_iridx_n_expo,
   )
   increase_amount = inimontant * multiplication_factor_for_increase
-  return increase_amount
+  # calculate quinhoes from multfactors_for_incr
+  quinhoes = []
+  ongoingmontant = inimontant
+  for multfactor_for_incr in multfactors_for_incr:
+    increase = ongoingmontant * multfactor_for_incr
+    quinhoes.append(increase)
+    ongoingmontant = ongoingmontant + increase
+  # move this to the unit-tests
+  total_quinhoes = Decimal(sum(quinhoes))
+  # if Decimals are too big, q4() may fail (with exception InvalidOperation):
+  # so divide them by 1G (1bi) if one of them is greater than that
+  # it worked for unit-test test_8 which may compound a real 'huge' number
+  # with the combination of inimontant, ir_idx, and exponent
+  if not dec_is_close(increase_amount, total_quinhoes):
+    errmsg = f"Error: increase_amount (={increase_amount}) is not close to total_quinhoes (={total_quinhoes})"
+    raise ValueError(errmsg)
+  return increase_amount, quinhoes
 
 
 def calc_finalmontant_w_1inimontant_2tuplelist_iridx_n_exponent(
@@ -607,18 +737,19 @@ def calc_finalmontant_w_1inimontant_2tuplelist_iridx_n_exponent(
   produtory, mult_factors_for_fm = calc_multiplicationfactor_for_fm_w_1tuplelist_iridx_n_exponent(
     tuplelist_iridx_n_expo=tuplelist_iridx_n_expo,
   )
-  r_finalmontant = inimontant * produtory
+  finmontant = inimontant * produtory
   quinhoes = []
   ongoingmontant = inimontant
   for mult_factor_for_fm in mult_factors_for_fm:
     quinhao = ongoingmontant * mult_factor_for_fm
     quinhoes.append(quinhao)
     ongoingmontant = ongoingmontant + quinhao
-  # move this part to unit-tests
-  if ongoingmontant != r_finalmontant:
-    errmsg = f"Error: ongoingmontant {ongoingmontant} != r_finalmontant {r_finalmontant}"
+  # this part is also in the unit-tests
+  if not dec_is_close(ongoingmontant, finmontant):
+    errmsg = (f"Error: (direct) finmontant (={finmontant}) is not 'close' to"
+              f" the piecemeal-calculated one (={ongoingmontant})")
     raise ValueError(errmsg)
-  return r_finalmontant, quinhoes
+  return finmontant, quinhoes
 
 
 def calc_increase_amount_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
@@ -744,7 +875,7 @@ def adhoctest2():
   print(scrmsg)
   # ======== inverting to 'backexponent'
   ir_idx, exponent = Decimal(.01), Decimal(2)
-  mult_for_incr = calc_multiplier_for_increase_intrstrt_w_1iridx_2expo(ir_idx, exponent)
+  mult_for_incr = calc_multiplier_for_increase_w_1iridx_2expo(ir_idx, exponent)
   scrmsg = f"""calc_multiplier_for_increase_intrstrt_w_1iridx_2expo() input: ir_idx={ir_idx:.4f} | exponent={exponent:.4f}"""
   scrmsg += f"""\n\t ouput: mult_for_incr={mult_for_incr:.4f}"""
   print(scrmsg)
