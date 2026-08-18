@@ -1,5 +1,6 @@
 """
 lib/fncfs/credeb_pkg/pay_by_quinhoes_etc.py
+lib/fncfs/credeb_pkg/monthly_pay_creditor_class.py
   Contains functions that pay a debt directly or by "quinhões"
     (i.e., peacemealwise when monthly mora is partitioned, i.e., it happens across more than one month)
 """
@@ -12,11 +13,15 @@ from typing import Optional
 from dateutil import relativedelta
 import pydantic
 import lib.datesetc.datefs as dtfs
+import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_value_to_accounts
+import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 # for fncfs.calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate
+import lib.fncfs.credeb_pkg.pay_by_quinhoes_etc as paybyquin  # paybyquin.process_payments_in_month
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fncfs
 DECIMAL_ZERO = Decimal('0')
 DECIMAL_ONE = Decimal('1')
+M_MINUS_N = 2
 
 
 class SameMonthMora(pydantic.BaseModel):
@@ -35,6 +40,11 @@ class SameMonthMora(pydantic.BaseModel):
     return line
 
   @property
+  def refmonth(self) -> datetime.date:
+    _refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.fromdate, M_MINUS_N)
+    return _refmonth
+
+  @property
   def moradays(self):
     deltadays = self.todate - self.fromdate
     _moradays = deltadays.days + 1
@@ -45,8 +55,16 @@ class SameMonthMora(pydantic.BaseModel):
     return self.postvalue - self.prevalue
 
   @property
-  def ipca_dec(self) -> Decimal:
-    return DECIMAL_ZERO
+  def ipca_dec(self) -> Decimal | None:
+    if not self.has_ipca:
+      return DECIMAL_ZERO
+    if self._var_ir is not None:
+      return self._var_ir
+    cacher = fncach.IpcaAPICacherRetriever()
+    ipca_refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, M_MINUS_N)
+    ipca_dec = cacher.fetch_ipca_dec_for_refmonth(ipca_refmonth)
+    self._var_ir = ipca_dec if ipca_dec is not None else DECIMAL_ZERO
+    return self._var_ir
 
   @property
   def var_ir(self) -> Decimal:
@@ -105,6 +123,9 @@ class PaymentCrediter(pydantic.BaseModel):
   _ipca_dec: Decimal
   payments: list[PaymentInterfaceDateNValue] = pydantic.dataclasses.Field(default_factory=lambda: [])
   mora_objs: list[PaymentInterfaceDateNValue] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  credito_no_fecho: Decimal = pydantic.dataclasses.Field(default_factory=lambda: None)
+  debito_no_fecho: Decimal = pydantic.dataclasses.Field(default_factory=lambda: None)
+  ndays_n_increase_tuplelist: list[tuple[int, Decimal]] = pydantic.dataclasses.Field(default_factory=lambda: [])
 
   def add_payment(self, payment):
     self.payments.append(payment)
@@ -159,12 +180,34 @@ class PaymentCrediter(pydantic.BaseModel):
     return fix_plus_var_ir_dec
 
   @property
-  def ipca_dec(self):
-    if self._ipca_dec is None:
-      ipcacacher = 1
+  def ipca_dec(self) -> Decimal:
+    if not self.has_ipca:
+      return DECIMAL_ZERO
+    if self._var_ir is not None:
+      return self._var_ir
+    cacher = fncach.IpcaAPICacherRetriever()
+    ipca_refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, M_MINUS_N)
+    ipca_dec = cacher.fetch_ipca_dec_for_refmonth(ipca_refmonth)
+    self._var_ir = ipca_dec if ipca_dec is not None else DECIMAL_ZERO
+    return self._var_ir
+
+  def make_mora_objs(self):
+    monthslastday = self.curmonthslastday
+    for ndays_base_increase in self.ndays_n_increase_tuplelist:
+      ndays, base, increase = ndays_n_increase
+      todate = self.curmonthslastdate
+      if ndays != monthslastday:
+        todate = self.curmonthsfirstdate
+      mora_o = SameMonthMora(
+        fromdate=self.curmonthsfirstdate,
+        todate=todate,
+        prevalue=base,
+        has_ipca=True,
+      )
+
 
   def process_payments_in_month(self):
-    process_payments_in_month(
+    self.credito_no_fecho, self.debito_no_fecho, self.ndays_n_increase_tuplelist = paybyquin.process_payments_in_month(
       valor_a_pagar_como_debito = self.monthspayvalue,
       payments = self.payments,
       duedate = self.duedate,
@@ -172,157 +215,7 @@ class PaymentCrediter(pydantic.BaseModel):
       postdate_ifinmora = self.curmonthslastdate,
       fix_plus_var_ir_dec = self.ir_idx,  # the variable parcel, if mora happens, is fetched 'downstream'
     )
-
-
-def pay_monthsbill_by_quinhao_considering_mora(
-    debito_em_mora: Decimal,
-    p_payments: list[PaymentInterfaceDateNValue],  # we'll only need date and value from a payment object
-    retrodate_ifinmora: datetime.date,
-    postdate_ifinmora: datetime.date,
-    fix_plus_var_ir_dec: Decimal  # the variable parcel, if mora happens, is fetched 'downstream'
-  ) -> tuple[decimal.Decimal, decimal.Decimal, list[tuple[int, Decimal]]]:
-  """
-
-  All input dates for this function must be in the same month.
-
-  Explanation of retrodate_ifinmora and postdate_ifinmora:
-  ==============
-    retrodate_ifinmora applies only when in mora.
-    The same with postdate_ifinmora.
-
-    When in mora, a payment window (date range) opens.
-    However, if duedate is overtaken, the payment window
-      becomes a 'mora' moment together with the days after
-      dueday (the whole month in fact for refmonth is M-1).
-    The general case is the following:
-      a) if dueday is the 10th
-      b) if that day is 'overtaken'
-      c) then retroday goes to the 1st
-      d) and postday goes to the last day of the month
-  """
-  if debito_em_mora > DECIMAL_ZERO:
-    errmsg = f"Error: debito_em_mora (={debito_em_mora}) cannot be greater than zero"
-    raise ValueError(errmsg)
-  elif debito_em_mora == DECIMAL_ZERO:
-    return DECIMAL_ZERO, DECIMAL_ZERO, []
-  # at this point: debito_em_mora < DECIMAL_ZERO
-  debito, credito = debito_em_mora, DECIMAL_ZERO
-  payments = p_payments[:]  # copy it
-  quinhoes_days_vals = []
-  while len(payments) > 0:
-    payment = payments.pop(0)
-    payvalue = payment.value
-    paydate = payment.date
-    inimontant = -debito
-    if inimontant > DECIMAL_ZERO:
-      mora_incr = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
-        inimontant, fix_plus_var_ir_dec, retrodate_ifinmora, paydate
-      )
-      debito = debito - mora_incr
-      ndays = paydate.day - retrodate_ifinmora.day + 1
-      days_n_vals = (ndays, mora_incr)
-      quinhoes_days_vals.append(days_n_vals)
-      debito = debito + payvalue  # notice pay is positive, debito is negative
-      if debito > DECIMAL_ZERO:
-        # debito has been paid
-        credito += debito
-        debito = DECIMAL_ZERO
-        break
-    else:  # debito has been paid
-      credito += payvalue
-    # loop on if while condition is still true (more payments in queue)
-  # loop is over, payments all considered
-  # at this point, if debito may or may not yet exist
-  # however, if it does, it must mora-increase from retrodate_ifinmora to postdate_ifinmora
-  if debito < DECIMAL_ZERO:
-    inimontant = -debito
-    mora_incr = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
-      inimontant, fix_plus_var_ir_dec, retrodate_ifinmora, postdate_ifinmora
-    )
-    debito = debito - mora_incr
-    ndays = postdate_ifinmora.day - retrodate_ifinmora.day + 1
-    days_n_vals = (ndays, mora_incr)
-    quinhoes_days_vals.append(days_n_vals)
-  return credito, debito, quinhoes_days_vals
-
-
-def process_payments_in_month(
-    valor_a_pagar_como_debito: Decimal,
-    payments: list[PaymentInterfaceDateNValue],  # we'll only need date and value from a payment object
-    duedate: datetime.date,
-    retrodate_ifinmora: datetime.date,
-    postdate_ifinmora: datetime.date,
-    fix_plus_var_ir_dec: Decimal  # the variable parcel, if mora happens, is fetched 'downstream'
-  ) -> tuple[decimal.Decimal, decimal.Decimal, list[tuple[int, Decimal]]]:
-  """
-  This function receives a debt value and a list of payments.
-  It outputs two values: credito_no_fecho, debito_no_fecho
-    credito_no_fecho is an excedent out of the payments
-    debito_no_fecho signals that the payment was not completed
-
-  This function uses a 'subsystem' that does the credit/debit calculation.
-  The 'process' respects duedate and outdated payments,
-    on the latter 'mora' is incident.
-  """
-  debtvalue = valor_a_pagar_como_debito
-  if debtvalue > DECIMAL_ZERO:
-    errmsg = f"Error: debt (={debtvalue}) cannot be greater than DECIMAL_ZERO"
-    raise ValueError(errmsg)
-  if len(payments) == 0:
-    # there is no payments
-    return DECIMAL_ZERO, debtvalue, []
-  payments_ondate = list(filter(lambda po: po.date <= duedate, payments))
-  payvalues = [p.value for p in payments_ondate]
-  cred_account = sum(payvalues)
-  if not isinstance(cred_account, Decimal):
-    cred_account = Decimal(cred_account)
-  credito_no_fecho, debito_no_fecho = cdfs.debit_value_to_accounts(debtvalue, cred_account, DECIMAL_ZERO)
-  credito_no_fecho = DECIMAL_ZERO if credito_no_fecho is None else credito_no_fecho
-  debito_no_fecho = DECIMAL_ZERO if debito_no_fecho is None else debito_no_fecho
-  payments_outdate = list(filter(lambda po: po.date > duedate, payments))
-  if len(payments_outdate) == 0:
-    # all payments were in duedate, but we still have to check debito_no_fecho
-    quinhoes_days_vals = []
-    if debito_no_fecho < DECIMAL_ZERO:
-      # there should be a 'mora-projection' from retro to post date
-      inimontant = -debito_no_fecho
-      # mora_incr 'projects' this remaining debt to postdate
-      mora_incr = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
-        inimontant=inimontant,
-        ir_idx=fix_plus_var_ir_dec,
-        inidate=retrodate_ifinmora,
-        findate=postdate_ifinmora,
-      )
-      # fill in 'quinhoes'
-      ndays = postdate_ifinmora.day - retrodate_ifinmora.day + 1
-      days_n_vals = (ndays, mora_incr)
-      quinhoes_days_vals.append(days_n_vals)
-      # udpates debito_no_fecho according to the 'projection' above
-      debito_no_fecho = debito_no_fecho - mora_incr
-    return credito_no_fecho, debito_no_fecho, quinhoes_days_vals
-  if credito_no_fecho > DECIMAL_ZERO:
-    # notice that credito is always positive, debito is always negative
-    # if one of them has value, the other must be zeroed
-    return credito_no_fecho, debito_no_fecho, []
-  # now the following condition holds: there are payments done out of duedate
-  laterpayvalues = [p.value for p in payments_outdate]
-  later_cred_account = sum(laterpayvalues)
-  # then let's check if debito == 0, if so, payments go to credit
-  if debito_no_fecho == DECIMAL_ZERO:
-    credito_no_fecho += later_cred_account
-    return credito_no_fecho, debito_no_fecho, []
-  # now it's the most 'difficult' part because it involves 'mora'
-  if not debito_no_fecho < DECIMAL_ZERO:
-    errmsg = f"debito_no_fecho ({debito_no_fecho}) is not < DECIMAL_ZERO"
-    raise ValueError(errmsg)
-  debito_ainda = debito_no_fecho
-  return pay_monthsbill_by_quinhao_considering_mora(
-    debito_em_mora=debito_ainda,
-    p_payments=payments_outdate,
-    retrodate_ifinmora=retrodate_ifinmora,
-    postdate_ifinmora=postdate_ifinmora,
-    fix_plus_var_ir_dec=fix_plus_var_ir_dec,
-  )  # returns credito_no_fecho, debito_no_fecho, quinhoes_days_vals
+    self.make_mora_objs()
 
 
 def adhoctest1():
