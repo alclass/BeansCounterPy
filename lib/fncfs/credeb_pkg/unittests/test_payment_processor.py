@@ -4,7 +4,7 @@
 from decimal import Decimal
 import unittest
 import datetime
-import lib.fncfs.credeb_pkg.pay_by_quinhoes_etc as pay  # pay.process_payments_in_month
+import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 DECIMAL_ZERO = Decimal(0)
 
 

@@ -6,7 +6,7 @@ import datetime
 import art.immeub.rent.mdb.mongo_rent_retriever as mreader  # .MongoDBCollectionRetriever
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub
-import art.immeub.rent.pdntcmdls.billingcard_pydantic as bcard  #
+import art.immeub.rent.bill.billingcard_pydantic as bcard  #
 PERSON_COLL = 'persons'
 
 

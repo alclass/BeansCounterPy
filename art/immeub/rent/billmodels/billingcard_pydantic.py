@@ -13,11 +13,10 @@ import locale
 from prettytable import PrettyTable
 import pydantic
 from dateutil.relativedelta import relativedelta
-import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.credeb_pkg.pay_by_quinhoes_etc as quinhoes  # quinhoes.process_payments
+import lib.fncfs.credeb_pkg.payment_processor as quinhoes  # quinhoes.process_payments
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
-import art.immeub.rent.pdntcmdls.billingitem_pydantic as bipydtc  # bipydtc.PydtcBillingItem
+import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.PydtcBillingItem
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
@@ -27,7 +26,6 @@ PAYMENT_DUE_DAY_IN_MONTH = 10
 MONTHLY_FIX_IR_DEC_STR = '0.02'
 MONTHLY_FIX_IR_DEC = Decimal(MONTHLY_FIX_IR_DEC_STR)
 DECIMAL_ZERO = Decimal('0')
-
 
 
 def from_to_json():

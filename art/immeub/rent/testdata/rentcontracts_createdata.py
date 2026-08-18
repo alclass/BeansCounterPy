@@ -3,13 +3,12 @@ art/immeub/rent/testdata/rentcontracts_createdata.py
   Contains instantiation examples for the 'rent app'.
 """
 from decimal import Decimal
-import art.immeub.rent.pdntcmdls.billingcard_pydantic as bcard
+import art.immeub.rent.bill.billingcard_pydantic as bcard
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc
 import art.immeub.rent.mdb.mongo_rent_retriever as mreader
 import lib.datesetc.datefs as dtfs
-import lib.datesetc.refmonth_fs as rmfs
 
 
 def make_rentcontract_1() -> rentpydtc.PydtcRentContract:

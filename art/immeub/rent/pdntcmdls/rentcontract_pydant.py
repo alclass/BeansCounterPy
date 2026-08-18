@@ -24,9 +24,10 @@ import art.immeub.rent.pdntcmdls as init
 import art.immeub.tribs.onproperties.mongo_tribs_retriever as funesbom
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
-import art.immeub.rent.pdntcmdls.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
+import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
 from tabulate import tabulate
 from lib.fncfs.credeb_pkg.credit_debit_fs import ONE_THOUSANDTH_AS_STR
+import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
 PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
@@ -503,7 +504,9 @@ def adhoctest1():
     tenants=[person],
     fiadores=[person],
   """
-  person = pers.get_person_ex()
+  persons = mngfetch.get_persons_by_cpfs([])
+  if persons is None or len(persons) == 0:
+    return
   location = immeub.get_immeuble_ex()
   rentvalue = Decimal(1000)
   rent = PydtcRentContract(

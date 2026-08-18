@@ -10,7 +10,7 @@ import datetime
 from decimal import Decimal
 import pydantic
 import json
-import art.immeub.rent.mdb.mongo_rent_retriever as mngrent
+import lib.dbfs.mngdb.mongo_gen_fetcher as mngretr
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 from pydantic import BaseModel, computed_field, model_validator
 import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble as embed  # embed.EmbeddedImmeubleTax
@@ -52,7 +52,7 @@ class PydtcImmeuble(BaseModel):
       if 'owners_cpfs' in data and not data.get('owners'):
         cpfs = data.pop('owners_cpfs')  # Extract CPFs
         # Fetch full objects using your existing DB lookup function
-        owners = mngrent.get_persons_by_cpfs(cpfs)
+        owners = mngretr.get_persons_by_cpfs(cpfs)
         data['owners'] = owners
     return data
 
@@ -141,7 +141,9 @@ class PydtcImmeuble(BaseModel):
 
 
 def get_immeuble_ex():
-  person = pers.get_person_ex()
+  person = mngretr.get_persons_by_cpfs([])
+  if person is None or len(person) == 0:
+    return None
   immeuble = PydtcImmeuble(
     imm_nickname="CDouto",
     inscr_txincend="1234",

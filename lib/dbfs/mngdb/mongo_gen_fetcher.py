@@ -187,9 +187,12 @@ class GenMongoDBFetcher:
     if collname is not None:
       self.set_or_change_collname(collname)
     query = {fieldname: {"$in": valuelist}}
-    docs = self.find_by_coll_n_query(
-      query=query, collname=collname
-    )
+    if valuelist is None or len(valuelist) > 0:
+      docs = self.fetch_all(collname=collname)
+    else:
+      docs = self.find_by_coll_n_query(
+        query=query, collname=collname
+      )
     return docs
 
   def fetch_all(self, collname: str | None = None) -> list[str]:

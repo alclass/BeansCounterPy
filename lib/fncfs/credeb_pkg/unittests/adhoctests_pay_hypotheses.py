@@ -3,7 +3,7 @@
 """
 import datetime
 from decimal import Decimal
-import lib.fncfs.credeb_pkg.pay_by_quinhoes_etc as pay  # pay.process_payments_in_month
+import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 import lib.datesetc.refmonth_fs as rmfs  # pay.process_payments_in_month
 import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_value_to_accounts
 from lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal import \
