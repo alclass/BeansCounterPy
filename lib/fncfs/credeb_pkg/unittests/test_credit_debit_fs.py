@@ -26,7 +26,7 @@ class TestCase1(unittest.TestCase):
     account = Decimal(str("-200"), BRL)
     value = Decimal(str("-100"), BRL)
     exp_account = account + value
-    ret_account = cdfs.debit_value_to_deb_account(value, account)
+    ret_account = cdfs.debt_value_to_deb_account(value, account)
     self.assertEqual(exp_account, ret_account)
     # hypothesis 1-3 credit_value_to_deb_account()
     account = Decimal(str("-200"), BRL)
@@ -40,7 +40,7 @@ class TestCase1(unittest.TestCase):
     value = Decimal(str("-100"), BRL)
     exp_account = account + value
     exp_remaining = cdfs.DINERO_ZERO
-    ret_remaining, ret_account = cdfs.debit_value_to_cred_account(value, account)
+    ret_remaining, ret_account = cdfs.debt_value_to_cre_account(value, account)
     self.assertEqual((exp_remaining, exp_account), (ret_remaining, ret_account))
 
   def test_2credit_debt_w_2_cre_n_deb_accounts(self):
@@ -58,7 +58,7 @@ class TestCase1(unittest.TestCase):
     value = Decimal(str("-150"), BRL)
     exp_cred_account = cdfs.DINERO_ZERO
     exp_deb_account = cred_account + deb_account + value
-    ret_cred_account, ret_deb_account = cdfs.debit_value_to_accounts(value, cred_account, deb_account)
+    ret_cred_account, ret_deb_account = cdfs.debt_value_to_accounts(value, cred_account, deb_account)
     self.assertEqual((exp_cred_account, exp_deb_account), (ret_cred_account, ret_deb_account))
     # hypothesis 2-3 credit_value_to_accounts(value, cred_account, deb_account)
     cred_account = Decimal(str("100"), BRL)
@@ -79,7 +79,7 @@ class TestCase1(unittest.TestCase):
     deb_account = Decimal(str("-100"), BRL)
     exp_cred_account = cred_account + deb_account
     exp_deb_account = DINERO_ZERO
-    ret_cred_account, ret_deb_account = cdfs.compensate_cred_deb_accounts_one_against_the_other(
+    ret_cred_account, ret_deb_account = cdfs.compensate_cre_deb_accounts_one_against_the_other(
       cred_account, deb_account
     )
     self.assertEqual((exp_cred_account, exp_deb_account), (ret_cred_account, ret_deb_account))
@@ -89,7 +89,7 @@ class TestCase1(unittest.TestCase):
     deb_account = Decimal(str("-200"), BRL)
     exp_cred_account = DINERO_ZERO
     exp_deb_account = cred_account + deb_account
-    ret_cred_account, ret_deb_account = cdfs.compensate_cred_deb_accounts_one_against_the_other(
+    ret_cred_account, ret_deb_account = cdfs.compensate_cre_deb_accounts_one_against_the_other(
       cred_account, deb_account
     )
     self.assertEqual((exp_cred_account, exp_deb_account), (ret_cred_account, ret_deb_account))
@@ -99,7 +99,7 @@ class TestCase1(unittest.TestCase):
     deb_account = Decimal(str("-100"), BRL)
     exp_cred_account = DINERO_ZERO
     exp_deb_account = DINERO_ZERO
-    ret_cred_account, ret_deb_account = cdfs.compensate_cred_deb_accounts_one_against_the_other(
+    ret_cred_account, ret_deb_account = cdfs.compensate_cre_deb_accounts_one_against_the_other(
       cred_account, deb_account
     )
     self.assertEqual((exp_cred_account, exp_deb_account), (ret_cred_account, ret_deb_account))

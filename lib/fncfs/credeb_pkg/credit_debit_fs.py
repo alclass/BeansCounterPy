@@ -20,7 +20,7 @@ def make_decimal_w_appcontext(val: str | int | float | Decimal, n_decimal_places
   return Decimal(val, DECIMAL_CTX).quantize(Decimal(str_decimal_places))
 
 
-def compensate_cred_deb_accounts_one_against_the_other(
+def compensate_cre_deb_accounts_one_against_the_other(
     cred_account: Decimal, deb_account: Decimal,
   ):
   """
@@ -114,7 +114,7 @@ def credit_value_to_deb_account(value: Decimal, account: Decimal) -> tuple[Decim
   return remaining, DECIMAL_ZERO
 
 
-def debit_value_to_deb_account(value: Decimal, account: Decimal) -> Decimal:
+def debt_value_to_deb_account(value: Decimal, account: Decimal) -> Decimal:
   """
   Debting a debt account is just a sum, and it doesn't produce a remaining.
   """
@@ -131,7 +131,7 @@ def debit_value_to_deb_account(value: Decimal, account: Decimal) -> Decimal:
   return account
 
 
-def debit_value_to_cred_account(value: Decimal, account: Decimal) -> tuple[Decimal, Decimal]:
+def debt_value_to_cre_account(value: Decimal, account: Decimal) -> tuple[Decimal, Decimal]:
   """
   Debting a cred account may produce a remaining
   """
@@ -174,35 +174,35 @@ def credit_value_to_accounts(
   return cre_account, deb_account
 
 
-def debit_value_to_accounts(
-    value: Decimal, cred_account: Decimal, deb_account: Decimal
+def debt_value_to_accounts(
+    value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple[Decimal | None, Decimal | None]:
   """
   Receives tripe value, credit account, debit account
   Calculates resultant cred_account, deb_account
   """
   if value is None:
-    errmsg = f"Error: debit ({value}) is None"
+    errmsg = f"Error: debt ({value}) is None"
     raise ValueError(errmsg)
-  if cred_account is None and deb_account is None:
-    errmsg = "Error: both cred account and deb account cannot be None."
+  if cre_account is None and deb_account is None:
+    errmsg = "Error: credit account and debt account cannot be both None."
     raise ValueError(errmsg)
   if value > DECIMAL_ZERO:
-    errmsg = f"Error: debit ({value}) cannot be positive"
+    errmsg = f"Error: debt ({value}) cannot be positive"
     raise ValueError(errmsg)
-  if cred_account and cred_account < DECIMAL_ZERO:
-    errmsg = f"Error: cred account [{cred_account}] cannot be negative."
+  if cre_account and cre_account < DECIMAL_ZERO:
+    errmsg = f"Error: credit account [{cre_account}] cannot be negative."
     raise ValueError(errmsg)
   if deb_account and deb_account > DECIMAL_ZERO:
-    errmsg = f"Error: deb account [{deb_account}] cannot be positive."
+    errmsg = f"Error: debt account [{deb_account}] cannot be positive."
     raise ValueError(errmsg)
   # ========================
-  if cred_account is None:
-    deb_account = debit_value_to_deb_account(value, deb_account)
+  if cre_account is None:
+    deb_account = debt_value_to_deb_account(value, deb_account)
     return None, deb_account
-  remaining, cred_account = debit_value_to_cred_account(value, cred_account)
+  remaining, cre_account = debt_value_to_cre_account(value, cre_account)
   deb_account = deb_account + remaining
-  return cred_account, deb_account
+  return cre_account, deb_account
 
 
 def debit_or_credit_value_to_accounts(
@@ -229,7 +229,7 @@ def debit_or_credit_value_to_accounts(
     return cred_account, deb_account
   if value > DECIMAL_ZERO:
     return credit_value_to_accounts(value, cred_account, deb_account)
-  return debit_value_to_accounts(value, cred_account, deb_account)
+  return debt_value_to_accounts(value, cred_account, deb_account)
 
 
 def get_brl_dinero(value):

@@ -7,6 +7,8 @@ from decimal import Decimal, Context, ROUND_HALF_UP
 import datetime
 from typing import Optional
 import pydantic
+from dateutil.relativedelta import relativedelta
+
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
@@ -35,17 +37,25 @@ class SameMonthMora(pydantic.BaseModel):
 
   @property
   def refmonth(self) -> datetime.date:
-    _refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.fromdate, M_MINUS_N)
+    """
+    refmonth is the previous month related to the month when payment happens
+    It may be said the refmonth is M-1
+    """
+    _refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.fromdate, 1)
     return _refmonth
 
   @property
   def moradays(self):
+    if self.todate == self.fromdate:
+      return 0
     deltadays = self.todate - self.fromdate
-    _moradays = deltadays.days + 1
+    _moradays = deltadays.days  # because mora rolls along the month, it cannot add '+ 1'
     return _moradays
 
   @property
   def increase(self) -> Decimal:
+    if self.todate == self.fromdate:
+      return DECIMAL_ZERO
     if self._increase is None:
       self._increase = self.calc_increase()
     return self._increase
@@ -74,28 +84,39 @@ class SameMonthMora(pydantic.BaseModel):
 
   @property
   def postvalue(self) -> Decimal:
+    if self.todate == self.fromdate:
+      return self.prevalue
     if self._postvalue is None:
+      # ajust days: either add 1 to the first or diminish 1 to the last
+      # this is because monthmora 'slides' through the month according to the dates interacted with
+      findate = self.todate - relativedelta(days=1)
       self._postvalue, increase = fncfs.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
         inimontant=self.prevalue,
         ir_idx=self.ir_idx,
         inidate=self.fromdate,
-        findate=self.todate,
+        findate=findate,
       )
     return self._postvalue
 
   def calc_increase(self) -> Decimal:
-    return fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    if self.todate == self.fromdate:
+      return Decimal(0)
+    # ajust days: either add 1 to the first or diminish 1 to the last
+    # this is because monthmora 'slides' through the month according to the dates interacted with
+    findate = self.todate - relativedelta(days=1)
+    _increase = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=self.prevalue,
       ir_idx=self.ir_idx,
       inidate=self.fromdate,
-      findate=self.todate,
+      findate=findate,
     )
+    return _increase
 
   def __str__(self):
     fr, to = self.fromdate, self.todate
-    ostr = f"SameMonthMora: fr={fr} to={to} ndays={self.moradays}"
+    ostr = f"SameMonthMora: fr={fr} to={to} ndays={self.moradays} ipca={self.ipca_dec:.4f} fix={self.fix_ir_dec:.2f}"
     preval, posval = self.prevalue, self.postvalue
-    ostr += f"\n\t preval={preval:.2f} | posval={posval:.2f} | incr={self.increase:.2f}"
+    ostr += f"\n\t preval={preval:.2f} | posval={posval:.2f} | incr={self.increase:.2f} | ir={self.ir_idx:.4f} modays={self.moradays}"
     return ostr
 
 

@@ -62,7 +62,7 @@ def adhoctest2():
   #
   account = Decimal(str("-200"), BRL)
   value = Decimal(str("-100"), BRL)
-  ret_account = cdfs.debit_value_to_deb_account(value, account)
+  ret_account = cdfs.debt_value_to_deb_account(value, account)
   print('debit_value_to_deb_account', value, account, ret_account)
   #
   account = Decimal(str("-200"), BRL)
@@ -72,7 +72,7 @@ def adhoctest2():
   #
   account = Decimal(str("200"), BRL)
   value = Decimal(str("-100"), BRL)
-  remaining, ret_account = cdfs.debit_value_to_cred_account(value, account)
+  remaining, ret_account = cdfs.debt_value_to_cre_account(value, account)
   print('debit_value_to_cred_account', value, account, remaining, ret_account)
   #
   account = Decimal(str("-100"), BRL)
@@ -82,7 +82,7 @@ def adhoctest2():
   #
   account = Decimal(str("100"), BRL)
   value = Decimal(str("-200"), BRL)
-  remaining, ret_account = cdfs.debit_value_to_cred_account(value, account)
+  remaining, ret_account = cdfs.debt_value_to_cre_account(value, account)
   print('debit_value_to_cred_account', value, account, remaining, ret_account)
   #
   cred_account = Decimal(str("100"), BRL)
@@ -94,7 +94,7 @@ def adhoctest2():
   cred_account = Decimal(str("100"), BRL)
   deb_account = Decimal(str("-200"), BRL)
   deb_value = Decimal(str("-150"), BRL)
-  ret_cred_account, ret_deb_account = cdfs.debit_value_to_accounts(deb_value, cred_account, deb_account)
+  ret_cred_account, ret_deb_account = cdfs.debt_value_to_accounts(deb_value, cred_account, deb_account)
   print('debit_value_to_accounts', deb_value, cred_account, deb_account, ret_cred_account, ret_deb_account)
   #
   cred_account = Decimal(str("100"), BRL)
@@ -117,7 +117,7 @@ def adhoctest2():
   #
   cred_account = Decimal(str("100"), BRL)
   deb_account = Decimal(str("-200"), BRL)
-  ret_cred_account, ret_deb_account = cdfs.compensate_cred_deb_accounts_one_against_the_other(cred_account, deb_account)
+  ret_cred_account, ret_deb_account = cdfs.compensate_cre_deb_accounts_one_against_the_other(cred_account, deb_account)
   print(
     'compensate_cred_deb_accounts_one_against_the_other',
     'credacc =', cred_account, 'debacc =', deb_account, 'newcredacc =', ret_cred_account, 'newdebacc =', ret_deb_account
@@ -125,7 +125,7 @@ def adhoctest2():
   #
   cred_account = Decimal(str("200"), BRL)
   deb_account = Decimal(str("-100"), BRL)
-  ret_cred_account, ret_deb_account = cdfs.compensate_cred_deb_accounts_one_against_the_other(cred_account, deb_account)
+  ret_cred_account, ret_deb_account = cdfs.compensate_cre_deb_accounts_one_against_the_other(cred_account, deb_account)
   print(
     'compensate_cred_deb_accounts_one_against_the_other',
     'credacc =', cred_account, 'debacc =', deb_account, 'newcredacc =', ret_cred_account, 'newdebacc =', ret_deb_account
@@ -133,7 +133,7 @@ def adhoctest2():
   #
   cred_account = Decimal(str("100"), BRL)
   deb_account = Decimal(str("-100"), BRL)
-  ret_cred_account, ret_deb_account = cdfs.compensate_cred_deb_accounts_one_against_the_other(cred_account, deb_account)
+  ret_cred_account, ret_deb_account = cdfs.compensate_cre_deb_accounts_one_against_the_other(cred_account, deb_account)
   print(
     'compensate_cred_deb_accounts_one_against_the_other',
     'credacc =', cred_account, 'debacc =', deb_account, 'newcredacc =', ret_cred_account, 'newdebacc =', ret_deb_account

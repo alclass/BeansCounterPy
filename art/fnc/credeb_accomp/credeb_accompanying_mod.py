@@ -396,7 +396,7 @@ class DebCredAccompanier:
         input = (reserve=50, D2=-50)
         output then should be (reserve=0, D2=0)
     """
-    self.finvalue_res, self.finvalue_d2 = cdfs.compensate_cred_deb_accounts_one_against_the_other(
+    self.finvalue_res, self.finvalue_d2 = cdfs.compensate_cre_deb_accounts_one_against_the_other(
       self.finvalue_res, self.finvalue_d2
     )
 
