@@ -46,19 +46,17 @@ class SameMonthMora(pydantic.BaseModel):
 
   @property
   def moradays(self):
-    if self.todate == self.fromdate:
-      return 0
     deltadays = self.todate - self.fromdate
-    _moradays = deltadays.days  # because mora rolls along the month, it cannot add '+ 1'
+    _moradays = deltadays.days + 1 # because mora rolls along the month, it cannot add '+ 1'
     return _moradays
 
   @property
   def increase(self) -> Decimal:
-    if self.todate == self.fromdate:
-      return DECIMAL_ZERO
     if self._increase is None:
       self._increase = self.calc_increase()
-    return self._increase
+      return self._increase
+    else:
+      return self._increase
 
   @property
   def ipca_dec(self) -> Decimal | None:

@@ -5,7 +5,7 @@ lib/fncfs/dinerofs/adhoctests/ahdoctest_credit_debit_fs.py
 """
 from dinero import Decimal
 from dinero.currencies import BRL
-import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.credit_value_to_cred_account
+import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.credit_value_to_cred_account
 
 DINERO_ZERO = Decimal(str("0"), BRL)
 
@@ -29,7 +29,7 @@ def adhoctest1():
   # credit = Dinero(str("100"), BRL)
   detail = 'input credit'
   print_adhoc1(seq, value, cred_account, detail)
-  credit, account = cdfs.debit_or_credit_value_to_accounts(value=value, cred_account=cred_account, deb_account=None)
+  credit, account = cdfs.debt_or_credit_value_to_accounts(value=value, cred_account=cred_account, deb_account=None)
   detail = 'output'
   print_adhoc1(seq, credit, account, detail)
   print(srule)
@@ -39,7 +39,7 @@ def adhoctest1():
   value = Decimal(str("100"), BRL)
   detail = 'input'
   print_adhoc1(seq, value, deb_account, detail)
-  credit, account = cdfs.debit_or_credit_value_to_accounts(value=value, cred_account=None, deb_account=deb_account)
+  credit, account = cdfs.debt_or_credit_value_to_accounts(value=value, cred_account=None, deb_account=deb_account)
   detail = 'output'
   print_adhoc1(seq, value, account, detail)
   print(srule)
@@ -100,13 +100,13 @@ def adhoctest2():
   cred_account = Decimal(str("100"), BRL)
   deb_account = Decimal(str("-200"), BRL)
   value = Decimal(str("-150"), BRL)
-  ret_cred_account, ret_deb_account = cdfs.debit_or_credit_value_to_accounts(value, cred_account, deb_account)
+  ret_cred_account, ret_deb_account = cdfs.debt_or_credit_value_to_accounts(value, cred_account, deb_account)
   print('debit_or_credit_value_to_accounts', value, cred_account, deb_account, ret_cred_account, ret_deb_account)
   #
   cred_account = Decimal(str("7"), BRL)
   deb_account = Decimal(str("-113"), BRL)
   value = Decimal(str("-10"), BRL)
-  ret_cred_account, ret_deb_account = cdfs.debit_or_credit_value_to_accounts(value, cred_account, deb_account)
+  ret_cred_account, ret_deb_account = cdfs.debt_or_credit_value_to_accounts(value, cred_account, deb_account)
   print('debit_or_credit_value_to_accounts', value, cred_account, deb_account, ret_cred_account, ret_deb_account)
   #
   cred_account = Decimal(str("100"), BRL)

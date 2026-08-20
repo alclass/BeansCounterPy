@@ -7,7 +7,7 @@ art/fnc/credeb_accomp/fastapi/models/credeb_pydanticmodels.py
 import datetime
 import pydantic
 from decimal import Decimal
-import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
+import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
 import art.fnc.credeb_accomp.credeb_accompanying_mod as cdaccomp
 import art.fnc.credeb_accomp as cdinit
 from art.immeub.rent.pydantmodels import DEFAULT_3LETTER_CURRENCY

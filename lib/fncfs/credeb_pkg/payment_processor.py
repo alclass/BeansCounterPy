@@ -1,6 +1,6 @@
 """
-lib/fncfs/credeb_pkg/pay_by_quinhoes_etc.py
-  Contains functions that pay a debt directly or by "quinhões"
+lib/fncfs/credeb_pkg/payment_processor.py
+  Contains class PaymentProcessor that models payment to monthly debt that include 'mora' after duedate.
     (i.e., peacemealwise when monthly mora is partitioned, i.e., it happens across more than one month)
 
 To import PaymentProcessor:
@@ -13,14 +13,29 @@ import lib.datesetc.datefs as dtfs
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fncfs
 """
 import calendar
-from decimal import Decimal, Context, ROUND_HALF_UP
+from decimal import Decimal  # , Context, ROUND_HALF_UP
 import datetime
 from typing import Optional
-import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_value_to_accounts
+
+from dateutil.relativedelta import relativedelta
+
+import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debt_value_to_accounts
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.fncfs.credeb_pkg.samemonthmora_classes as moram  # moram.SameMonthMora
 DECIMAL_ZERO = Decimal('0')
 DEFAULT_FIX_IR_DEC = Decimal('0.02')
+
+
+class StepByStepMonthValuesKeeper:
+  date: datetime.date
+  inivalue: Decimal
+  finvalue: Decimal
+  credit_values: list[Decimal]
+  debtvalue: list[Decimal]
+  ndays: int
+  debts: list[intrfc.PaymentInterfaceDateNValue]
+
+
 
 
 class PaymentProcessor:
@@ -47,12 +62,11 @@ class PaymentProcessor:
     self.ongo_tardy_payments: list[intrfc.PaymentInterfaceDateNValue] = []
     self._retrodate_ifinmora: Optional[datetime.date] = None
     self._postdate_ifinmora: Optional[datetime.date] = None
-    self.credito_no_fecho: Optional[Decimal] = None
-    self.debito_no_fecho: Optional[Decimal] = None
     self.monthmoras: list[moram.SameMonthMora] = []
     self._total_paid_ondate: Optional[Decimal] = None
     self.ongoing_credit: Decimal = DECIMAL_ZERO
-    self.ongoing_date: datetime.date = None
+    self.ongoing_date: Optional[datetime.date] = None
+    self.orig_monthsdebt: Optional[Decimal] = None
     self.payment_process_finished: bool = False
 
   @property
@@ -62,6 +76,7 @@ class PaymentProcessor:
     self._total_paid_ondate = DECIMAL_ZERO
     paid_ondate_lst = [p.value for p in self.payments if p.date <= self.duedate]
     self._total_paid_ondate = Decimal(sum(paid_ondate_lst))
+    # noinspection bad-return
     return self._total_paid_ondate
 
   def total_paid_inmonth(self) -> Decimal:
@@ -86,6 +101,7 @@ class PaymentProcessor:
     year, month = self.duedate.year, self.duedate.month
     monthsfirstdaydate = datetime.date(year=year, month=month, day=1)
     self._retrodate_ifinmora = monthsfirstdaydate
+    # noinspection bad-return
     return self._retrodate_ifinmora
 
   @property
@@ -102,6 +118,7 @@ class PaymentProcessor:
     _, lastdayinmonth = calendar.monthrange(year, month)
     monthslastdaydate = datetime.date(year=year, month=month, day=lastdayinmonth)
     self._postdate_ifinmora = monthslastdaydate
+    # noinspection bad-return
     return self._postdate_ifinmora
 
   @property
@@ -109,7 +126,26 @@ class PaymentProcessor:
     _cre_deb_moras_tuple = self.ongoing_credit, self.ongoing_debt, self.monthmoras
     return _cre_deb_moras_tuple
 
-  def process_tardy_payments(self):
+  def history_backtrack(self):
+    lines = []
+    line = "history_backtrack"
+    lines.append(line)
+    line = f"valor mensal: {self.orig_monthsdebt} | total pagt no prazo: {self.total_paid_ondate}"
+    lines.append(line)
+    monthmoras = self.monthmoras[:]
+    monthmoras.sort(key=lambda mm: mm.todate)
+    while len(monthmoras) > 0:
+      mm = monthmoras.pop(0)
+      line = f"{mm.todate} | mora: {mm.increase} | valor no momento: {mm.prevalue} | ajustado: {mm.postvalue}"
+      lines.append(line)
+      result_lst = list(filter(lambda p: p.date == mm.todate, self.payments))
+      while len(result_lst) > 0:
+        payment = result_lst.pop(0)
+        line = f"pagamento: {payment.value} em {payment.date}"
+        lines.append(line)
+    return '\n'.join(lines)
+
+  def process_tardy_payments_if_any(self):
     """
     Processes payment(s) that were made later (tardy) than duedate.
 
@@ -131,19 +167,17 @@ class PaymentProcessor:
       In fact, postday dynamically moves, with payments if any, towards the end of month.
     """
     # safeguard condition
-    if self.ongoing_debt >= DECIMAL_ZERO:
-      errmsg = (f"Error: debito_em_mora (={self.ongoing_debt:.2f}) cannot be greater than zero"
-                f" in tardy payments")
-      raise ValueError(errmsg)
-    # at this point: debito_em_mora < DECIMAL_ZERO
-    self.credit_tardy_payments_ifany()
-    # at this point, all payments were processed and a last look at ongoing_debt is needed
-    if self.ongoing_debt < DECIMAL_ZERO:
-      self.treat_last_mora_after_all_payments_credited()
+    self.ongo_tardy_payments = [p for p in self.payments if p.date > self.duedate]
+    if len(self.ongo_tardy_payments) == 0:
+      return
+    self.credit_tardy_payments()
 
-  def mk_n_get_monthmora_w_todate(self, todate):
+  def mk_n_get_monthmora_w_findate(self, todate):
     if self.ongoing_date is None:
       self.ongoing_date = self.retrodate_ifinmora
+    if self.ongoing_date == todate:
+      return None
+    # noinspection bad-argument-type
     monthmora = moram.SameMonthMora(
       fromdate=self.ongoing_date,
       todate=todate,
@@ -151,26 +185,23 @@ class PaymentProcessor:
       fix_ir_dec=self.fix_ir_dec,
       has_ipca=self.has_ipca,
     )
-    self.ongoing_date = todate
+    self.ongoing_date = todate + relativedelta(days=1)
     return monthmora
 
-  def credit_tardy_payments_ifany(self):
+  def credit_tardy_payments(self):
     """
-    Credits tardy payments if any.
+    Credits tardy payments.
     """
     while len(self.ongo_tardy_payments) > 0:
       payment = self.ongo_tardy_payments.pop(0)
       payvalue = payment.value
       paydate = payment.date
-      monthmora = self.mk_n_get_monthmora_w_todate(paydate)
+      monthmora = self.mk_n_get_monthmora_w_findate(paydate)
+      if monthmora is None:
+        continue
       self.monthmoras.append(monthmora)
-      # montnsmora.increase must be negative as ongoing_debt is
-      self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts(
-        value=monthmora.increase, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
-      )
-      self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts(
-        value=payvalue, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
-      )
+      self.debt_to_ongoingdebt(monthmora.increase)
+      self.credit_to_debt(payvalue)
 
   def treat_last_mora_after_all_payments_credited(self):
     """
@@ -179,13 +210,20 @@ class PaymentProcessor:
     """
     if self.ongoing_date == self.postdate_ifinmora:
       return
-    if self.ongoing_credit >= DECIMAL_ZERO:
+    if self.ongoing_credit > DECIMAL_ZERO:
+      return
+    if self.ongoing_debt == DECIMAL_ZERO:
       return
     todate = self.postdate_ifinmora
-    monthmora = self.mk_n_get_monthmora_w_todate(todate)
+    monthmora = self.mk_n_get_monthmora_w_findate(todate)
+    if monthmora is None:
+      return
     self.monthmoras.append(monthmora)
+    self.debt_to_ongoingdebt(monthmora.increase)
+
+  def debt_to_ongoingdebt(self, debt_value):
     self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts(
-      value=monthmora.increase, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
+      value=debt_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
     )
 
   def treat_no_payments_happened(self):
@@ -193,14 +231,16 @@ class PaymentProcessor:
     Treats the case when no payments were made.
     """
     todate = self.postdate_ifinmora
-    monthmora = self.mk_n_get_monthmora_w_todate(todate)
+    monthmora = self.mk_n_get_monthmora_w_findate(todate)
+    if monthmora is None:
+      return
     self.monthmoras.append(monthmora)
     self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts(
       value=monthmora.increase, cre_account=DECIMAL_ZERO, deb_account=self.ongoing_debt
     )
     self.treat_last_mora_after_all_payments_credited()
 
-  def treat_payments_ondate_ifany(self):
+  def credit_payments_ondate(self):
     """
     This method contains a function that credits the total paid to two accounts:
       a) 'cre_acc' - beginning with zero;
@@ -212,20 +252,25 @@ class PaymentProcessor:
       if it pays above, cre will be > 0 (positive)
     """
     credit_value = self.total_paid_ondate
+    self.credit_to_debt(credit_value)
+
+  def credit_to_debt(self, credit_value):
+    # 1st step: credit value to deb_acc (with month's debt) and, if any remainder, to cre_acc
     self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts(
       value=credit_value, cre_account=DECIMAL_ZERO, deb_account=self.ongoing_debt
     )
-    if self.ongoing_debt < DECIMAL_ZERO and self.ongoing_credit > 0:
-      # oh, oh error!
-      cre, deb = self.ongoing_credit, self.ongoing_debt
-      errmsg = f"Error: credit (={cre}) and debt (={deb}) upon ondate payment(s) cannot both have values."
-      raise ValueError(errmsg)
+    # 2nd step: in case credit exists with debt, compensate the first to the latter
+    self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_deb_account(
+      self.ongoing_credit, self.ongoing_debt
+    )
 
+  @property
   def credito_no_fecho(self) -> Decimal | None:
     if self.payment_process_finished:
       return self.ongoing_credit
     return None
 
+  @property
   def debito_no_fecho(self) -> Decimal | None:
     if self.payment_process_finished:
       return self.ongoing_debtt
@@ -236,17 +281,31 @@ class PaymentProcessor:
       errmsg = f"Error: debt (={self.ongoing_debt}) cannot be greater than DECIMAL_ZERO"
       raise ValueError(errmsg)
 
-  def credit_tardy_payments_if_any(self):
-    """
-    Credits tardy payments, if any, after ongoing_debt has been fully paid.
-    """
-    if self.ongoing_debt < DECIMAL_ZERO:
-      errmsg = (f"Error: ongoing debt ({self.ongoing_debt}) cannot be less than ZERO"
-                f" in credit_tardy_payments_if_any()")
+  def process_payments_ondate_ifany(self):
+    if len(self.payments) == 0:
+      return
+    self.credit_payments_ondate()
+
+  def raise_va_if_some_paydate_are_not_in_paymonth(self):
+    paydates = [p.date for p in self.payments]
+    firstdate = self.retrodate_ifinmora
+    lastdate = self.postdate_ifinmora
+    outofmonthdates =  [d for d in paydates if lastdate < d < firstdate ]
+    if len(outofmonthdates) > 0:
+      errmsg = f"Error: some dates ({outofmonthdates}) do not belong to pay month."
       raise ValueError(errmsg)
-    while len(self.ongo_tardy_payments) > 0:
-      tardy_payment = self.ongo_tardy_payments.pop(0)
-      self.ongoing_credit += tardy_payment.value
+
+  def raise_va_if_some_payvalues_are_negative(self):
+    negativevalues = [p.value for p in self.payments if p.value < 0]
+    if len(negativevalues) > 0:
+      allpayvalues = [p.value for p in self.payments]
+      errmsg = f"Error: payments ({allpayvalues}) cannot contain negative values."
+      raise ValueError(errmsg)
+
+  def check_processors_data_are_consistent_or_raise_va(self):
+    self.raise_va_if_debt_is_positive()
+    self.raise_va_if_some_paydate_are_not_in_paymonth()
+    self.raise_va_if_some_payvalues_are_negative()
 
   def process_payments_in_month(self):
     """
@@ -264,20 +323,14 @@ class PaymentProcessor:
       print('Method process_payments_in_month() already run. Returning.')
       return
     # debt cannot be positive at the beginning
-    self.raise_va_if_debt_is_positive()
-    if len(self.payments) == 0:
-      self.treat_no_payments_happened()
-      self.payment_process_finished = True
+    self.check_processors_data_are_consistent_or_raise_va()
+    self.orig_monthsdebt = self.ongoing_debt
+    self.process_payments_ondate_ifany()
+    if self.payment_process_finished:
       return
-    self.treat_payments_ondate_ifany()
-    self.ongo_tardy_payments = [p for p in self.payments if p.date > self.duedate]
-    if self.ongoing_debt >= DECIMAL_ZERO:
-      self.credit_tardy_payments_if_any()
-    else:
-      self.process_tardy_payments()
+    self.process_tardy_payments_if_any()
     self.treat_last_mora_after_all_payments_credited()
     self.payment_process_finished = True
-
 
 def adhoctest1():
   print("The adhoctests are in the same folder as are the unit-tests.")

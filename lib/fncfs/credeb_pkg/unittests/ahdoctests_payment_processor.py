@@ -125,7 +125,8 @@ def adhoctest3():
   print(scrmsg)
   for monthmora in monthmoras:
     print(monthmora)
-
+  text = payprocessor.history_backtrack()
+  print(text)
 
 def process():
   pass

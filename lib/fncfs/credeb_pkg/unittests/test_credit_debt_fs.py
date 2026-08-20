@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-lib/fncfs/dinerofs/credit_debit_fs.py
+lib/fncfs/dinerofs/credit_debt_fs.py
 
 """
 from dinero import Decimal
@@ -50,7 +50,7 @@ class TestCase1(unittest.TestCase):
     value = Decimal(str("-150"), BRL)
     exp_cred_account = cdfs.DINERO_ZERO
     exp_deb_account = cred_account + deb_account + value
-    ret_cred_account, ret_deb_account = cdfs.debit_or_credit_value_to_accounts(value, cred_account, deb_account)
+    ret_cred_account, ret_deb_account = cdfs.debt_or_credit_value_to_accounts(value, cred_account, deb_account)
     self.assertEqual((exp_cred_account, exp_deb_account), (ret_cred_account, ret_deb_account))
     # hypothesis 2-2 debit_value_to_accounts(value, cred_account, deb_account)
     cred_account = Decimal(str("100"), BRL)

@@ -12,7 +12,7 @@ To imported:
 from decimal import Decimal
 import art.fnc.credeb_accomp as init
 dec_monthlymeta_brl_value = Decimal(init.DEFAULT_VALOR_META_MENSAL_IN_BRL)
-import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
+import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
 DECIMAL_ZERO = cdfs.DECIMAL_ZERO
 makedec = cdfs.make_decimal_w_appcontext
 

@@ -3,9 +3,10 @@
 """
 import datetime
 from decimal import Decimal
+import lib.fncfs.credeb_pkg.pay_dt_val_interface as pinterf  # pay.process_payments_in_month
 import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
-import lib.datesetc.refmonth_fs as rmfs  # pay.process_payments_in_month
-import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_value_to_accounts
+import lib.datesetc.refmonth_fs as rmfs
+import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debit_value_to_accounts
 from lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal import \
   calc_finmontant_w_1inimontant_2iridxlist_3monthpartition, \
   calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth
@@ -107,18 +108,18 @@ def hypothesis5():
   a_pg_deb = valor_a_pagar_como_debito
   duedate = datetime.date(2026, 4, 10)
   paydate1 = duedate
-  payment_1 = pay.PaymentInterfaceDateNValue(
+  payment_1 = pinterf.PaymentInterfaceDateNValue(
     date=paydate1, value=Decimal(1000),
   )
   paydate2 = datetime.date(2026, 4, 21)
-  payment_2 = pay.PaymentInterfaceDateNValue(
+  payment_2 = pinterf.PaymentInterfaceDateNValue(
     date=paydate2, value=Decimal(1000),
   )
   payments = [payment_1, payment_2]
   retrodate_ifinmora = datetime.date(2026, 4, 1)
   postdate_ifinmora = datetime.date(2026, 4, 30)
   fix_plus_var_ir_dec = Decimal(0.025)
-  postpay_tupl = pay.process_payments_in_month(
+  postpay_tupl = pinterf.process_payments_in_month(
     valor_a_pagar_como_debito=valor_a_pagar_como_debito,
     payments=payments,
     duedate=duedate,
@@ -139,13 +140,13 @@ def hypothesis4():
   hypstr = "# hypothesis 4: paying twice less than due, twice in time, once tardy"
   valor_a_pagar_como_debito = Decimal(-2000)
   duedate = datetime.date(2026, 4, 10)
-  payment_1 = pay.PaymentInterfaceDateNValue(
+  payment_1 = pinterf.PaymentInterfaceDateNValue(
     date=duedate, value=Decimal(2000),
   )
   retrodate_ifinmora = datetime.date(2026, 4, 1)
   postdate_ifinmora = datetime.date(2026, 4, 30)
   fix_plus_var_ir_dec = Decimal(0.025)
-  tupl_dec_dec_list = pay.process_payments_in_month(
+  tupl_dec_dec_list = pinterf.process_payments_in_month(
     valor_a_pagar_como_debito=valor_a_pagar_como_debito,
     payments=[payment_1],
     duedate=duedate,
@@ -166,13 +167,13 @@ def hypothesis3():
   valor_a_pagar_como_debito = Decimal(-2000)
   duedate = datetime.date(2026, 4, 10)
   paydate = datetime.date(2026, 4, 11)
-  payment_1 = pay.PaymentInterfaceDateNValue(
+  payment_1 = pinterf.PaymentInterfaceDateNValue(
     date=paydate, value=Decimal(1000),
   )
   retrodate_ifinmora = datetime.date(2026, 4, 1)
   postdate_ifinmora = datetime.date(2026, 4, 30)
   fix_plus_var_ir_dec = Decimal(0.025)
-  tupl_dec_dec_list = pay.process_payments_in_month(
+  tupl_dec_dec_list = pinterf.process_payments_in_month(
     valor_a_pagar_como_debito=valor_a_pagar_como_debito,
     payments=[payment_1],
     duedate=duedate,
@@ -192,13 +193,13 @@ def hypothesis2():
   hypstr = "# hypothesis 2: paying once: less than due and in/on time"
   valor_a_pagar_como_debito = Decimal(-2000)
   duedate = datetime.date(2026, 4, 10)
-  payment_1 = pay.PaymentInterfaceDateNValue(
+  payment_1 = pinterf.PaymentInterfaceDateNValue(
     date=duedate, value=Decimal(1000),
   )
   retrodate_ifinmora = datetime.date(2026, 4, 1)
   postdate_ifinmora = datetime.date(2026, 4, 30)
   fix_plus_var_ir_dec = Decimal(0.025)
-  tupl_dec_dec_list = pay.process_payments_in_month(
+  tupl_dec_dec_list = pinterf.process_payments_in_month(
     valor_a_pagar_como_debito=valor_a_pagar_como_debito,
     payments=[payment_1],
     duedate=duedate,
@@ -219,12 +220,15 @@ def hypothesis1():
   valor_a_pagar_como_debito = Decimal(-2000)
   duedate = datetime.date(2026, 4, 10)
   paydate = duedate
-  payment_1 = pay.PaymentInterfaceDateNValue(
+  payment_1 = pinterf.PaymentInterfaceDateNValue(
     date=paydate, value=Decimal(2000),
   )
   retrodate_ifinmora = datetime.date(2026, 4, 1)
   postdate_ifinmora = datetime.date(2026, 4, 30)
   fix_plus_var_ir_dec = Decimal(0.025)
+  payproc = pay.PaymentProcessor(
+
+  )
   tupl_dec_dec_list = pay.process_payments_in_month(
     valor_a_pagar_como_debito=valor_a_pagar_como_debito,
     payments=[payment_1],

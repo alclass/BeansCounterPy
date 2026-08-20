@@ -32,7 +32,7 @@ from dataclasses import dataclass, field, asdict
 import art.fnc.credeb_accomp.dictdata_fo_monthly_credeb_accomp as accdt  # accdt.items
 import art.fnc.credeb_accomp.mdb.serialize_dinero_n_decimal as obj_srlz
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.credeb_pkg.credit_debit_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
+import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debit_or_credit_value_to_accounts
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcachache
 import art.fnc.credeb_accomp as init
 from art.immeub.rent.pydantmodels import DEFAULT_3LETTER_CURRENCY
@@ -411,7 +411,7 @@ class DebCredAccompanier:
     self.bool_updt_saldos_has_run = True
     exced_or_faltante = self.surplus_or_deficit_to_monthlymeta
     # the function called below 'distributes' exced_or_faltante into 'reserve' or D2 as it's a credit or a debt
-    self.finvalue_res, self.finvalue_d2 = cdfs.debit_or_credit_value_to_accounts(
+    self.finvalue_res, self.finvalue_d2 = cdfs.debt_or_credit_value_to_accounts(
       exced_or_faltante,
       self.finvalue_res,
       self.finvalue_d2

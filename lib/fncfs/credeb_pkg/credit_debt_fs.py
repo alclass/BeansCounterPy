@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-lib/fncfs/dinerofs/credit_debit_fs.py
+lib/fncfs/dinerofs/credit_debt_fs.py
 
 """
 from dinero import Dinero
@@ -24,10 +24,10 @@ def compensate_cre_deb_accounts_one_against_the_other(
     cred_account: Decimal, deb_account: Decimal,
   ):
   """
-  Compensates credit account with debit account (or viceversa)
+  Compensates credit account with debt account (or viceversa)
 
-  input: credit_account, debit_account
-  output: new_credit_account, new_debit_account
+  input: credit_account, debt_account
+  output: new_credit_account, new_debt_account
 
   Example:
     ex1:
@@ -93,24 +93,25 @@ def credit_value_to_cred_account(value: Decimal, account: Decimal) -> Decimal:
   return account
 
 
-def credit_value_to_deb_account(value: Decimal, account: Decimal) -> tuple[Decimal, Decimal]:
+def credit_value_to_deb_account(cre_value: Decimal, deb_account: Decimal) -> tuple[Decimal, Decimal]:
   """
-  Crediting a debt account may produce a remaining
+  Credits a debt account. It may produce a remaining.
+  Returns (remaining, deb_acc)
   """
-  if value is None or account is None:
-    errmsg = f"Error: either value [{value}] or account [{account}] is None"
+  if cre_value is None or deb_account is None:
+    errmsg = f"Error: either value [{cre_value}] or account [{deb_account}] is None"
     raise ValueError(errmsg)
-  if value < DECIMAL_ZERO:
-    errmsg = f"credit_value ({value}) cannot be negative"
+  if cre_value < DECIMAL_ZERO:
+    errmsg = f"credit_value ({cre_value}) cannot be negative"
     raise ValueError(errmsg)
   # =========================
-  if account > DECIMAL_ZERO:
-    errmsg = f"deb account ({value}) cannot be positive"
+  if deb_account > DECIMAL_ZERO:
+    errmsg = f"deb account ({cre_value}) cannot be positive"
     raise ValueError(errmsg)
-  if abs(account) > value:
-    account = account + value
-    return DECIMAL_ZERO, account
-  remaining = account + value
+  if abs(deb_account) > cre_value:
+    deb_account = deb_account + cre_value
+    return DECIMAL_ZERO, deb_account
+  remaining = deb_account + cre_value
   return remaining, DECIMAL_ZERO
 
 
@@ -122,7 +123,7 @@ def debt_value_to_deb_account(value: Decimal, account: Decimal) -> Decimal:
     errmsg = f"Error: either value [{value}] or account [{account}] is None"
     raise ValueError(errmsg)
   if value > DECIMAL_ZERO:
-    errmsg = f"debit value ({value}) cannot be positive"
+    errmsg = f"debt value ({value}) cannot be positive"
     raise ValueError(errmsg)
   if account > DECIMAL_ZERO:
     errmsg = f"deb account ({value}) cannot be positive"
@@ -139,7 +140,7 @@ def debt_value_to_cre_account(value: Decimal, account: Decimal) -> tuple[Decimal
     errmsg = f"Error: either value [{value}] or account [{account}] is None"
     raise ValueError(errmsg)
   if value > DECIMAL_ZERO:
-    errmsg = f"debit value ({value}) cannot be positive"
+    errmsg = f"debt value ({value}) cannot be positive"
     raise ValueError(errmsg)
   if account < DECIMAL_ZERO:
     errmsg = f"cred account ({value}) cannot be negative"
@@ -157,7 +158,7 @@ def credit_value_to_accounts(
     value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple:
   if value is None:
-    errmsg = f"Error: debit ({value}) is None"
+    errmsg = f"Error: debt ({value}) is None"
     raise ValueError(errmsg)
   if value < DECIMAL_ZERO:
     errmsg = f"credit_value ({value}) cannot be negative"
@@ -176,9 +177,9 @@ def credit_value_to_accounts(
 
 def debt_value_to_accounts(
     value: Decimal, cre_account: Decimal, deb_account: Decimal
-  ) -> tuple[Decimal | None, Decimal | None]:
+  ) -> tuple[Decimal, Decimal]:
   """
-  Receives tripe value, credit account, debit account
+  Receives tripe value, credit account, debt account
   Calculates resultant cred_account, deb_account
   """
   if value is None:
@@ -199,19 +200,19 @@ def debt_value_to_accounts(
   # ========================
   if cre_account is None:
     deb_account = debt_value_to_deb_account(value, deb_account)
-    return None, deb_account
+    return DECIMAL_ZERO, deb_account
   remaining, cre_account = debt_value_to_cre_account(value, cre_account)
   deb_account = deb_account + remaining
   return cre_account, deb_account
 
 
-def debit_or_credit_value_to_accounts(
+def debt_or_credit_value_to_accounts(
     value: Decimal, cred_account: Decimal, deb_account: Decimal
   ) -> tuple:
   """
     To credit, here, is conventioned as a 'plus' operation
       and also credit_value must be a positive value
-      (otherwise it's a debit operation).
+      (otherwise it's a debt operation).
 
     Observations:
     =============
@@ -261,9 +262,9 @@ def adhoctests():
   scrmsg = f"""{__name__} | {__file__}:
   The adhoctests were moved to a module of their own.
   At the time of writing, this module:
-    lib/fncfs/dinerofs/adhoctests/ahdoctest_credit_debit_fs.py
+    lib/fncfs/dinerofs/adhoctests/ahdoctest_credit_debt_fs.py
   (it cannot be executed from here due to circular imports)
-  (execute it from its module [ahdoctest_credit_debit_fs.py] 'there'.)
+  (execute it from its module [ahdoctest_credit_debt_fs.py] 'there'.)
   """
   print(scrmsg)
 

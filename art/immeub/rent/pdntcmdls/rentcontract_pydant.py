@@ -26,7 +26,7 @@ import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
 from tabulate import tabulate
-from lib.fncfs.credeb_pkg.credit_debit_fs import ONE_THOUSANDTH_AS_STR
+from lib.fncfs.credeb_pkg.credit_debt_fs import ONE_THOUSANDTH_AS_STR
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
 PAYMENT_DUE_DAY_IN_MONTH = 10
