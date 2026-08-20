@@ -5,10 +5,19 @@ lib/fncfs/credeb_pkg/unittests/ahdoctests_payment_processor.py
     lib.fncfs.credeb_pkg.payment_processor as paypro  # paypro.PaymentProcessor
 
 """
+import datetime
 from decimal import Decimal, Context, ROUND_HALF_UP
 import lib.datesetc.datefs as dtfs
+import lib.datesetc.refmonth_fs as rmfs
+import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 import lib.fncfs.credeb_pkg.payment_processor as paypro  # paypro.PaymentProcessor
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcam  # ipcam.IpcaAPICacherRetriever
+# fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fnmts
+from lib.fncfs.indices.ipca.ipca_fetcher_cacher import IpcaAPICacherRetriever
+
+mkdt = dtfs.make_date_or_raise
 
 
 def adhoctest1():
@@ -38,7 +47,7 @@ def adhoctest1():
   )
   payprocessor.payments = payments
   payprocessor.process_payments_in_month()
-  credito, debito, quinhoes = payprocessor.cre_deb_moras_tuple
+  credito, debito, quinhoes = payprocessor.cre_deb_moras_after_process
   debito = payprocessor.ongoing_debt
   credito = payprocessor.ongoing_credit
   monthmoras = payprocessor.monthmoras
@@ -79,7 +88,7 @@ def adhoctest2():
   )
   payprocessor.payments = payments
   payprocessor.process_payments_in_month()
-  credito, debito, quinhoes = payprocessor.cre_deb_moras_tuple
+  credito, debito, quinhoes = payprocessor.cre_deb_moras_after_process
   scrmsg = f"""Example:
     Input: debt = {ongoingdebt} | payments = {payments}
       duedate = {duedate} | pays issued: {billstotal} | quinhoes = {quinhoes} 
@@ -115,7 +124,7 @@ def adhoctest3():
   )
   payprocessor.payments = payments
   payprocessor.process_payments_in_month()
-  credito, debito, monthmoras = payprocessor.cre_deb_moras_tuple
+  credito, debito, monthmoras = payprocessor.cre_deb_moras_after_process
   scrmsg = f"""Example:
     Input: debt = {ongoingdebt} | payments = {payments}
       duedate = {duedate} | pays issued: {billstotal} | quinhoes = {payprocessor.monthmoras} 
@@ -128,6 +137,50 @@ def adhoctest3():
   text = payprocessor.history_backtrack()
   print(text)
 
+
+def adhoctest4():
+  inidate = mkdt('2026-04-01')
+  findate = mkdt('2026-04-30')
+  ipcacacher = ipcam.IpcaAPICacherRetriever()
+  ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(inidate, 2)
+  refminus2 = rmfs.calc_refmonth_minus_n(inidate, 2)
+  scrmsg = f"refmonth={inidate} M-2 {refminus2} | ipca_dec: {ipca_dec:.4f}"
+  print(scrmsg)
+  ir_idx = Decimal(0.02) + ipca_dec
+  moravalue = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    inimontant=Decimal(-1000),
+    ir_idx=ir_idx,
+    inidate=inidate,
+    findate=findate,
+  )
+  scrmsg = f"moravalue' {moravalue:.4f}"
+  print(scrmsg)
+  monthdebtvalue = Decimal(-2000)
+  duedate = datetime.date(2026, 4, 10)
+  pprocessor = pay.PaymentProcessor(
+    ongoing_debt=monthdebtvalue,
+    duedate=duedate,
+    fix_ir_dec=Decimal(0.02),
+  )
+  payment_1 = intrfc.PaymentInterfaceDateNValue(
+    date=duedate, value=Decimal(1000),
+  )
+  pprocessor.payments = [payment_1]
+  pprocessor.process()
+  cre_deb_moras_after_process = pprocessor.cre_deb_moras_after_process
+  print('cre_deb_moras_after_process', cre_deb_moras_after_process)
+  print(pprocessor)
+  print(pprocessor.monthmoras[0])
+
+
+def adhoctest5():
+  inidate = mkdt('2026-04-01')
+  findate = mkdt('2026-04-30')
+  ipcacacher = ipcam.IpcaAPICacherRetriever()
+  ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(inidate, 2)
+  print(inidate, ipca_dec)
+
+
 def process():
   pass
 
@@ -135,7 +188,7 @@ def process():
 if __name__ == "__main__":
   """
   process()
-  """
   # adhoctest1()
   # adhoctest2()
-  adhoctest3()
+  """
+  adhoctest4()

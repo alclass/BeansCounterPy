@@ -16,7 +16,7 @@ import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICac
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fncfs
 DECIMAL_ZERO = Decimal('0')
 DECIMAL_ONE = Decimal('1')
-M_MINUS_N = 2
+M_MINUS_N_POSTPAYCASE = 1
 
 
 class SameMonthMora(pydantic.BaseModel):
@@ -65,7 +65,7 @@ class SameMonthMora(pydantic.BaseModel):
     if self._var_ir is not None:
       return self._var_ir
     cacher = fncach.IpcaAPICacherRetriever()
-    ipca_refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, M_MINUS_N)
+    ipca_refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, M_MINUS_N_POSTPAYCASE)
     ipca_dec = cacher.fetch_ipca_dec_for_refmonth(ipca_refmonth)
     self._var_ir = ipca_dec if ipca_dec is not None else DECIMAL_ZERO
     return self._var_ir
@@ -85,14 +85,11 @@ class SameMonthMora(pydantic.BaseModel):
     if self.todate == self.fromdate:
       return self.prevalue
     if self._postvalue is None:
-      # ajust days: either add 1 to the first or diminish 1 to the last
-      # this is because monthmora 'slides' through the month according to the dates interacted with
-      findate = self.todate - relativedelta(days=1)
       self._postvalue, increase = fncfs.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
         inimontant=self.prevalue,
         ir_idx=self.ir_idx,
         inidate=self.fromdate,
-        findate=findate,
+        findate=self.todate,
       )
     return self._postvalue
 
@@ -101,12 +98,11 @@ class SameMonthMora(pydantic.BaseModel):
       return Decimal(0)
     # ajust days: either add 1 to the first or diminish 1 to the last
     # this is because monthmora 'slides' through the month according to the dates interacted with
-    findate = self.todate - relativedelta(days=1)
     _increase = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=self.prevalue,
       ir_idx=self.ir_idx,
       inidate=self.fromdate,
-      findate=findate,
+      findate=self.todate,
     )
     return _increase
 

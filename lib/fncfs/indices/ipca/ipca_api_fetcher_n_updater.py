@@ -145,6 +145,8 @@ def fetch_n_store_ipcas_in_current_year_uptilnow() -> Path | None:
   upto_refmonth = rmfs.make_refmonth_it_minus_n_or_raise(current_refmonth, month_minus_n)
   str_first_refmonth_in_year = f"{current_year}-01"
   first_refmonth_in_year = make_refmonth_or_raise(str_first_refmonth_in_year)
+  errmsg = f"Error: wrongly calling web-API"
+  raise ValueError(errmsg)
   json_content = bcb_api_fetch_monthly_ipcas_between(first_refmonth_in_year, upto_refmonth)
   if not confirm_filewritting_jsoncontent_ipcas_for_year(current_year, json_content):
     print('Not writing file, returning.')
@@ -212,7 +214,8 @@ def get_year_monthly_ipcas_pct_via_jsonfile(year: int) -> dict[datetime.date, de
   if not ipca_jsonfile.is_file():
     return None
   try:
-    datadictlist = json.load(open(ipca_jsonfile))
+    with open(ipca_jsonfile, 'r', encoding='utf-8') as jfile:
+      datadictlist = json.load(jfile)
     ret_dict = {}
     for datadict in datadictlist:
       strdate = datadict[FIELDNAME_DATE_IN_IPCA_JSON]
@@ -289,6 +292,8 @@ def bcb_api_fetch_monthly_ipcas_between(inidate, findate) -> str:
   url = BCB_API_URL_INTERPOL.format(**paramsdict)
   scrmsg = f"Calling BCB (IPCA) API's url: {url}"
   print(scrmsg)
+  errmsg = f"Error: wrongly calling web-API @{__name__}"
+  raise ValueError(errmsg)
   try:
     # Executa a requisição HTTP GET
     with urllib.request.urlopen(url) as response:

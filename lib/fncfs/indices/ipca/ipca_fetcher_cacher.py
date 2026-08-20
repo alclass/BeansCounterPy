@@ -249,7 +249,6 @@ class IpcaAPICacherRetriever:
     ipca_dec = self.fetch_ipca_dec_for_refmonth(refmonth)
     return ipca_dec
 
-
   def retrieve_all_monthly_ipcapct_between_refmonths(self, inirefmonth, finrefmonth):
     for refmonth in rmfs.generate_monthrange(inirefmonth, finrefmonth):
       ipca_idx = self.fetch_ipca_pct_for_refmonth(refmonth)
@@ -292,8 +291,11 @@ def adhoctest2():
   retlist = trnsp_refmonth_n_ipcadec_fr_dict_to_tuplelist(pdict)
   scrmsg = f"input {refmonths} | output {retlist}"
   print(scrmsg)
+
+
+def adhoctest3():
   retriever = IpcaAPICacherRetriever()
-  refmonths = ['2010-2','2015-3','2019-12',]
+  refmonths = ['2019-12','2015-3','2010-2',]
   inirefmonth, finrefmonth = refmonths[0], refmonths[-1]
   retriever.retrieve_all_monthly_ipcapct_between_refmonths(inirefmonth, finrefmonth)
   # scrmsg = f"input {inirefmonth} to {finrefmonth}| output {tuplelist}"
@@ -301,7 +303,6 @@ def adhoctest2():
   print(retriever)
   plist = retriever.fetch_the_last_n_months_n_ipca(3)
   print(plist)
-
 
 
 def process():
@@ -322,4 +323,4 @@ if __name__ == '__main__':
   adhoctest1()
   process()
   """
-  adhoctest2()
+  adhoctest3()
