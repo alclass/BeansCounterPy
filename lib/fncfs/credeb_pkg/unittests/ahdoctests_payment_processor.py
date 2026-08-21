@@ -178,6 +178,43 @@ def adhoctest5():
   findate = mkdt('2026-04-30')
   ipcacacher = ipcam.IpcaAPICacherRetriever()
   ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(inidate, 2)
+  refminus2 = rmfs.calc_refmonth_minus_n(inidate, 2)
+  scrmsg = f"refmonth={inidate} M-2 {refminus2} | ipca_dec: {ipca_dec:.4f}"
+  print(scrmsg)
+  ir_idx = Decimal(0.02) + ipca_dec
+  moravalue = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    inimontant=Decimal(-1000),
+    ir_idx=ir_idx,
+    inidate=inidate,
+    findate=findate,
+  )
+  scrmsg = f"moravalue' {moravalue:.4f}"
+  print(scrmsg)
+  monthdebtvalue = Decimal(-2000)
+  duedate = datetime.date(2026, 4, 10)
+  pprocessor = pay.PaymentProcessor(
+    ongoing_debt=monthdebtvalue,
+    duedate=duedate,
+    fix_ir_dec=Decimal(0.02),
+  )
+  paydate = mkdt('2026-04-20')
+  payment_1 = intrfc.PaymentInterfaceDateNValue(
+    date=paydate, value=Decimal(1000),
+  )
+  pprocessor.payments = [payment_1]
+  pprocessor.process()
+  cre_deb_moras_after_process = pprocessor.cre_deb_moras_after_process
+  print('cre_deb_moras_after_process', cre_deb_moras_after_process)
+  print(pprocessor)
+  for mmora in pprocessor.monthmoras:
+    print(mmora)
+
+
+def adhoctest15():
+  inidate = mkdt('2026-04-01')
+  findate = mkdt('2026-04-30')
+  ipcacacher = ipcam.IpcaAPICacherRetriever()
+  ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(inidate, 2)
   print(inidate, ipca_dec)
 
 
@@ -191,4 +228,4 @@ if __name__ == "__main__":
   # adhoctest1()
   # adhoctest2()
   """
-  adhoctest4()
+  adhoctest5()

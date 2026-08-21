@@ -117,6 +117,12 @@ class PaymentProcessor:
     _cre_deb_moras_tuple = self.ongoing_credit, self.ongoing_debt, self.monthmoras
     return _cre_deb_moras_tuple
 
+  @property
+  def tot_mor_val(self) -> Decimal:
+    increases = [mo.increase for mo in self.monthmoras]
+    _tot_mor_val = Decimal(sum(increases))
+    return _tot_mor_val
+
   @staticmethod
   def mkstr_payments_as_date_n_value_lines_w_lst(payments) -> str:
     lines = []
@@ -145,6 +151,15 @@ class PaymentProcessor:
     payments = self.getcp_duedate_payments()
     return self.mkstr_payments_as_date_n_value_lines_w_lst(payments)
 
+  def monthly_bill_to_embed_as_dict(self) -> dict:
+    """
+    The processing when finished (also: closed) is recorded
+      embedded in MongoDB's collection doc related to its corresponding 'refmonth' BillingCard.
+    Then, fields that are already in the BillingCard must be removed in this selection.
+    """
+    _ = self
+    return {}
+
   def history_backtrack(self) -> str:
     if not self.payment_process_finished:
       return "Processing has not finished yet. Retry later."
@@ -154,6 +169,7 @@ class PaymentProcessor:
     line = f"valor mensal: {self.orig_monthsdebt:.2f} | total pagt no prazo: {self.total_paid_uptoduedate}"
     lines.append(line)
     line = self.mkstr_payments_uptoduedate_as_date_n_value_lines()
+    line += f' | total mora = {self.tot_mor_val:.2f}'
     lines.append(line)
     monthmoras = self.monthmoras[:]
     monthmoras.sort(key=lambda mmo: mmo.todate)

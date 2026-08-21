@@ -4,18 +4,30 @@
 from decimal import Decimal
 import unittest
 import datetime
-
 from dateutil.relativedelta import relativedelta
-
 import lib.datesetc.datefs as dtfs
+import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcam  # ipcam.
-# fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth
+import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fm_mnts
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fnmts
-from lib.fncfs.indices.ipca.ipca_fetcher_cacher import IpcaAPICacherRetriever
 mkdt = dtfs.make_date_or_raise
+mkrm = rmfs.make_refmonth_or_raise
 DECIMAL_ZERO = Decimal(0)
+DEFAULT_FIX_IR_DEC = Decimal('0.02')
+
+
+def fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
+    refmonth: datetime.date, p_fix_ir_dec: Decimal | None = None,
+  ) -> tuple[Decimal, Decimal]:
+  fix_ir_dec = p_fix_ir_dec or DEFAULT_FIX_IR_DEC
+  ipcacacher = ipcam.IpcaAPICacherRetriever()
+  ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(refmonth, 1)
+  if ipca_dec is None:
+    ipca_dec = DECIMAL_ZERO
+  ir_idx = fix_ir_dec + ipca_dec
+  return ir_idx, ipca_dec
 
 
 class TestCase1(unittest.TestCase):
@@ -44,7 +56,6 @@ class TestCase1(unittest.TestCase):
     payment_1 = intrfc.PaymentInterfaceDateNValue(
       date=duedate, value=Decimal(2000),
     )
-    fix_plus_var_ir_dec = Decimal(0.025)
     pprocessor = pay.PaymentProcessor(
       ongoing_debt=monthdebtvalue,
       duedate=duedate,
@@ -52,13 +63,12 @@ class TestCase1(unittest.TestCase):
     pprocessor.payments = [payment_1]
     pprocessor.process()
     # tuple[decimal.Decimal, decimal.Decimal, list[tuple[int, Decimal]]]
-    postpay_tupl = pprocessor.cre_deb_moras_after_process
-    cre, deb, monthmoras = postpay_tupl
+    cre, deb, monthmoras = pprocessor.cre_deb_moras_after_process
     self.assertEqual(cre, DECIMAL_ZERO)
     self.assertEqual(deb, DECIMAL_ZERO)
     self.assertEqual(monthmoras, [])
 
-  def test_2_paying_less(self):
+  def test_2_paying_1once_2lessthandue_3uptoduedate(self):
     """
     hypothesis 2:
       2a paying once and up to duedate
@@ -69,10 +79,11 @@ class TestCase1(unittest.TestCase):
     """
     monthdebtvalue = Decimal(-2000)
     duedate = datetime.date(2026, 4, 10)
+    fix_ir_dec = Decimal(0.02)
     pprocessor = pay.PaymentProcessor(
       ongoing_debt=monthdebtvalue,
       duedate=duedate,
-      fix_ir_dec=Decimal(0.02),
+      fix_ir_dec=fix_ir_dec,
     )
     payment_1 = intrfc.PaymentInterfaceDateNValue(
       date=duedate, value=Decimal(1000),
@@ -81,12 +92,10 @@ class TestCase1(unittest.TestCase):
     pprocessor.process()
     inidate = mkdt('2026-04-01')
     findate = mkdt('2026-04-30')
-    ipcacacher = ipcam.IpcaAPICacherRetriever()
-    ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(inidate, 2)
-    if ipca_dec is None:
-      ir_idx = Decimal(0.02)
-    else:
-      ir_idx = Decimal(0.02) + ipca_dec
+    refmonth = mkrm('2026-03')
+    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    )
     moravalue = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=Decimal(-1000),
       ir_idx=ir_idx,
@@ -100,15 +109,19 @@ class TestCase1(unittest.TestCase):
     monthmora = monthmoras[0]
     self.assertEqual(ipca_dec, monthmora.ipca_dec)
     self.assertEqual(deb, missing_avec_mora)
+    self.assertEqual(cre, DECIMAL_ZERO)
+    # noinspection bad-argument-type
     self.assertEqual(len(monthmoras), 1)
     self.assertEqual(moravalue, monthmora.increase)
     # the 1000 missing is counted for the whole month (30 days)
+    # though the 'balance approach' is better when there are payments after duedate
     self.assertEqual(monthmora.moradays, 30)
     self.assertEqual(monthmora.prevalue, missing_sans_mora)
     self.assertEqual(monthmora.postvalue, missing_avec_mora)
     self.assertEqual(monthmora.ir_idx, ir_idx)
+    self.assertEqual(pprocessor.tot_mor_val, moravalue)
 
-  def test_3_process_month_pays(self):
+  def test_3_paying_1once_2lessthandue_3afterduedate(self):
     """
     hypothesis 3
       3a paying once and after duedate
@@ -128,100 +141,172 @@ class TestCase1(unittest.TestCase):
     )
     paydate = mkdt('2026-04-20')
     payment_1 = intrfc.PaymentInterfaceDateNValue(
-      date=duedate, value=Decimal(1000),
+      date=paydate, value=Decimal(1000),
     )
     pprocessor.payments = [payment_1]
     pprocessor.process()
     inidate = mkdt('2026-04-01')
     findate = mkdt('2026-04-30')
-    ipcacacher = ipcam.IpcaAPICacherRetriever()
-    ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(inidate, 2)
-    if ipca_dec is None:
-      ir_idx = Decimal(0.02)
-    else:
-      ir_idx = Decimal(0.02) + ipca_dec
-    moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    fix_ir_dec = Decimal(0.02)
+    refmonth = rmfs.make_refmonth_or_raise('2026-03')
+    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    )
+    exp_inimontant_1 = monthdebtvalue
+    exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=Decimal(-2000),
       ir_idx=ir_idx,
       inidate=inidate,
       findate=paydate,
     )
     paydate_plus_1 = paydate + relativedelta(days=1)
-    moravalue2 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
-      inimontant=Decimal(-1000),
+    exp_inimontant_2 = Decimal(-1000) + exp_moravalue1
+    exp_moravalue2 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=exp_inimontant_2,
       ir_idx=ir_idx,
       inidate=paydate_plus_1,
       findate=findate,
     )
-    the_2_mora = moravalue1 + moravalue2
+    the_2_mora = exp_moravalue1 + exp_moravalue2
     missing_avec_mora = monthdebtvalue + payment_1.value + the_2_mora
     cre, deb, monthmoras = pprocessor.cre_deb_moras_after_process
     self.assertEqual(cre, DECIMAL_ZERO)
-    monthmora = monthmoras[0]
-    self.assertEqual(ipca_dec, monthmora.ipca_dec)
+    ret_monthmora_1 = monthmoras[0]
+    ret_monthmora_2 = monthmoras[1]
+    self.assertEqual(ipca_dec, ret_monthmora_1.ipca_dec)
+    self.assertEqual(ret_monthmora_1.ir_idx, ir_idx)
+    # noinspection bad-argument-type
     self.assertEqual(len(monthmoras), 2)
-    # self.assertEqual(deb, missing_avec_mora)
-    # self.assertEqual(moravalue, monthmora.increase)
-    # # the 1000 missing is counted for the whole month (30 days)
-    # self.assertEqual(monthmora.moradays, 30)
-    # self.assertEqual(monthmora.prevalue, missing_sans_mora)
+    self.assertEqual(the_2_mora, ret_monthmora_1.increase+ret_monthmora_2.increase)
+    self.assertEqual(deb, missing_avec_mora)
+    self.assertEqual(ret_monthmora_1.moradays, 20)
+    self.assertEqual(ret_monthmora_2.moradays, 10)
+    # self.assertEqual(ret_monthmora_1.prevalue, )
     # self.assertEqual(monthmora.postvalue, missing_avec_mora)
-    # self.assertEqual(monthmora.ir_idx, ir_idx)
 
-  def atest_3_process_month_pays(self):
+  def test_4_paying_1twice_2lessthandue_3afterduedate(self):
     """
+      # hypothesis 4: paying twice less than due, twice in time, once tardy
+
     hypotheses 5 and 6
     # hypothesis 5: paying twice, one in due time, one tardy
     # hypothesis 6: paying twice, twice tardy
 
     """
     # hypothesis 5: paying twice, one in due time, one tardy
-    valor_a_pagar_como_debito = Decimal(-2000)
-    duedate = datetime.date(2026, 4, 10)
-    payment_1 = pay.PaymentInterfaceDateNValue(
-      date=duedate, value=Decimal(1000),
+    inidate, findate = mkdt('2026-4-1'), mkdt('2026-04-30')
+    duedate, paydate1, paydate2 = mkdt('2026-04-10'), mkdt('2026-04-15'), mkdt('2026-04-25')
+    payvalue1, payvalue2 = Decimal(950), Decimal(850)
+    payment1 = intrfc.PaymentInterfaceDateNValue(
+      date=paydate1, value=payvalue1,
     )
-    retrodate_ifinmora = datetime.date(2026, 4, 1)
-    postdate_ifinmora = datetime.date(2026, 4, 30)
-    fix_plus_var_ir_dec = Decimal(0.025)
-    # tuple[decimal.Decimal, decimal.Decimal, list[tuple[int, Decimal]]]
-    postpay_tupl = pay.process_payments_in_month(
-      valor_a_pagar_como_debito=valor_a_pagar_como_debito,
-      payments=[payment_1],
+    payment2 = intrfc.PaymentInterfaceDateNValue(
+      date=paydate2, value=payvalue2,
+    )
+    monthdebtvalue = Decimal(-2000)
+    pprocessor = pay.PaymentProcessor(
+      ongoing_debt=monthdebtvalue,
       duedate=duedate,
-      retrodate_ifinmora=retrodate_ifinmora,
-      postdate_ifinmora=postdate_ifinmora,
-      fix_plus_var_ir_dec=fix_plus_var_ir_dec,
+      fix_ir_dec=Decimal(0.02),
     )
-    cre, deb, ndays_n_amt = postpay_tupl
-    self.assertEqual(cre, DECIMAL_ZERO)
-    self.assertEqual(deb, DECIMAL_ZERO)
-    self.assertEqual(ndays_n_amt, [])
-    # hypothesis 2: paying once: less than due and in/on time
-    valor_a_pagar_como_debito = Decimal(-2000)
-    duedate = datetime.date(2026, 4, 10)
-    payment_1 = pay.PaymentInterfaceDateNValue(
-      date=duedate, value=Decimal(1000),
+    pprocessor.payments = [payment1, payment2]
+    pprocessor.process()
+    fix_ir_dec = Decimal(0.02)
+    refmonth = rmfs.make_refmonth_or_raise('2026-03')
+    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
     )
-    retrodate_ifinmora = datetime.date(2026, 4, 1)
-    postdate_ifinmora = datetime.date(2026, 4, 30)
-    fix_plus_var_ir_dec = Decimal(0.025)
-    # tuple[decimal.Decimal, decimal.Decimal, list[tuple[int, Decimal]]]
-    cre, deb, ndays_n_amt = postpay_tupl
+    exp_inimontant_1 = monthdebtvalue
+    exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=exp_inimontant_1,
+      ir_idx=ir_idx,
+      inidate=inidate,
+      findate=paydate1,
+    )
+    paydate1_plus_1 = paydate1 + relativedelta(days=1)
+    exp_inimontant_2 = exp_inimontant_1 + payvalue1 + exp_moravalue1
+    exp_moravalue2 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=exp_inimontant_2,
+      ir_idx=ir_idx,
+      inidate=paydate1_plus_1,
+      findate=paydate2,
+    )
+    paydate2_plus_1 = paydate2 + relativedelta(days=1)
+    exp_inimontant_3 = exp_inimontant_2 + payvalue2 + exp_moravalue2
+    exp_moravalue3 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=exp_inimontant_3,
+      ir_idx=ir_idx,
+      inidate=paydate2_plus_1,
+      findate=findate,
+    )
+    exp_total_moravalue = exp_moravalue1 + exp_moravalue2 + exp_moravalue3
+    calcd_total_moravalue = pprocessor.tot_mor_val
+    cre, deb, monthmoras = pprocessor.cre_deb_moras_after_process
+    self.assertEqual(calcd_total_moravalue, exp_total_moravalue)
     self.assertEqual(cre, DECIMAL_ZERO)
-    # deb will be finmontant = 1000 * (1 + 0.025) ** 1
-    v_a_pg = valor_a_pagar_como_debito + payment_1.value
-    mult_for_fm = (1 + fix_plus_var_ir_dec) ** 1
-    exp_deb_finmontant = v_a_pg * mult_for_fm
-    # ==========
-    # at the month's end, deb is the mora-updated debt
-    # ==========
-    self.assertEqual(deb, exp_deb_finmontant)
-    exp_abs_deb_increase = abs(v_a_pg * (mult_for_fm - 1))
-    exp_ndays_n_amt = [(30, exp_abs_deb_increase)]
-    # ==========
-    # at the month's end, tuple contains ndays and increse
-    # take care with signs (though debt is negative, amounts are positive)
-    # (maybe the system should re-sign it, i.e., the amounts being negative)
-    # ==========
-    self.assertEqual(ndays_n_amt, exp_ndays_n_amt)
+    exp_deb = monthdebtvalue + payvalue1 + payvalue2 + exp_moravalue1 + exp_moravalue2 + exp_moravalue3
+    # noinspection bad-argument-type
+    deb, exp_deb = fm_mnts.sigfig(deb, 16), fm_mnts.sigfig(exp_deb, 16)
+    self.assertEqual(deb, exp_deb)
+
+  def test_5_paying_1twice_oneuptoduedate_oneafter_2morethanduepay(self):
+    """
+    hypothesis 5: paying twice, once up to duetime, one tardy, the two payments more than month's due.
+
+    hypothesis 6: paying twice, twice tardy
+    """
+    # hypothesis 5: paying twice, one in due time, one tardy
+    inidate, findate = mkdt('2026-4-1'), mkdt('2026-04-30')
+    duedate, paydate1, paydate2 = mkdt('2026-04-10'), mkdt('2026-04-15'), mkdt('2026-04-25')
+    payvalue1, payvalue2 = Decimal(950), Decimal(850)
+    payment1 = intrfc.PaymentInterfaceDateNValue(
+      date=paydate1, value=payvalue1,
+    )
+    payment2 = intrfc.PaymentInterfaceDateNValue(
+      date=paydate2, value=payvalue2,
+    )
+    monthdebtvalue = Decimal(-2000)
+    pprocessor = pay.PaymentProcessor(
+      ongoing_debt=monthdebtvalue,
+      duedate=duedate,
+      fix_ir_dec=Decimal(0.02),
+    )
+    pprocessor.payments = [payment1, payment2]
+    pprocessor.process()
+    fix_ir_dec = Decimal(0.02)
+    refmonth = rmfs.make_refmonth_or_raise('2026-03')
+    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    )
+    exp_inimontant_1 = monthdebtvalue
+    exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=exp_inimontant_1,
+      ir_idx=ir_idx,
+      inidate=inidate,
+      findate=paydate1,
+    )
+    paydate1_plus_1 = paydate1 + relativedelta(days=1)
+    exp_inimontant_2 = exp_inimontant_1 + payvalue1 + exp_moravalue1
+    exp_moravalue2 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=exp_inimontant_2,
+      ir_idx=ir_idx,
+      inidate=paydate1_plus_1,
+      findate=paydate2,
+    )
+    paydate2_plus_1 = paydate2 + relativedelta(days=1)
+    exp_inimontant_3 = exp_inimontant_2 + payvalue2 + exp_moravalue2
+    exp_moravalue3 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      inimontant=exp_inimontant_3,
+      ir_idx=ir_idx,
+      inidate=paydate2_plus_1,
+      findate=findate,
+    )
+    exp_total_moravalue = exp_moravalue1 + exp_moravalue2 + exp_moravalue3
+    calcd_total_moravalue = pprocessor.tot_mor_val
+    cre, deb, monthmoras = pprocessor.cre_deb_moras_after_process
+    self.assertEqual(calcd_total_moravalue, exp_total_moravalue)
+    self.assertEqual(cre, DECIMAL_ZERO)
+    exp_deb = monthdebtvalue + payvalue1 + payvalue2 + exp_moravalue1 + exp_moravalue2 + exp_moravalue3
+    # noinspection bad-argument-type
+    deb, exp_deb = fm_mnts.sigfig(deb, 16), fm_mnts.sigfig(exp_deb, 16)
+    self.assertEqual(deb, exp_deb)
