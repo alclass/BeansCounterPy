@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-art/immeubroutes/pdntcmdls/billing_mod.py
-
+art/immeub/rent/billmodels/billingcard_pydantic.py
 
 # from art.immeub.rent.pdntcmdls.schema_bizmodels import BillingCard
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
@@ -13,13 +12,15 @@ import locale
 from prettytable import PrettyTable
 import pydantic
 from dateutil.relativedelta import relativedelta
-import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.credeb_pkg.payment_processor as quinhoes  # quinhoes.process_payments
-import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
 import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.PydtcBillingItem
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
+import lib.datesetc.refmonth_fs as rmfs
+import lib.fncfs.credeb_pkg.payment_processor as quinhoes  # quinhoes.process_payments
+import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
+import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 PAYMENT_DUE_DAY_IN_MONTH = 10
@@ -28,7 +29,7 @@ MONTHLY_FIX_IR_DEC = Decimal(MONTHLY_FIX_IR_DEC_STR)
 DECIMAL_ZERO = Decimal('0')
 
 
-def from_to_json():
+def from_to_json(doc):
   billingcard_o = None
   if doc is not None:
     # pdict = srlz.deserialize_mongo_doc(doc, is_data_from_db=True)
@@ -155,29 +156,23 @@ class PydtcBillingCard(pydantic.BaseModel):
 
       a) credito_no_fecho: if payment superseded bill's value.
       b) debito_no_fecho: if payment was below bill's value. This also generates mora.
-      c) quinhoes_days_vals: in case of mora, details how this mora is composed in parts.
+      c) monthmoras
 
     """
-    # first in the step-by-step processing: init the 3 vars: cred, debt & quinhões
-    self.credito_no_fecho, self.debito_no_fecho = DECIMAL_ZERO, DECIMAL_ZERO
-    self.quinhoes_days_vals = []
-    total_debito = -self.fatura_total
-    # first: count payment up to due date
-    if len(self.payments) == 0:
-      self.credito_no_fecho = total_debito
-      return False
+    # sort payments date-asc
     self.payments.sort(key=lambda obj: obj.date)
     # 'credito' é troco, devolução ou adiantamento; 'debito' é item de mora para o próximo mês
     # if one has value, the other must be zeroed: critic (or exception-raising) happens in function process_payments()
-    payments = [quinhoes.PaymentInterfaceDateNValue(o.date, o.value) for o in self.payments]
-    self.credito_no_fecho, self.debito_no_fecho, self.quinhoes_days_vals = quinhoes.process_payments_in_month(
-      valor_a_pagar_como_debito=total_debito,
-      payments=payments,
+    payments = [intrfc.PaymentInterfaceDateNValue(o.date, o.value) for o in self.payments]
+    ongoing_debt = -self.fatura_total
+    pprocessor = pay.PaymentProcessor(
+      ongoing_debt=ongoing_debt,
       duedate=self.duedate,
-      retrodate_ifinmora=self.retrodate_ifinmora,
-      postdate_ifinmora=self.postdate_ifinmora,
-      fix_plus_var_ir_dec=self.fix_plus_var_ir_dec,
+      fix_ir_dec=self.monthly_fix_ir_dec,
+      has_ipca=True,
     )
+    pprocessor.payments = payments
+    pprocessor.process()
     return True
 
   @property
@@ -252,7 +247,6 @@ class PydtcBillingCard(pydantic.BaseModel):
     lastpayment = self.payments[-1]
     _lastpaydate = lastpayment.date
     return _lastpaydate
-
 
   def has_been_paid_after_payment_processed(self):
     if self.debito_no_fecho == DECIMAL_ZERO:
@@ -376,7 +370,6 @@ class PydtcBillingCard(pydantic.BaseModel):
     pydantic_to_mongo = self.as_pydantic_to_mongo()
     mongojsonrepr = pydantic_to_mongo.model_dump_json(indent=2)
     return mongojsonrepr
-
 
   def process(self):
     pass
