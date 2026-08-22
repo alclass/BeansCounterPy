@@ -1,5 +1,6 @@
 """
-
+lib/fncfs/credeb_pkg/unittests/test_payment_processor.py
+   Unit-tests to class payment_processor.PaymentProcessor()
 """
 from decimal import Decimal
 import unittest
@@ -40,16 +41,15 @@ class TestCase1(unittest.TestCase):
   # hypothesis 6: paying twice, twice tardy
   # hypothesis 7: paying nothing (to check/verify back mora)
   # hypothesis 8: paying once in/on time leaving credit
-  # test_2 below will repeat this with more data
   """
 
   def test_1_paying_the_charged_amount(self):
     """
     hypothesis 1: paying total monthsdebt correctly up to duedate
 
-    The numerical example:
-      2a paydate <= duedate: e.g. 2026-04-10
-      2a payvalue < duevalue e.g. 2000 (when monthsdebt = -2000)
+    A numerical example:
+      a) paydate <= duedate: e.g. 2026-04-10
+      b) payvalue == duevalue e.g. 2000 (when monthsdebt = -2000)
     """
     monthdebtvalue = Decimal(-2000)
     duedate = datetime.date(2026, 4, 10)
@@ -61,12 +61,14 @@ class TestCase1(unittest.TestCase):
       duedate=duedate,
     )
     pprocessor.payments = [payment_1]
+    self.assertIsNone(pprocessor.is_monthsbill_fully_paid())
     pprocessor.process()
     # tuple[decimal.Decimal, decimal.Decimal, list[tuple[int, Decimal]]]
     cre, deb, monthmoras = pprocessor.cre_deb_moras_after_process
     self.assertEqual(cre, DECIMAL_ZERO)
     self.assertEqual(deb, DECIMAL_ZERO)
     self.assertEqual(monthmoras, [])
+    self.assertTrue(pprocessor.is_monthsbill_fully_paid)
 
   def test_2_paying_1once_2lessthandue_3uptoduedate(self):
     """
@@ -89,6 +91,7 @@ class TestCase1(unittest.TestCase):
       date=duedate, value=Decimal(1000),
     )
     pprocessor.payments = [payment_1]
+    self.assertIsNone(pprocessor.is_monthsbill_fully_paid())
     pprocessor.process()
     inidate = mkdt('2026-04-01')
     findate = mkdt('2026-04-30')
@@ -120,6 +123,8 @@ class TestCase1(unittest.TestCase):
     self.assertEqual(monthmora.postvalue, missing_avec_mora)
     self.assertEqual(monthmora.ir_idx, ir_idx)
     self.assertEqual(pprocessor.tot_mor_val, moravalue)
+    self.assertFalse(pprocessor.is_monthsbill_fully_paid())
+
 
   def test_3_paying_1once_2lessthandue_3afterduedate(self):
     """
@@ -168,9 +173,9 @@ class TestCase1(unittest.TestCase):
       findate=findate,
     )
     the_2_mora = exp_moravalue1 + exp_moravalue2
-    missing_avec_mora = monthdebtvalue + payment_1.value + the_2_mora
-    cre, deb, monthmoras = pprocessor.cre_deb_moras_after_process
-    self.assertEqual(cre, DECIMAL_ZERO)
+    exp_debito_no_fecho = monthdebtvalue + payment_1.value + the_2_mora
+    credito_debito_no_fecho, ret_debito_no_fecho, monthmoras = pprocessor.cre_deb_moras_after_process
+    self.assertEqual(credito_debito_no_fecho, DECIMAL_ZERO)
     ret_monthmora_1 = monthmoras[0]
     ret_monthmora_2 = monthmoras[1]
     self.assertEqual(ipca_dec, ret_monthmora_1.ipca_dec)
@@ -178,11 +183,11 @@ class TestCase1(unittest.TestCase):
     # noinspection bad-argument-type
     self.assertEqual(len(monthmoras), 2)
     self.assertEqual(the_2_mora, ret_monthmora_1.increase+ret_monthmora_2.increase)
-    self.assertEqual(deb, missing_avec_mora)
+    self.assertEqual(ret_debito_no_fecho, exp_debito_no_fecho)
     self.assertEqual(ret_monthmora_1.moradays, 20)
     self.assertEqual(ret_monthmora_2.moradays, 10)
-    # self.assertEqual(ret_monthmora_1.prevalue, )
-    # self.assertEqual(monthmora.postvalue, missing_avec_mora)
+    self.assertEqual(exp_debito_no_fecho, ret_debito_no_fecho)
+    self.assertFalse(pprocessor.is_monthsbill_fully_paid())
 
   def test_4_paying_1twice_2lessthandue_3afterduedate(self):
     """
@@ -247,7 +252,9 @@ class TestCase1(unittest.TestCase):
     exp_deb = monthdebtvalue + payvalue1 + payvalue2 + exp_moravalue1 + exp_moravalue2 + exp_moravalue3
     # noinspection bad-argument-type
     deb, exp_deb = fm_mnts.sigfig(deb, 16), fm_mnts.sigfig(exp_deb, 16)
-    self.assertEqual(deb, exp_deb)
+    exp_debito_no_fecho, ret_debito_no_fecho = exp_deb, deb
+    self.assertEqual(exp_debito_no_fecho, ret_debito_no_fecho)
+    self.assertFalse(pprocessor.is_monthsbill_fully_paid())
 
   def test_5_paying_1twice_oneuptoduedate_oneafter_2morethanduepay(self):
     """

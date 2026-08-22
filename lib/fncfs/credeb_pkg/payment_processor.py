@@ -182,6 +182,13 @@ class PaymentProcessor(pydantic.BaseModel):
       lines.append(line)
     return '\n'.join(lines)
 
+  def is_monthsbill_fully_paid(self) -> bool | None:
+    if not self.payment_process_finished:
+      return None
+    if self.debito_no_fecho < DECIMAL_ZERO:
+      return False
+    return True
+
   def process_tardy_payments_if_any(self) -> None:
     """
     Processes payment(s) that were made later (or tardier)
