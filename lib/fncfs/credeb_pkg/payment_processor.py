@@ -16,12 +16,11 @@ import calendar
 from decimal import Decimal  # , Context, ROUND_HALF_UP
 import datetime
 from typing import Optional
-
+import pydantic
 from dateutil.relativedelta import relativedelta
-
 import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debt_value_to_accounts
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
-import lib.fncfs.credeb_pkg.samemonthmora_classes as moram  # moram.SameMonthMora
+import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
 DECIMAL_ZERO = Decimal('0')
 DEFAULT_FIX_IR_DEC = Decimal('0.02')
 
@@ -36,14 +35,14 @@ class StepByStepMonthValuesKeeper:
   debts: list[intrfc.PaymentInterfaceDateNValue]
 
 
-class PaymentProcessor:
+class PaymentProcessor(pydantic.BaseModel):
   """
   Contains 'logic' to process a monthly payment obligation
     having a due-window-day-range for payment.
   The explanatory description of this process is found
     in the accompanying doc.md in the package.
-  """
 
+  # before inherint from pydantic.BaseModel
   def __init__(
       self,
       ongoing_debt: Decimal,
@@ -51,20 +50,21 @@ class PaymentProcessor:
       fix_ir_dec: Decimal = DEFAULT_FIX_IR_DEC,
       has_ipca: bool = True
     ) -> None:
-    self.ongoing_debt: Decimal = ongoing_debt
-    self.duedate: datetime.date = duedate
-    self.fix_ir_dec: Decimal = fix_ir_dec if fix_ir_dec is not None else DEFAULT_FIX_IR_DEC
-    self.has_ipca: bool = has_ipca if has_ipca is not None else True
-    # a list of payment objects that contain date and value
-    self.payments: list[intrfc.PaymentInterfaceDateNValue] = []
-    self._retrodate_ifinmora: Optional[datetime.date] = None
-    self._postdate_ifinmora: Optional[datetime.date] = None
-    self.monthmoras: list[moram.SameMonthMora] = []
-    self._total_paid_ondate: Optional[Decimal] = None
-    self.ongoing_credit: Decimal = DECIMAL_ZERO
-    self.orig_monthsdebt: Optional[Decimal] = None
-    self.ongoing_date: Optional[datetime.date] = None
-    self.payment_process_finished: bool = False
+
+  """
+  ongoing_debt: Decimal
+  duedate: datetime.date
+  fix_ir_dec: Decimal = pydantic.Field(default_factory=lambda: DEFAULT_FIX_IR_DEC)
+  payments: list[intrfc.PaymentInterfaceDateNValue] = pydantic.Field(default_factory=lambda: [])
+  monthmoras: list[moram.SameMonthMora] = pydantic.Field(default_factory=lambda: [])
+  _total_paid_ondate: Optional[Decimal] = None
+  _retrodate_ifinmora: Optional[datetime.date] = None
+  _postdate_ifinmora: Optional[datetime.date] = None
+  ongoing_credit: Optional[Decimal] = None
+  orig_monthsdebt: Optional[Decimal] = None
+  ongoing_date: Optional[datetime.date] = None
+  has_ipca: bool = True
+  payment_process_finished: bool = False
 
   @property
   def total_paid_uptoduedate(self) -> Decimal:

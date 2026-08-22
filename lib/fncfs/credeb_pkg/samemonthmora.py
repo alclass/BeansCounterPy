@@ -1,18 +1,16 @@
 """
-art/immeub/rent/billmodels/samemonthmora_class.py
-  Contains functions that pay a debt directly or by "quinhões"
-    (i.e., peacemealwise when monthly mora is partitioned, i.e., it happens across more than one month)
+lib/fncfs/credeb_pkg/samemonthmora.py
+  Contains class SameMonthMora which calculates mora within a month.
+
+from dateutil.relativedelta import relativedelta
 """
 from decimal import Decimal, Context, ROUND_HALF_UP
 import datetime
 from typing import Optional
 import pydantic
-from dateutil.relativedelta import relativedelta
-
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
-# for fncfs.calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fncfs
 DECIMAL_ZERO = Decimal('0')
 DECIMAL_ONE = Decimal('1')
@@ -21,13 +19,22 @@ M_MINUS_N_POSTPAYCASE = 1
 
 class SameMonthMora(pydantic.BaseModel):
   fromdate: datetime.date
-  todate: datetime.date  # todate is also incidencedate
-  prevalue: Decimal
+  todate: datetime.date  # find out, in Pydantic, how to criticize todate so that is not smaller than fromdate
+  prevalue: Decimal  # the client-caller has to control whether prevalue is positive (credit) or negative (debt)
   fix_ir_dec: Decimal
   has_ipca: bool = True
-  _var_ir: Optional[Decimal] = None
+  _var_ir: Optional[Decimal] = None  # TODO to make this flexible for any kind of financial index (beyond IPCA)
   _postvalue: Optional[Decimal] = None
   _increase: Optional[Decimal] = None
+
+  @pydantic.model_validator(mode='after')
+  def check_date_order(self) -> 'SameMonthMora':
+    # Self contains fully validated date objects at this point
+    if self.todate < self.fromdate:
+      errmsg = f'todate {self.todate} cannot be earlier than fromdate {self.fromdate}'
+      raise ValueError(errmsg)
+    return self
+
 
   def explains(self) -> str:
     ir_pct = self.ir_idx * 100
@@ -38,8 +45,9 @@ class SameMonthMora(pydantic.BaseModel):
   @property
   def refmonth(self) -> datetime.date:
     """
-    refmonth is the previous month related to the month when payment happens
-    It may be said the refmonth is M-1
+    refmonth is the previous month related to the month when payment happens.
+    It may be said the refmonth is M-1 (that is, the previous month).
+    Notice that the IPCA refmonth is M-1 from the billing refmonth (this) or M-2 from payment refmonth.
     """
     _refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.fromdate, 1)
     return _refmonth
@@ -60,6 +68,12 @@ class SameMonthMora(pydantic.BaseModel):
 
   @property
   def ipca_dec(self) -> Decimal | None:
+    """
+    Fetches the month's IPCA for M-2 from payment refmonth (M-1 from billing refmonth).
+
+    To fetch I/O-fetching in here: an alternative is to input ipca_dec via the constructor
+      and avoid I/O-fetching in this class.
+    """
     if not self.has_ipca:
       return DECIMAL_ZERO
     if self._var_ir is not None:
@@ -72,18 +86,30 @@ class SameMonthMora(pydantic.BaseModel):
 
   @property
   def var_ir(self) -> Decimal:
+    """
+    Looks up boolean has_ipca:
+      a) if False, returns DECIMAL_ZERO;
+      b) if True, returns ipca_dec (that is in turn I/O-fetchable).
+    """
     if not self.has_ipca:
       return DECIMAL_ZERO
     return self.ipca_dec
 
   @property
   def ir_idx(self) -> Decimal:
+    """The sum of the fix part and the variable part of the return rate (or ir = interest rate)."""
     return self.fix_ir_dec + self.var_ir
 
   @property
   def postvalue(self) -> Decimal:
-    if self.todate == self.fromdate:
-      return self.prevalue
+    """
+    The 'final montant' of the financial equation:
+      fm = im * (1 + r) ** d
+    WHERE:
+      fm = final montant
+      r = the return rate (or interest rate)
+      d = the duration in the operation's time measure unit
+    """
     if self._postvalue is None:
       self._postvalue, increase = fncfs.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
         inimontant=self.prevalue,
@@ -94,10 +120,11 @@ class SameMonthMora(pydantic.BaseModel):
     return self._postvalue
 
   def calc_increase(self) -> Decimal:
-    if self.todate == self.fromdate:
-      return Decimal(0)
-    # ajust days: either add 1 to the first or diminish 1 to the last
-    # this is because monthmora 'slides' through the month according to the dates interacted with
+    """
+    Calculates the increase, i.e. the increment that is added to inimontant to give finmontant.
+    @see also docstr for postvalue above.
+    It calls an 'underlying' financial function for that purpose.
+    """
     _increase = fncfs.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=self.prevalue,
       ir_idx=self.ir_idx,

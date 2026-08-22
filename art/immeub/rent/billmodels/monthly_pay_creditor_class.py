@@ -13,7 +13,7 @@ import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 # for fncfs.calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate
 import lib.fncfs.credeb_pkg.payment_processor as paybyquin  # paybyquin.process_payments_in_month
-import lib.fncfs.credeb_pkg.samemonthmora_classes as mmora # mmora.SameMonthMora
+import lib.fncfs.credeb_pkg.samemonthmora as mmora # mmora.SameMonthMora
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 DECIMAL_ZERO = Decimal('0')
 DECIMAL_ONE = Decimal('1')
