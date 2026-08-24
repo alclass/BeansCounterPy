@@ -1,21 +1,24 @@
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # pers.Person
 import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble as embed  # embed.EmbeddedImmeubleTax
+from art.immeub.rent.create_adhoc_objects.persons_createdata import address1
+import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
 
 
 def make_immeuble_ex1():
-  person = pers.get_person_ex()
+  persons = pers.get_persons_by_cpfs([])
   tributos = []
   iptu = embed.make_example_iptu_1()
   tributos.append(iptu)
   funesbom = embed.make_example_funesbom_1()
   tributos.append(funesbom)
+  address = addr.make_example_address_1()
   immeuble = immeub.PydtcImmeuble(
     imm_nickname="CDouto",
     inscr_txincend="1234",
     inscr_munic="12345",
-    address=["Rio street 67 apt 101", "20222-111 | Barra Central"],
-    owners=[person],
+    address=address,
+    owners=persons,
     tributos=tributos,
   )
   print(immeuble)
@@ -28,10 +31,13 @@ def instantiate_immeuble_fr_jsondump():
     "inscr_munic": "12345",
     "inscr_txincend": "1234",
     "cartorio_inscr": null,
-    "address": [
-      "Rio street 67 apt 101",
-      "20222-111 | Barra Central"
-    ],
+    "address": {
+      "street": "Rio street",
+      "number":"67",
+      "complement": "apt 101",
+      "zipcode": "20222111",
+      "neighborhood": "Barra Central"
+    },
     "phys_description": "",
     "other_characts": "",
     "tributos": [
@@ -65,7 +71,7 @@ def instantiate_immeuble_fr_jsondump():
   print('immeub.instantiate_immeuble_fr_jsondump(jsondump)')
   immeuble1 = immeub.PydtcImmeuble.instantiate_from_jsondict(jsondump)
   print(immeuble1)
-
+  return immeuble1
 
 
 def adhoctest1():
@@ -79,7 +85,8 @@ def adhoctest1():
 
 def adhoctest2():
   print('instantiate_immeuble_fr_jsondump')
-  instantiate_immeuble_fr_jsondump()
+  immeuble1 = instantiate_immeuble_fr_jsondump()
+  print(immeuble1.asdict())
 
 
 def process():
@@ -93,3 +100,4 @@ if __name__ == '__main__':
   process()
   """
   adhoctest2()
+  adhoctest1()

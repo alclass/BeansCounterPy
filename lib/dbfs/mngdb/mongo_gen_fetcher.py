@@ -310,6 +310,18 @@ def get_immeubles_by_nicknames(nicknames: list[str]) -> list:
   return jsondocs
 
 
+def find_immeuble_by_nickname(imm_nickname):
+  collname, dbname = 'immeubles', 'immeub_db'
+  mngfetcher = GenMongoDBFetcher(
+    dbname=dbname,
+    collname=collname,
+  )
+  mngdoc = mngfetcher.find_one_w_querydict_n_collname(
+    querydict={'imm_nickname': imm_nickname}
+  )
+  return mngdoc
+
+
 def get_billingcards_by_contrnumbers(contrnumbers: list[str]) -> list:
   dbname, collname = 'immeub_db', 'billingcards'
   fieldname, valuelist = 'contrnumber', contrnumbers

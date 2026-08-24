@@ -14,18 +14,22 @@ from pydantic import field_validator, EmailStr, BaseModel, StringConstraints  # 
 import pydantic
 CPFTYPE = Annotated[str, StringConstraints(pattern=r"\d{11}")]
 STREETNAMETYPE = Annotated[str, StringConstraints(max_length=80)]
-STREETNUMBERTYPE = Annotated[str, StringConstraints(max_length=8)]
+ZIPCODETYPE = Annotated[str, StringConstraints(max_length=8)]
+STREETNUMBERTYPE = ZIPCODETYPE
 
 
 class PydtcAddress(BaseModel):
+  """
+  import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
+  """
   street: STREETNAMETYPE
   number: STREETNUMBERTYPE
+  zipcode: ZIPCODETYPE
   complement: Optional[STREETNAMETYPE] = None
   neighborhood: Optional[STREETNAMETYPE] = None
   city: Optional[STREETNAMETYPE] = None
   state: Optional[str] = None
   country: Optional[str] = None
-  zipcode: Optional[str] = None
   refplace: Optional[STREETNAMETYPE] = None
   lat: Optional[Decimal] = None
   lon: Optional[Decimal] = None
@@ -48,7 +52,7 @@ class PydtcAddress(BaseModel):
     if adds_dots:
       _zc = _zc[:2] + '.' + _zc[2:]
     if adds_dash:
-      _zc = _zc[:7] + '-' + _zc[7:]
+      _zc = _zc[:6] + '-' + _zc[6:]
     return _zc
 
   def __str__(self):
@@ -57,39 +61,41 @@ class PydtcAddress(BaseModel):
     A line has a 70-char size
     """
     lines = []
-    complement = f" {self.complement:11}" if self.complement else ""
-    line = f"{self.street}, {self.number:04}, {complement}"
+    complement = f", {self.complement:11}" if self.complement else ""
+    line = f"{self.street}, {self.number:04}{complement}"
     lines.append(line)
-    zip_n_neighbor = ""
+    zipcode = ""
     if self.zipcode is not None:
-      zip_n_neighbor = f"{self.fmt_zipcode}"
-      if self.neighborhood is not None:
-        zip_n_neighbor += f" {self.neighborhood}"
-        line = f"{zip_n_neighbor}"
-        lines.append(line)
+      zipcode = f"{self.fmt_zipcode}"
+    line = zipcode
+    if self.neighborhood is not None:
+      line += f" {self.neighborhood}"
+    lines.append(line)
+    line = ""
     if self.city is not None:
-      city_n_state = f"{self.city}"
+      line = f"{self.city}"
       if self.state is not None:
-        zip_n_neighbor += f" {city_n_state}"
-        line = f"{zip_n_neighbor}"
-        lines.append(line)
+        line += f" {self.state}"
+    if len(line) > 0:
+      lines.append(line)
     trunktext = '\n'.join(lines)
     return trunktext
 
 
-def adhoctest1():
+def make_example_address_1():
   """
+  Example address
   """
-
-  address1 = PydtcAddress(
+  address = PydtcAddress(
     street="Rua Camilo Douto",
     number="123",
+    zipcode='22333111',
   )
-  print(address1)
+  return address
 
 
-def adhoctest2():
-  address1 = make_address_1()
+def adhoctest1():
+  address1 = make_example_address_1()
   print('address1', address1)
   print(address1)
 

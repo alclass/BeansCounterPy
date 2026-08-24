@@ -22,10 +22,20 @@ from typing import Annotated, Optional
 import datetime
 import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
+import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch.get_rentcontract_by_number
 from beanie import Document, Link
 from pydantic import field_validator, EmailStr, BaseModel, StringConstraints  # Field
 import pydantic
 CPFTYPE = Annotated[str, StringConstraints(pattern=r"\d{11}")]
+
+
+def get_persons_by_cpfs(cpfs: list[str]):
+  persondocs = mngfetch.get_persons_by_cpfs(cpfs)
+  persons = []
+  for persondoc in persondocs:
+    person = PydtcPerson.instantiate_from_json(persondoc)
+    persons.append(person)
+  return persons
 
 
 class PydtcPerson(BaseModel):

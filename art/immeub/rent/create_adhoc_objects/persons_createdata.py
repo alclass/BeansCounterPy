@@ -4,10 +4,13 @@ art/immeub/rent/testdata/persons_createdata.py
 """
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson(...)
 import lib.datesetc.refmonth_fs as rmfs
-address_1 = [
-  "Rio street s/n",
-  "22333111 - Barra Central",
-]
+import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
+address1 = addr.PydtcAddress(
+  street="Rio street s/n",
+  number="s/n",
+  zipcode="22333111",
+  neighborhood="Barra Central",
+)
 
 
 def make_person_example_1():
@@ -22,7 +25,7 @@ def make_person_example_1():
     emails=["johndoe@example.com"],
     marital_st="S",
     docum_id="1234567",
-    address=address_1,
+    address=address1,
   )
   return person
 

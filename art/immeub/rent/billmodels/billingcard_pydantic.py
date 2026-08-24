@@ -9,7 +9,7 @@ import calendar
 import datetime
 from decimal import Decimal
 import locale
-from typing import Annotated
+from typing import Annotated, Optional
 import lib.fncfs.credeb_pkg.payment_processor as pproc
 from prettytable import PrettyTable
 import pydantic
@@ -75,76 +75,58 @@ def from_to_json(doc):
           # here we look for lists so that we can look for inner dict's that may contain None's
           alist = obj
           remove_nones_fr_billingitems(alist)
-      billingcard_o = bcardpydtc.PydtcBillingCard.MongoJsonRepr(**elem)
-  self.close_conn()
-  return billingcard_o
+      billingcard_o = PydtcBillingCard.MongoJsonRepr(**elem)
+    return billingcard_o
 
 
 class PydtcBillingCard(pydantic.BaseModel):
   """
-
-  Mora, if any, explained
-  =======================
-  This can be explained with a simple example.
-  Let's consider this context/situation:
-    a) duedate is on month's day 10
-    b) payment happened lately incomplete on month's day 20
-  How 'mora' is calculated?
-    1 first, a 20 day (after day 1) mora will increase the whole month's pay;
-    2 then the pay on the 20th will credit the updated month's bill;
-    3 then the remaining balance will increase to the rest of month
-      (day 31, in this case, it increases another 10 days);
-    4 this remaining is then closed (frozen),
-       and is passed on to a new billing entry on the subsequent month's bill
-    5 if another payment happens in between day 21 to month's end,
-      payment_process() must be rerun and calculates again either credit or debit.
-
-  When the month transitions (i.e., the next month comes),
-    the 'mora' becomes a new 'billing item' itself and
-    does not correct for the 10-day payment window.
-    However, it goes into the same treatment as the other items
-    in case a new mora becomes incident after duedate.
-
-  billingcard: BillingCard = pydantic.dataclasses.Field(default_factory=lambda: None)
-  refmonth: Optional[datetime.date] = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
+  Class that models a 'billing card' which contains:
+    a) a rentcontract (link or object)
+    b) a refmonth (the month to whicy payment is due)
+    c) its billing-items whose sum makes up the billing card total
+    d) the pay_processor object which in turn contains
+        d1 payments
+        d2 and mora parts if anty
+      and processes payment(s) and closes (*) the BC (Billing Card) for the next month.
+      (*) the BC closing is a logical one, it happens when the next refmonth opens for payment;
+      (*) if mora exists at closing, it becomes a billing_item to the next BC.
   """
-  contrnumber: contrnumber_type
+  rentcontract: rentpydtc.PydtcRentContract = pydantic.Field(default_factory=lambda: None)
+  refmonth: Optional[datetime.date] = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
   billingitems: list[bipydtc.PydtcBillingItem] = pydantic.Field(default_factory=lambda: [])
-  payprocessor: pproc.PaymentProcessor
+  payprocessor: pproc.PaymentProcessor = pydantic.Field(default_factory=lambda: None)
 
-  class BillingCardClean(pydantic.BaseModel):
-    contract: Contract
-
-    @pydantic.model_validator(mode='before')
-    @classmethod
-    def allow_fetching_by_number(cls, values: dict) -> dict:
-      # If the user passed a raw string/number instead of a contract object
-      if "contrnumber" in values and "contract" not in values:
-        cnumber = values.pop("contrnumber")
-        values["contract"] = find_rentcontract_by_contrnumber(cnumber)
-      return values
-
-    @property
-    def contract_number(self) -> str:
-      # Convenient access to the inner attribute without data duplication
-      return self.contract.contract_number
-
-  @pydantic.computed_field
-  @property
-  def rentcontract(self) -> rentpydtc.PydtcRentContract:
-    _rentcontract = rentpydtc.find_rentcontract_by_contrnumber(self.contrnumber)
-    if _rentcontract is None:
-      errmsg = f"Not Found Error: rent contract not found for contrnumber: {self.contrnumber}"
-      raise ValueError(errmsg)
-    return _rentcontract
+  @pydantic.model_validator(mode='before')
+  @classmethod
+  def allow_fetching_by_number(cls, values: dict) -> dict:
+    # If the user passed a raw string/number instead of a contract object
+    if "contrnumber" in values and "contract" not in values:
+      cnumber = values.pop("contrnumber")
+      values["contract"] = find_rentcontract_by_contrnumber(cnumber)
+    return values
 
   @property
-  def refmonth(self) -> datetime.date:
-    return self.rentcontract.make_contracts_pay_refmonth()
+  def contrnumber(self) -> str:
+    # Convenient access to the inner attribute without data duplication
+    if self.rentcontract is None:
+      return "n/a"
+    return self.rentcontract.contrnumber
 
   @property
-  def duedate(self) -> datetime.date:
-    return self.rentcontract.get_contracts_duedate()
+  def charging_month(self) -> datetime.date | None:
+    """
+    It's the month following refmonth
+    """
+    if self.refmonth is None:
+      return None
+    return rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
+
+  @property
+  def duedate(self) -> datetime.date | None:
+    if self.refmonth is None:
+      return None
+    return self.rentcontract.get_pay_duedate_for_refmonth(self.refmonth)
 
   @property
   def payments(self) -> list[intrfc.PaymentInterfaceDateNValue]:  # bipydtc.PydtcPayment
@@ -156,21 +138,25 @@ class PydtcBillingCard(pydantic.BaseModel):
   def credito_no_fecho(self) -> Decimal | None:
     if not self.payprocessor.payment_process_finished:
       return None
-    _credito_no_fecho = payprocessor.cre_deb_moras_after_process[0]
+    _credito_no_fecho = self.payprocessor.cre_deb_moras_after_process[0]
     return _credito_no_fecho
 
   @property
   def debito_no_fecho(self) -> Decimal | None:
     if not self.payprocessor.payment_process_finished:
       return None
-    _debito_no_fecho = payprocessor.cre_deb_moras_after_process[1]
+    _debito_no_fecho = self.payprocessor.cre_deb_moras_after_process[1]
     return _debito_no_fecho
 
   @property
   def monthmoras(self) -> list[moram.SameMonthMora]:
     if not self.payprocessor.payment_process_finished:
       return []
-    _monthmoras = payprocessor.cre_deb_moras_after_process[2]
+    _monthmoras = self.payprocessor.cre_deb_moras_after_process[2]
+    if _monthmoras is None:
+      # this None case does not happen after the 'if' above,
+      # but IDE looks upat the returning type-hint, so this 'if' is for the IDE
+      return []
     return _monthmoras
 
   @property
@@ -293,7 +279,7 @@ class PydtcBillingCard(pydantic.BaseModel):
           -> postdate_ifinmora =  '2026-6-30'
     """
     paymonth = self.refmonth + relativedelta(months=1)
-    return self.rentcontract.get_postdate_ifinmora(paymonth)
+    return self.rentcontract.get_mora_endingdate_w_refmonth(paymonth)
 
   @property
   def retrodate_ifinmora(self) -> datetime.date:
@@ -307,7 +293,7 @@ class PydtcBillingCard(pydantic.BaseModel):
           postdate_ifinmora =  '2026-6-30'
     """
     paymonth = self.refmonth + relativedelta(months=1)
-    return self.rentcontract.get_retrodate_ifinmora(paymonth)
+    return self.rentcontract.get_date_when_mora_begins_w_refmonth(paymonth)
 
   def add_payment(self, payment: intrfc.PaymentInterfaceDateNValue):
     """

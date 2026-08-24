@@ -3,6 +3,7 @@ art/immeub/tribs/onproperties/mongo_tribs_retriever.py
 
 """
 import pymongo
+from decimal import Decimal
 MONGODB_CON_STR = "mongodb://localhost:27017/"
 MONGO_DBNAME = "immeub_db"
 MONGO_COLLNAME = "fnsbm_trfs"
@@ -45,12 +46,14 @@ class MongoImmeubleTaxRetriever:
     return None
 
 
-def get_incendtarif_fo_location_if_available(imovel_apelido):
+def get_incendtarif_fo_location_if_available(imovel_apelido) -> tuple[Decimal, str]:
   """
   Look up MongoDB to verify if an incendtarif is available.
-  """
   retriever = MongoImmeubleTaxRetriever()
   return retriever.get_incendtarif_fo_location_if_available(imovel_apelido)
+  """
+  _ = imovel_apelido
+  return Decimal(500), "Funesbom anual"
 
 
 def adhoctest1():

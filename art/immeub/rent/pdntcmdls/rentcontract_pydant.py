@@ -12,11 +12,13 @@ from prettytable import PrettyTable
 import datetime
 from decimal import Context, Decimal, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
+import json
 import dinero
 from dinero.currencies import BRL
 from typing import List
 import pydantic
 import typing
+# from typing_extensions import Annotated
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls as init
@@ -33,6 +35,27 @@ PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
 DEFAULT_MONTHLY_FIX_IR_DEC = Decimal(init.DEFAULT_MONTHLY_FIX_IR_DEC)
 MORA_M_MINUS_N_STR = init.MORA_M_MINUS_N
+CONTRNUMBERTYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=12)]
+
+
+def mk_contrnumber_w_immnickname_n_refmstr(
+    imm_nickname: str, refmonth: datetime.datetime | str
+  ) -> str:
+  if imm_nickname is None:
+    errmsg = f"Error: location imm_nickname cannot be None."
+    raise ValueError(errmsg)
+  if refmonth is None:
+    refmonth = rmfs.make_current_refmonth()
+  if not isinstance(refmonth, datetime.datetime):
+    refmonth = rmfs.make_refmonth_or_raise(refmonth)
+  refmstr = refmonth.strftime('%Y%m')
+  contrnumber = f"{imm_nickname}{refmstr}"
+  return contrnumber
+
+
+def find_immeuble_by_nickname(imm_nickname):
+  location = mngfetch.find_immeuble_by_nickname(imm_nickname)
+  return location
 
 
 def find_rentcontract_by_contrnumber(contrnumber) -> "PydtcRentContract":
@@ -146,16 +169,16 @@ class PydtcRentContract(pydantic.BaseModel):
   """
 
   # imm_nickname: str = 'CDouto'
+  contrnumber: str = pydantic.PrivateAttr(default_factory=lambda: None)
+CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
+
   """
+  contrnumber: CONTRNUMBERTYPE
   location: immeub.PydtcImmeuble
   inidate: datetime.date
   ori_rentvalue: typing.Annotated[Decimal, pydantic.Field(max_digits=12, decimal_places=4)]
-  nmonths_duration: int
-  has_proptax: bool
-  # List of references (Many-to-Many / One-to-Many)
-  # tenants: list[Person] = field(default_factory=list)
   tenants: List[pers.PydtcPerson] = pydantic.dataclasses.Field(default=[])
-  fiadores: List[pers.PydtcPerson] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  guarantors: List[pers.PydtcPerson] = pydantic.dataclasses.Field(default_factory=lambda: [])
   nmonths_duration: int = 30
   has_proptax: bool = True
   has_incendtarif: bool = True
@@ -163,11 +186,35 @@ class PydtcRentContract(pydantic.BaseModel):
   currency3letter: str = 'BRL'
   reajustes: list[Reajuste] = pydantic.dataclasses.Field(default_factory=lambda: [])
   monthly_fix_ir_dec: Decimal = pydantic.dataclasses.Field(default_factory=lambda: DEFAULT_MONTHLY_FIX_IR_DEC)
+  has_ipca: bool = True
   _cur_rentvalue: Decimal = pydantic.PrivateAttr(default_factory=lambda: None)
-  _contrnumber: str = pydantic.PrivateAttr(default_factory=lambda: None)
 
-  @staticmethod
-  def get_retrodate_ifinmora(refmonth: datetime.date) -> datetime.date:
+  @pydantic.model_validator(mode='before')
+  @classmethod
+  def allow_fetching_location_by_key(cls, values: dict) -> dict:
+    # If the user passed a raw string/number instead of a contract object
+    if "imm_nickname" in values and "location" not in values:
+      imm_nickname = values.pop("imm_nickname")
+      values["location"] = find_immeuble_by_nickname(imm_nickname)
+    return values
+    if "tenants_cpfs" in values and "tenants" not in values:
+      tenants_cpfs = values.pop("tenants_cpfs")
+      values["tenants"] = find_persons_by_cpfs(tenants_cpfs)
+    return values
+
+
+  def get_pay_duedate_for_refmonth(self, refmonth):
+    if refmonth is None:
+      paymonth = datetime.date.today()
+    else:
+      paymonth = refmonth + relativedelta(months=1)
+    year, month = paymonth.year, paymonth.month
+    duedate = datetime.date(year=year, month=month, day=self.get_payment_dueday_in_month())
+    return duedate
+
+  def get_date_when_mora_begins_w_refmonth(
+      self, refmonth: datetime.date | str
+    ) -> datetime.date:
     """
     retrodate is refmonth itself
     (this rule is not configurable as it seems stable in practice)
@@ -179,10 +226,21 @@ class PydtcRentContract(pydantic.BaseModel):
       but from the beginning of the month;
     """
     refmonth = rmfs.make_refmonth_or_raise(refmonth)
-    return refmonth
+    paymonth_on_day1 = refmonth + relativedelta(months=1)
+    return paymonth_on_day1
 
   @staticmethod
-  def get_postdate_ifinmora(refmonth: datetime.date) -> datetime.date:
+  def get_lastmonthsday_for_mora(
+      paymonth: datetime.date | str
+    ) -> int:
+    """
+    It's the last day in month
+    """
+    paymonth = rmfs.make_refmonth_or_raise(paymonth)
+    _, lastday_inmonth = calendar.monthrange(paymonth.year, paymonth.month)
+    return lastday_inmonth
+
+  def get_mora_endingdate_w_refmonth(self, refmonth: datetime.date) -> datetime.date:
     """
     postdate is the last day of month 'refmonth'
     (this rule is not configurable as it seems stable in practice)
@@ -205,8 +263,10 @@ class PydtcRentContract(pydantic.BaseModel):
     So, this attribute gives the date that the c) operation needs as parameter.
     """
     refmonth = rmfs.make_refmonth_or_raise(refmonth)
+    paymonth = refmonth + relativedelta(months=1)
     _, ndays_inmonth = calendar.monthrange(refmonth.year, refmonth.month)
-    year, month, day = refmonth.year, refmonth.month, ndays_inmonth
+    year, month, day = paymonth.year, paymonth.month, ndays_inmonth
+    day = self.get_lastmonthsday_for_mora(paymonth=paymonth)
     lastdate_inmonth = datetime.date(year=year, month=month, day=day)
     return lastdate_inmonth
 
@@ -288,16 +348,10 @@ class PydtcRentContract(pydantic.BaseModel):
       return None
 
   @property
-  def contrnumber(self) -> str:
-    if self._contrnumber is not None:
-      return self._contrnumber
-    strdate = self.inidate.strftime('%Y%m')
-    self._contrnumber = f"{self.imm_nickname}{strdate}"
-    return self._contrnumber
-
-  # @property
-  # def imm_nickname(self) -> str:
-  #   return self.location.imm_nickname
+  def other_tenants_ifany(self) -> list[pers.PydtcPerson]:
+    if len(self.tenants) > 1:
+      return self.tenants[1:]
+    return []
 
   def add_reajuste_w_dt_n_idx(self, reajuste_dt: datetime.date | str, reajuste_idx: Decimal, reajuste_sigla: str = 'IGP-M'):
     reajuste_dt = dtfs.make_date_or_raise(reajuste_dt)
@@ -353,7 +407,6 @@ class PydtcRentContract(pydantic.BaseModel):
     [table.add_row(r) for r in str_dates_reajustes_newrentvalues]
     print(table)
 
-
   @property
   def cur_rentvalue(self) -> Decimal:
     if self._cur_rentvalue is not None:
@@ -370,6 +423,21 @@ class PydtcRentContract(pydantic.BaseModel):
     except (AttributeError, NameError):
       pass
     return 'n/a'
+
+  @classmethod
+  def instantiate_fr_jsondict(cls, jsondump) -> "PydtcRentContract":
+    """
+    The updated version with cls.model_validate(cleaned_data)
+    The previous one had cls(**pdict)
+    """
+    def remove_none_values(data):
+      data = {k: v for k, v in data.items() if v is not None}
+      return data
+    pdict = json.loads(jsondump)
+    cleaned_data = remove_none_values(pdict)
+    # if 'location' in cleaned_data:
+    obj = cls.model_validate(cleaned_data)
+    return obj
 
   @property
   def commasep_landlords(self) -> str:
@@ -392,8 +460,8 @@ class PydtcRentContract(pydantic.BaseModel):
 
   def commasep_fiadores(self):
     ostr = ""
-    if len(self.fiadores) > 0:
-      for fiador in self.fiadores:
+    if len(self.guarantors) > 0:
+      for fiador in self.guarantors:
         ostr += fiador.nomecompleto + ", "
       ostr = ostr.rstrip(", ")
       return ostr
@@ -517,10 +585,14 @@ def adhoctest1():
   person = persons[0]
   print('person =', person)
   location = immeub.get_immeuble_ex()
+  print('location =', type(location), location)
   rentvalue = Decimal(1000)
+  inidate = rmfs.make_refmonth_or_raise('202404')
+  contrnumber = location.imm_nickname + inidate.strftime('%y%m')
   rent = PydtcRentContract(
+    contrnumber=contrnumber,
     location=location,
-    inidate=dtfs.make_date_or_raise("2024-1-1"),
+    inidate=inidate,
     ori_rentvalue=rentvalue,
     nmonths_duration=30,
     has_proptax=True,

@@ -91,7 +91,7 @@ class EmbeddedImmeubleTax(pydantic.BaseModel):
 
 def make_example_iptu_1():
   mkrm = rmfs.make_refmonth_or_raise
-  emb_o = EmbeddedImmeubleTax(
+  embedded_tributo = EmbeddedImmeubleTax(
     sigla='IPTU',
     descr='Imposto predial',
     govlevel='municipal',
@@ -103,7 +103,7 @@ def make_example_iptu_1():
     monthvalue=Decimal(160),
   )
   # emb_o.opted_monthly = False
-  return emb_o
+  return embedded_tributo
 
 
 def make_example_funesbom_1():
@@ -126,8 +126,8 @@ def make_example_funesbom_1():
 def adhoctest1():
   """
   """
-  # emb_o = make_example_iptu_1()
-  # print(emb_o)
+  emb_o = make_example_iptu_1()
+  print(emb_o)
   emb_o = make_example_funesbom_1()
   print(emb_o)
 

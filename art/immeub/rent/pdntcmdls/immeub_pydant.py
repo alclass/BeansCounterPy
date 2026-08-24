@@ -8,10 +8,13 @@ art/immeub/rent/pdntcmdls/immeub_pydant.py
 """
 import datetime
 from decimal import Decimal
+from typing import Optional
+
 import pydantic
 import json
-import lib.dbfs.mngdb.mongo_gen_fetcher as mngretr
+import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
+import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
 from pydantic import BaseModel, computed_field, model_validator
 import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble as embed  # embed.EmbeddedImmeubleTax
 DECIMAL_ZERO = Decimal("0")
@@ -33,9 +36,9 @@ class PydtcImmeuble(BaseModel):
   """
   imm_nickname: str
   inscr_munic: str
-  inscr_txincend: str = None
-  cartorio_inscr: str = None
-  address: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  inscr_txincend: Optional[str] = None
+  cartorio_inscr: Optional[str] = None
+  address: addr.PydtcAddress = pydantic.dataclasses.Field(default_factory=lambda: None)
   owners:  list[pers.PydtcPerson] = pydantic.dataclasses.Field(default_factory=lambda: [])
   phys_description: str = ""
   other_characts: str = ""
@@ -52,7 +55,7 @@ class PydtcImmeuble(BaseModel):
       if 'owners_cpfs' in data and not data.get('owners'):
         cpfs = data.pop('owners_cpfs')  # Extract CPFs
         # Fetch full objects using your existing DB lookup function
-        owners = mngretr.get_persons_by_cpfs(cpfs)
+        owners = mngfetch.get_persons_by_cpfs(cpfs)
         data['owners'] = owners
     return data
 
@@ -91,11 +94,9 @@ class PydtcImmeuble(BaseModel):
     return ostr
 
   def address_as_str(self, spacing=""):
-    ostr = "\n"
-    for line in self.address:
-      ostr += f"{spacing}{line}\n"
-    ostr = ostr.lstrip('\n').rstrip('\n')
-    return ostr
+    if self.address is not None:
+      return str(self.address)
+    return "n/a"
 
   def mk_line_this_year_taxes_registered(self):
     total_tribs = self.get_total_this_year_taxes()
@@ -123,12 +124,11 @@ class PydtcImmeuble(BaseModel):
     """
     pdict = json.loads(jsondump)
     owners_cpfs = pdict.pop('owners_cpfs')
-    owners = get_persons_by_cpfs(owners_cpfs)
+    owners = pers.get_persons_by_cpfs(owners_cpfs)
     pdict['owners'] = owners
     cleaned_data = remove_none_values(pdict)
     obj = cls.model_validate(cleaned_data)
     return obj
-
 
   def __str__(self):
     lines_tributos = self.mk_line_this_year_taxes_registered()
@@ -141,15 +141,23 @@ class PydtcImmeuble(BaseModel):
 
 
 def get_immeuble_ex():
-  person = mngretr.get_persons_by_cpfs([])
-  if person is None or len(person) == 0:
+  persons = pers.get_persons_by_cpfs([])
+  if persons is None or len(persons) == 0:
     return None
+  address = addr.PydtcAddress(
+    street='Rua Carmo Douto',
+    number="67",
+    complement="apt 101",
+    neighborhood="Barra Central",
+    city="Rio de Janeiro",
+    zipcode="22333111",
+  )
   immeuble = PydtcImmeuble(
     imm_nickname="CDouto",
     inscr_txincend="1234",
     inscr_munic="12345",
-    address=["Rio street 67 apt 101", "20222-111 | Barra Central"],
-    owners=[person],
+    address=address,
+    owners=persons,
   )
   # print(immeuble)
   return immeuble
@@ -168,6 +176,8 @@ def adhoctest1():
   """
   location = get_immeuble_ex()
   print(location)
+  asdict = location.asdict()
+  print(asdict)
 
 
 def process():
