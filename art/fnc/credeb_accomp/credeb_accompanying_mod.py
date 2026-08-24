@@ -223,7 +223,7 @@ class DebCredAccompanier:
   @property
   def seq_refmonth(self) -> int:
     refmonth_ini_f_meta = find_refmonth_beginning_the_series_as_date()
-    n_months_inbetween = rmfs.calc_int_n_months_inbetween(refmonth_ini_f_meta, self.refmonth)
+    n_months_inbetween = rmfs.calc_n_months_between_as_int(refmonth_ini_f_meta, self.refmonth)
     # month 1 is conventioned as the 'legacy' 2025-10 which has not a testdata-record,
     # leaving it to the subsequent month
     # so, add one to 1

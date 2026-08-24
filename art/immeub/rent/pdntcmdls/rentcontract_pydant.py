@@ -24,15 +24,21 @@ import art.immeub.rent.pdntcmdls as init
 import art.immeub.tribs.onproperties.mongo_tribs_retriever as funesbom
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
+import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch.get_rentcontract_by_number
 import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
 from tabulate import tabulate
 from lib.fncfs.credeb_pkg.credit_debt_fs import ONE_THOUSANDTH_AS_STR
-import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
 PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
 DEFAULT_MONTHLY_FIX_IR_DEC = Decimal(init.DEFAULT_MONTHLY_FIX_IR_DEC)
 MORA_M_MINUS_N_STR = init.MORA_M_MINUS_N
+
+
+def find_rentcontract_by_contrnumber(contrnumber) -> "PydtcRentContract":
+  rentcontractdoc = mngfetch.get_rentcontract_by_number(contrnumber)
+  rentcontract = PydtcRentContract.instantiate_fr_jsondict(rentcontractdoc)
+  return rentcontract
 
 
 def get_conventioned_mora_m_minus_n():
@@ -506,7 +512,10 @@ def adhoctest1():
   """
   persons = mngfetch.get_persons_by_cpfs([])
   if persons is None or len(persons) == 0:
+    print('No persons found. Returning.')
     return
+  person = persons[0]
+  print('person =', person)
   location = immeub.get_immeuble_ex()
   rentvalue = Decimal(1000)
   rent = PydtcRentContract(

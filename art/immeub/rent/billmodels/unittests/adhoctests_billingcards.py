@@ -18,9 +18,9 @@ def adhoctest1():
   billingitems = []
   billingitem = bitem.PydtcBillingItem(
     seq=1,
-    description=1,
-    value=1,
-    mora=0,
+    description="aluguel",
+    value=2000,
+    mora_incr=0,
     itemtotal=1.2
   )
   billingitems.append(billingitem)

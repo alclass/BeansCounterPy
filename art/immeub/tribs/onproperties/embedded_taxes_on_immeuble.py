@@ -57,7 +57,7 @@ class EmbeddedImmeubleTax(pydantic.BaseModel):
   def meses_a_pagar(self) -> list[datetime.date]:
     if not self.opted_monthly:
       return [self.refmonth_beginning]
-    refmonths = rmfs.make_refmonth_list_fr_refmonth_plus_n(self.refmonth_beginning, self.n_parcels)
+    refmonths = rmfs.make_refmonth_list_fr_refmonth_plus_n_or_raise(self.refmonth_beginning, self.n_parcels)
     return refmonths
 
   def mk_line_meses_a_pagar(self) -> str:

@@ -8,8 +8,8 @@ import datetime
 """
 import lib.datesetc.refmonth_fs as rmfs
 make_refmonthdate_or_raise = rmfs.make_refmonth_or_raise
-gen_refmonths_within = rmfs.generate_monthrange
-get_refmonths_within = rmfs.get_monthrange_as_list
+gen_refmonths_within = rmfs.generate_refmonths_from_2datemonthrange
+get_refmonths_within = rmfs.get_refmonths_spreading_from_daterange_as_lst
 
 
 def make_refmonthrange_range_list(refmonthini, refmonthfim):

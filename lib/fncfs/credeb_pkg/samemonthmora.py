@@ -133,7 +133,17 @@ class SameMonthMora(pydantic.BaseModel):
     )
     return _increase
 
-  def __str__(self):
+  def __repr__(self) -> str:
+    frdt = self.fromdate.strftime('%Y%m%d')
+    todt = self.todate.strftime('%Y%m%d')
+    prev = f"{self.prevalue:.2f}"
+    posv = f"{self.postvalue:.2f}"
+    inc = f"{self.increase:.2f}"
+    retidx = f"{self.ir_idx:.4f}"
+    ostr = f"SMM(fr={frdt}, to={todt}, preval={prev}, r={retidx}, inc={inc}, postval={posv})"
+    return ostr
+
+  def __str__(self) -> str:
     fr, to = self.fromdate, self.todate
     ostr = f"SameMonthMora: fr={fr} to={to} ndays={self.moradays} ipca={self.ipca_dec:.4f} fix={self.fix_ir_dec:.2f}"
     preval, posval = self.prevalue, self.postvalue

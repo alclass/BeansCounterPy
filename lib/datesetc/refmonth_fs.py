@@ -101,9 +101,9 @@ def graftin_missing_gaps_thru_refmonths(p_refmonths):
   for i, refmonth in enumerate(refmonths[1:]):
     j = i + 1  # with enumerate() 'i' starts at 0 anyway, let 'j' count the indices
     previous_refmonth = refmonths[j - 1]
-    n = calc_int_n_months_inbetween(previous_refmonth, refmonth)
+    n = calc_n_months_between_as_int(previous_refmonth, refmonth)
     if n > 1:
-      refmonths = get_monthrange_as_list(previous_refmonth, refmonth)
+      refmonths = get_refmonths_spreading_from_daterange_as_lst(previous_refmonth, refmonth)
       refmonths_added += refmonths
   if len(refmonths_added) > 0:
     # some 'grafting' happened
@@ -114,15 +114,15 @@ def graftin_missing_gaps_thru_refmonths(p_refmonths):
   return refmonths
 
 
-def find_refmonths_spread_gaps_inbetween(
+def calc_refmonths_spreading_between_2dates_as_lst(
     inirefmonth: datetime.date | str, finrefmonth: datetime.date | str
   ) -> list[datetime.date]:
   inirefmonth = make_refmonth_or_raise(inirefmonth)
   finrefmonth = make_refmonth_or_raise(finrefmonth)
-  n = calc_int_n_months_inbetween(inirefmonth, finrefmonth)
+  n = calc_n_months_between_as_int(inirefmonth, finrefmonth)
   if n < 2:
     return []
-  mr_list = get_monthrange_as_list(inirefmonth, finrefmonth)
+  mr_list = get_refmonths_spreading_from_daterange_as_lst(inirefmonth, finrefmonth)
   # remove extremes
   _ = mr_list.pop(0), mr_list.pop()
   mr_list.sort()
@@ -227,7 +227,7 @@ def mk_partition_inidate_findate_as_refms_n_ndays_tlist(
     inidate: datetime.date, findate: datetime.date
   ) -> list[tuple[datetime.date, int]]:
   dayslist = partition_monthlydays_wi_monthrange(inidate, findate)
-  monthslist = get_monthrange_as_list(inidate, findate)
+  monthslist = get_refmonths_spreading_from_daterange_as_lst(inidate, findate)
   # zip the two lists (to form the intended tuple list)
   monthndays_tuplelist = list(zip(monthslist, dayslist))
   return monthndays_tuplelist
@@ -305,7 +305,7 @@ def mount_ndays_n_refmonth_tuplelist(inidate, findate):
   ndayslist = partition_monthlydays_wi_monthrange(inidate, findate)
   monthborders = find_dateborders_fr_ndayslist_n_refmonths(ndayslist, inidate, findate)
   inirefmonth, finrefmonth = monthborders
-  refmonths = get_monthrange_as_list(inirefmonth, finrefmonth)
+  refmonths = get_refmonths_spreading_from_daterange_as_lst(inirefmonth, finrefmonth)
   tuplelist = [(ndayslist[i], refmonths[i]) for i in range(len(ndayslist))]
   return tuplelist
 
@@ -338,12 +338,12 @@ def calc_n_months_involved(findate, inidate):
   return delta + 1
 
 
-def calc_float_n_months_inbetween(
+def calc_n_months_between_2dates_as_float(
     p_inidate: datetime.date | str, p_findate: datetime.date | str
   ) -> float | None:
   inidate = dtfs.make_date_or_raise(p_inidate)
   findate = dtfs.make_date_or_raise(p_findate)
-  int_n = calc_int_n_months_inbetween(findate, inidate)
+  int_n = calc_n_months_between_as_int(findate, inidate)
   if int_n is None:
     return None
   int_n = abs(int_n)
@@ -358,10 +358,10 @@ def calc_float_n_months_inbetween(
   return float_n
 
 
-def calc_dec_n_months_inbetween(
+def calc_n_months_inbetween_2dates_as_dec(
     p_inidate: datetime.date | str, p_findate: datetime.date | str, n_decplaces: int = 4
   ) -> Decimal:
-  float_n = calc_float_n_months_inbetween(p_inidate, p_findate)
+  float_n = calc_n_months_between_2dates_as_float(p_inidate, p_findate)
   if float_n is None:
     return None
   dec_n = Decimal(float_n)
@@ -372,7 +372,7 @@ def calc_dec_n_months_inbetween(
   return dec_n
 
 
-def calc_int_n_months_inbetween(
+def calc_n_months_between_as_int(
     inidate: datetime.date, findate: datetime.date,
   ) -> int:
   """
@@ -485,7 +485,7 @@ def months_inbetween_return_int_n_float(inidate, findate):
   if findate < inidate:
     errmsg = f"findate ({findate}) cannot be less than inidate ({inidate})"
     raise ValueError(errmsg)
-  n_int_inbetween = calc_int_n_months_inbetween(inidate, findate)
+  n_int_inbetween = calc_n_months_between_as_int(inidate, findate)
   n_float_in_borders = calc_floatfraction_elapsed_inbetween_months(inidate, findate, n_int_inbetween)
   duration_elapsed_tuple = (n_int_inbetween, n_float_in_borders)
   return duration_elapsed_tuple
@@ -554,13 +554,13 @@ def calc_refmonth_minus_n(pdate, n):
 def calc_n_completemonths_between_dates_or_raise(
     start_date: Union[str, datetime.date], end_date: Union[str, datetime.date]
   ) -> int | None:
-  n_months = calc_n_completemonths_between_dates(start_date, end_date)
+  n_months = calc_n_completemonths_between_2dates(start_date, end_date)
   if n_months is None:
     errmsg = f"{start_date} & {end_date} fail to derive number of months in-between"
     raise ValueError(errmsg)
 
 
-def calc_n_completemonths_between_dates(
+def calc_n_completemonths_between_2dates(
     start_date: Union[str, datetime.date], end_date: Union[str, datetime.date]
   ) -> int | None:
   start_date = dfs.make_date_or_none(start_date)
@@ -580,7 +580,7 @@ def calc_n_completemonths_between_dates(
   return total_months
 
 
-def generate_monthrange(
+def generate_refmonths_from_2datemonthrange(
     p_refmonth_ini: Any | None,
     p_refmonth_fim: Any | None,
     allow_future: bool = False
@@ -624,11 +624,11 @@ def generate_monthrange_allow_future(
     inirefmonth: Any | None,
     finrefmonth: Any | None
   ) -> Iterator[datetime.date]:
-  return generate_monthrange(inirefmonth, finrefmonth, allow_future=True)
+  return generate_refmonths_from_2datemonthrange(inirefmonth, finrefmonth, allow_future=True)
 
 
-def get_monthrange_as_list(refmonth_ini: datetime.date | str, refmonth_fim: datetime.date | str) -> list[datetime.date]:
-  return list(generate_monthrange(refmonth_ini, refmonth_fim))
+def get_refmonths_spreading_from_daterange_as_lst(refmonth_ini: datetime.date | str, refmonth_fim: datetime.date | str) -> list[datetime.date]:
+  return list(generate_refmonths_from_2datemonthrange(refmonth_ini, refmonth_fim))
 
 
 def calc_fractionlist_fr_monthpartition(
@@ -671,16 +671,13 @@ def calc_fractionlist_wi_1inidate_2findate(
   return calc_fractionlist_fr_monthpartition(monthpartition)
 
 
-def make_refmonth_list_fr_refmonth_plus_n(refmonth_ini: datetime.date | str, n_ahead: int) -> list[datetime.date]:
+def make_refmonth_list_fr_refmonth_plus_n_or_raise(refmonth_ini: datetime.date | str, n_ahead: int) -> list[datetime.date]:
   current_refmonth = make_refmonth_or_raise(refmonth_ini)
   refmonths = [current_refmonth]
-  try:
-    for i in range(1, int(n_ahead)):
-      next_refmonth = current_refmonth + relativedelta(months=1)
-      refmonths.append(next_refmonth)
-      current_refmonth = next_refmonth
-  except (IndexError, ValueError):
-    pass
+  for i in range(1, int(n_ahead)):
+    next_refmonth = current_refmonth + relativedelta(months=1)
+    refmonths.append(next_refmonth)
+    current_refmonth = next_refmonth
   return refmonths
 
 
@@ -701,10 +698,10 @@ def getverify_refmonthrangetuple_or_default(p_refmonth_ini: Any | None, p_refmon
   return refmonth_fim, refmonth_ini
 
 
-def strip_m_fr_mmonthd_n_get_nmonth_or_none(mmonth):
+def strip_m_fr_mmonthd_n_get_nmonth_or_none(mmonth: str) -> datetime.date | None:
   """
-  Transforms a mmonth (which is just a monthnumber preceded
-    (prefixed) by "M") into a nmonth (the month's number)
+  Transforms a mmonth (which is just a monthnumber (1 to 12) preceded
+    (or prefixed) by "M") into a nmonth (the month's number itself).
 
   Example:
     ex1
@@ -727,7 +724,7 @@ def strip_m_fr_mmonthd_n_get_nmonth_or_none(mmonth):
   return None
 
 
-def get_refmonthdate_fr_mmonth_n_year_or_none(mmonth, year):
+def trnsf_mmonth_n_year_into_refmonth_or_none(mmonth: str, year: int) -> datetime.date | None:
   """
   Transforms a mmonth (which is just a monthnumber preceded (prefixed) by "M") into a nmonth (the month's number)
     and, complemented with year, returns a refmonthdate
@@ -746,7 +743,22 @@ def get_refmonthdate_fr_mmonth_n_year_or_none(mmonth, year):
   nmonth = strip_m_fr_mmonthd_n_get_nmonth_or_none(mmonth)
   if nmonth is None:
     return None
-  return make_refmonth_w_year_n_month(year, nmonth)
+  return make_refmonth_w_year_n_month_or_none(year, nmonth)
+
+
+def trnsf_mmonth_n_year_into_refmonth_or_raise(mmonth: str, year: int) -> datetime.date:
+  refmonth = trnsf_mmonth_n_year_into_refmonth_or_none(mmonth, year)
+  if refmonth is None:
+    scrmsg = f"Error: input mmonth={mmonth} and year={year} are not convertible to a refmonth."
+    raise ValueError(scrmsg)
+  return refmonth
+
+
+def trnsf_mmonth_n_year_into_refmonth_or_current(mmonth: str, year: int) -> datetime.date:
+  refmonth = trnsf_mmonth_n_year_into_refmonth_or_none(mmonth, year)
+  if refmonth is None:
+    refmonth = make_current_refmonth()
+  return refmonth
 
 
 def get_monthslastday_via_calendar_or_raise(pdate: datetime.date) -> int:
@@ -770,7 +782,7 @@ def get_monthslastday_via_calendar_or_none(pdate: datetime.date | None) -> int |
   return None
 
 
-def get_monthslastdate_via_calendar(pdate: datetime.date | None) -> datetime.date | None:
+def get_monthslastdate_via_calendar_or_none(pdate: datetime.date | None) -> datetime.date | None:
   if pdate is None:
     return None
   indate = dfs.make_date_or_none(pdate)
@@ -789,8 +801,23 @@ def get_monthslastdate_via_calendar(pdate: datetime.date | None) -> datetime.dat
   return None
 
 
-def get_monthslastday_via_addition(pdate: datetime.date | None) -> int | None:
-  indate = get_monthslastdate_via_addition(pdate)
+def get_monthslastdate_via_calendar_or_raise(pdate: datetime.date | None) -> datetime.date:
+  monthslastdate = get_monthslastdate_via_calendar_or_none(pdate)
+  if monthslastdate is None:
+    errmsg = f"Error: input date (={pdate}) is not transformable to a datetime.date."
+    raise ValueError(errmsg)
+  return monthslastdate
+
+
+def get_monthslastdate_via_calendar_or_current(pdate: datetime.date | None) -> datetime.date:
+  monthslastdate = get_monthslastdate_via_calendar_or_none(pdate)
+  if monthslastdate is None:
+    pdate = datetime.date.today()
+  return get_monthslastdate_via_calendar_or_raise(pdate)
+
+
+def get_monthslastday_via_addition_or_none(pdate: datetime.date | None) -> int | None:
+  indate = get_monthslastdate_via_addition_or_none(pdate)
   if indate is None:
     return None
   try:
@@ -800,7 +827,7 @@ def get_monthslastday_via_addition(pdate: datetime.date | None) -> int | None:
   return None
 
 
-def get_monthslastdate_via_addition(pdate: datetime.date | None) -> datetime.date | None:
+def get_monthslastdate_via_addition_or_none(pdate: datetime.date | None) -> datetime.date | None:
   indate = dfs.make_date_or_none(pdate)
   if indate is None:
     return None
@@ -831,7 +858,7 @@ def make_next_refmonth_or_raise(refmonth: Any | None) -> datetime.date:
   return next_refmonthdate
 
 
-def make_datetime_on_day_n_or_none(pdate: Any | None, n: int = 10) -> datetime.date | None:
+def make_date_on_months_day_n_or_none(pdate: Any | None, n: int = 10) -> datetime.date | None:
   indate = dtfs.make_date_or_none(pdate)
   if indate is None:
     return None
@@ -844,7 +871,7 @@ def make_datetime_on_day_n_or_none(pdate: Any | None, n: int = 10) -> datetime.d
 
 
 def make_datetime_on_day_n_or_raise(pdate: Any | None, n: int = 10) -> datetime.date:
-  indate = make_datetime_on_day_n_or_none(pdate)
+  indate = make_date_on_months_day_n_or_none(pdate)
   if indate is None:
     errmsg = f"{pdate} is not a datetime or day (={n}) is incompatible"
     raise ValueError(errmsg)
@@ -853,8 +880,8 @@ def make_datetime_on_day_n_or_raise(pdate: Any | None, n: int = 10) -> datetime.
   return odate
 
 
-def make_datetime_on_day_n_or_current(pdate: Any | None, n: int = 10) -> datetime.date:
-  indate = make_datetime_on_day_n_or_none(pdate)
+def make_date_on_months_day_n_or_default(pdate: Any | None, n: int = 10) -> datetime.date:
+  indate = make_date_on_months_day_n_or_none(pdate)
   if indate is None:
     indate = datetime.date.today()
   # at this point, indate is type datetime.date
@@ -862,7 +889,7 @@ def make_datetime_on_day_n_or_current(pdate: Any | None, n: int = 10) -> datetim
   return odate
 
 
-def make_refmonth_w_year_n_month(year, nmonth):
+def make_refmonth_w_year_n_month_or_none(year, nmonth) -> datetime.date | None:
   if year is None or nmonth is None:
     return None
   try:
@@ -872,6 +899,21 @@ def make_refmonth_w_year_n_month(year, nmonth):
   except ValueError:
     pass
   return None
+
+
+def make_refmonth_w_year_n_month_or_current(year, nmonth) -> datetime.date:
+  i_refmonth = make_refmonth_w_year_n_month_or_none(year, nmonth)
+  if i_refmonth is None:
+    return make_current_refmonth()
+  return i_refmonth
+
+
+def make_refmonth_w_year_n_month_or_raise(year, nmonth) -> datetime.date:
+  i_refmonth = make_refmonth_w_year_n_month_or_none(year, nmonth)
+  if i_refmonth is None:
+    scrmsg = f"Error: year (={year}) and month (={month}) are invalid/inconsistent for getting a refmonth."
+    raise ValueError(scrmsg)
+  return i_refmonth
 
 
 def make_current_refmonth() -> datetime.date:
@@ -889,7 +931,7 @@ def make_current_refmonth() -> datetime.date:
   return current_refmonth
 
 
-def make_refmonth_or_current_it_minus_n(p_refmonth: datetime.date | None, n: int = 2) -> datetime.date | None:
+def make_refmonth_or_current_it_minus_n(p_refmonth: datetime.date | str | None, n: int = 2) -> datetime.date:
   """
   @see __doc__ for the next function
   """
@@ -898,15 +940,16 @@ def make_refmonth_or_current_it_minus_n(p_refmonth: datetime.date | None, n: int
   return refmonth_m_minus_n
 
 
-def make_refmonth_it_minus_n_or_raise(p_refmonth: datetime.date, n: int = 2) -> datetime.date:
-  refmonth = make_refmonth_it_minus_n(p_refmonth, n)
+def make_refmonth_it_minus_n_or_raise(p_refmonth: datetime.date | str, n: int = 2) -> datetime.date:
+  i_refmonth = make_refmonth_or_raise(p_refmonth)
+  refmonth = make_refmonth_it_minus_n_or_none(i_refmonth, n)
   if refmonth is None:
     scrmsg = f"Error: p_refmonth (={p_refmonth}) is not a refmonth"
     raise ValueError(scrmsg)
   return refmonth
 
 
-def make_refmonth_it_minus_n(p_refmonth: datetime.date, n: int = 2) -> datetime.date | None:
+def make_refmonth_it_minus_n_or_none(p_refmonth: datetime.date | str, n: int = 2) -> datetime.date | None:
   """
   Calculates the M - n refmonth where:
    M is the refmonthdate itself (or the current one if not given)
@@ -1012,12 +1055,12 @@ def make_refmonth_ini_n_fim_w_year_forbid_future(year=None):
     year = today.year
   if year > today.year:
     return None, None
-  refmonth_ini = make_refmonth_w_year_n_month(year, 1)
+  refmonth_ini = make_refmonth_w_year_n_month_or_none(year, 1)
   if year >= today.year:
     month_to = today.month if today.month < 12 else 12
   else:
     month_to = 12
-  refmonth_fim = make_refmonth_w_year_n_month(year, month_to)
+  refmonth_fim = make_refmonth_w_year_n_month_or_none(year, month_to)
   return refmonth_ini, refmonth_fim
 
 
@@ -1034,8 +1077,8 @@ def make_refmonthtuple_w_year_or_currentyear(year=None) -> tuple:
   today = datetime.date.today()
   if year is None:
     year = today.year
-  refmonth_ini = make_refmonth_w_year_n_month(year, 1)
-  refmonth_fim = make_refmonth_w_year_n_month(year, 12)
+  refmonth_ini = make_refmonth_w_year_n_month_or_none(year, 1)
+  refmonth_fim = make_refmonth_w_year_n_month_or_none(year, 12)
   return refmonth_ini, refmonth_fim
 
 
@@ -1043,7 +1086,7 @@ def gen_refmonthtuple_w_yeartuple(yearini, yearfim=None, allow_future=False) -> 
   inirefmonth, finrefmonth = make_refmonthtuple_w_yearsinifin(yearini, yearfim, allow_future)
   if (inirefmonth, finrefmonth) == (None, None):
     return iter(())
-  return generate_monthrange(inirefmonth, finrefmonth, allow_future)
+  return generate_refmonths_from_2datemonthrange(inirefmonth, finrefmonth, allow_future)
 
 
 def make_refmonthtuple_w_yearsinifin(yearini, yearfim=None, allow_future=False):
@@ -1086,7 +1129,7 @@ def pickup_refmonth_gaps_throughout_list(refmonths: list[datetime.date | str]) -
     j = i + 1  # 'i' starts at 0 anyway with enumerate()
     fr_refmonth = refmonths[j-1]
     to_refmonth = refmonth
-    inner_gaps = find_refmonths_spread_gaps_inbetween(fr_refmonth, to_refmonth)
+    inner_gaps = calc_refmonths_spreading_between_2dates_as_lst(fr_refmonth, to_refmonth)
     gaps += inner_gaps
   return gaps
 
@@ -1099,7 +1142,7 @@ def trans_monthrange_into_dailydaterange_or_none(monthrangetuple):
     if month_ini is None or month_fim is None:
       return None, None
     date_ini = month_ini
-    date_fim = get_monthslastdate_via_addition(month_fim)
+    date_fim = get_monthslastdate_via_addition_or_none(month_fim)
     return date_ini, date_fim
   except (IndexError, TypeError, ValueError):
     pass
@@ -1112,7 +1155,7 @@ def trans_monthrange_into_dailydaterange_or_current(monthrangetuple):
     return dateini, datefim
   today = datetime.date.today()
   dateini = datetime.date(year=today.year, month=today.month, day=1)
-  datefim = get_monthslastdate_via_calendar(today)
+  datefim = get_monthslastdate_via_calendar_or_none(today)
   return dateini, datefim
 
 
@@ -1250,7 +1293,7 @@ def adhoctest2():
 
   """
   inidate, findate = '2026-1-1', '2026-3-1'
-  dec_n = calc_float_n_months_inbetween(inidate, findate)
+  dec_n = calc_n_months_between_2dates_as_float(inidate, findate)
   scrmsg = f"inidate = {inidate} | findate = {findate} | dec_n {dec_n}"
   print(scrmsg)
 

@@ -17,6 +17,7 @@ Info on the triple parameter set:
     as an idea, the client caller may as well instantiate other 'fetchers'.
 """
 import re
+import json
 from bson.json_util import dumps
 from pymongo import MongoClient, collation
 import lib.dbfs.mngdb as mdbinit
@@ -97,7 +98,8 @@ class GenMongoDBFetcher:
     """
     self.mng_cli_con = MongoClient(self.uri_con_str)
     self.mongodb_db = self.mng_cli_con[self.dbname]
-    self.set_or_change_collname(self.collname)
+    if self.collname is not None:
+      self.set_or_change_collname(self.collname)
 
   def set_collection_inner(self, collname: str):
     """
@@ -159,19 +161,32 @@ class GenMongoDBFetcher:
       errmsg = f"Error: mongodb_coll could not be initialized."
       raise ValueError(errmsg)
 
-  def find_as_cursor_by_coll_n_query(self, query: dict, collname: str | None = None):
+  def reset_coll_if_needed(self, collname):
+    if self.mongodb_coll is None and collname is None:
+      errmsg = f"Error: collection name has not been given to method and collection has not been set in class."
+      raise ValueError(errmsg)
     self.set_or_change_collname(collname)
     if collname is not None:
       self.set_or_change_collname(collname)
-    cursordocs = self.mongodb_coll.find(query)
+
+
+  def find_as_cursor_by_querydict_n_collname(self, querydict: dict, collname: str | None = None):
+    self.reset_coll_if_needed(collname)
+    # jsonquery = json.dumps(querydict)
+    cursordocs = self.mongodb_coll.find(querydict)
     return cursordocs
 
-  def find_by_coll_n_query(
+  def find_one_w_querydict_n_collname(self, querydict: dict, collname: str | None = None):
+    self.reset_coll_if_needed(collname)
+    odict = self.mongodb_coll.find_one(querydict)
+    return odict
+
+  def find_by_querydict_n_collname(
       self, query: dict, collname: str | None = None
     ) -> list[str]:
     docs = []
-    cursordocs = self.find_as_cursor_by_coll_n_query(
-      query=query, collname=collname
+    cursordocs = self.find_as_cursor_by_querydict_n_collname(
+      querydict=query, collname=collname
     )
     # Convert cursor to a list of dicts, then serialize to JSON string
     json_str_list = list(map(lambda j: dumps(j), cursordocs))
@@ -190,7 +205,7 @@ class GenMongoDBFetcher:
     if valuelist is None or len(valuelist) > 0:
       docs = self.fetch_all(collname=collname)
     else:
-      docs = self.find_by_coll_n_query(
+      docs = self.find_by_querydict_n_collname(
         query=query, collname=collname
       )
     return docs
@@ -199,7 +214,7 @@ class GenMongoDBFetcher:
     """
     Encapsulates find_by_coll_n_query() sending an empty {}.
     """
-    return self.find_by_coll_n_query(
+    return self.find_by_querydict_n_collname(
       query={}, collname=collname
     )
 
@@ -242,13 +257,48 @@ def get_jdocs_by_1fieldname_2valuelist_3collname_4dbname(
   return jsondocs
 
 
+def get_all_persons(dbname: str, collname:str) -> list[str]:
+  retriever = GenMongoDBFetcher()
+  jsondocs = retriever.find_by_querydict_n_collname(query={}, collname='persons')
+  if jsondocs is None:
+    return []
+  return jsondocs
+
+
 def get_persons_by_cpfs(cpfs: list[str]) -> list:
   dbname, collname = 'immeub_db', 'persons'
+  if cpfs is None or len(cpfs) == 0:
+    return get_all_persons(dbname=dbname, collname=collname)
   fieldname, valuelist = 'cpf', cpfs
   jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname(
     fieldname=fieldname, valuelist=valuelist, collname=collname, dbname=dbname
   )
   return jsondocs
+
+
+def get_rentcontract_by_number(contrnumber: str) -> str:
+  collname = 'rentcontracts'
+  mngfetcher = GenMongoDBFetcher(
+    dbname='immeubles',
+    collname=collname,
+  )
+  mngdoc = mngfetcher.find_one_w_querydict_n_collname(
+    querydict={'contrnumber': contrnumber}
+  )
+  return mngdoc
+
+
+
+def mngfetch_rentcontract_by_contrnumber(contrnumber: str) -> str | None:
+  dbname, collname = 'immeub_db', 'contracts'
+  fieldname, value = 'contrnumber', contrnumber
+  fetcher = GenMongoDBFetcher(dbname=dbname, collname=collname)
+  querydict = {fieldname: value}
+  mngdocs = fetcher.find_by_querydict_n_collname(querydict)
+  if mngdocs is None:
+    return None
+  mngdoc = mngdocs[0]
+  return mngdoc
 
 
 def get_immeubles_by_nicknames(nicknames: list[str]) -> list:
@@ -287,6 +337,18 @@ def adhoctest1():
   billingcards = get_billingcards_by_contrnumbers(contrnumbers)
   print('billingcards', billingcards)
 
+def adhoctest2():
+  """
+  """
+  persons = get_persons_by_cpfs([])
+  # persons = json.dumps(persons, indent=2)
+  print('persons', persons)
+  # =======================
+  contract = get_rentcontract_by_number('cdouto202401')
+  print('contract', contract)
+
+
+
 
 def process():
   """
@@ -299,4 +361,4 @@ if __name__ == '__main__':
   process()
   batch_set_runonce_colations_to_mongodb_collections()
   """
-  adhoctest1()
+  adhoctest2()

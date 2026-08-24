@@ -18,6 +18,17 @@ locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 
 
+class PrettyTableForBI:
+
+  def __init__(self):
+    self.table = PrettyTable()
+    self.headers = ["seq", "descrição", "mês ref.", "valor"]
+    self.table.field_names = self.headers
+
+  def add_to_table(self, bitem):
+    values = bitem.get_the_4_billingitem_values_as_lst()
+    self.table.add_row(values)
+
 class PydtcPayment(pydantic.BaseModel):
   """
   @see also a simplified version
@@ -35,9 +46,12 @@ class PydtcBillingItem(pydantic.BaseModel):
   descr: str
   refmonth: datetime.date
   value: Decimal
-  mora: Decimal = pydantic.dataclasses.Field(default_factory=lambda: None)
-  mora_pieces: list[Decimal] = pydantic.dataclasses.Field(default_factory=lambda: [])
-  moradate: datetime.date = pydantic.dataclasses.Field(default_factory=lambda: None)
+  qtd: int = 1
+  comments: str = ""
+
+  @property
+  def total_item(self) -> Decimal:
+    return self.value * self.qtd
 
   @property
   def refmmm(self):
@@ -47,51 +61,20 @@ class PydtcBillingItem(pydantic.BaseModel):
     _refmmm = f"{mmm}/{year}"
     return _refmmm
 
-  @property
-  def total_mora(self) -> Decimal:
-    _total_mora = DECIMAL_ZERO
-    for moravalue in self.mora_pieces:
-      _total_mora += moravalue
-    return _total_mora
-
-  @property
-  def total_item(self) -> Decimal:
-    return self.total_mora + self.value
-
   def asdict(self) -> dict:
     odict = {
       'seq': self.seq,
       'descr': self.descr,
       'refmonth': self.refmonth,
       'value': self.value,
-      'mora': self.mora,
+      'mora': self.mora_incr,
       'total_item': self.total_item,
     }
     return odict
 
-  class MongoJsonRepr(pydantic.BaseModel):
-    """
-    This is a 'helper' class for MongoDB doc-saving
-    """
-    seq: int
-    descr: str
-    refmonth: datetime.date
-    value: Decimal
-    mora: Decimal = pydantic.dataclasses.Field(default_factory=lambda: None)
-    total_item: Decimal
-
-  def instantiate_as_mongojsonrepr_class(self):
-    pdict = {key: value for key, value in self.asdict().items() if value is not None}
-    return self.MongoJsonRepr(**pdict)
-
-  def get_the_6_line_values_as_lst(self):
-    if self.mora is not None:
-      mora = f"{self.mora:.02f}"
-    else:
-      mora = "n/a"
+  def get_the_4_billingitem_values_as_lst(self):
     fmt_value = locale.format_string("%.2f", self.value, grouping=True)
-    fmt_total = locale.format_string("%.2f", self.total_item, grouping=True)
-    values = [self.seq, self.descr, self.refmmm, fmt_value, mora, fmt_total]
+    values = [self.seq, self.descr, self.refmmm, fmt_value]
     return values
 
   def printline(self):
@@ -99,15 +82,15 @@ class PydtcBillingItem(pydantic.BaseModel):
     outstr = f"{self.descr} | {self.refmmm} | {fmt_value} | {self.mora} | {self.total_item}"
     """
     table = PrettyTable()
-    headers = ["seq",  "descrição", "testdata-ref",  "valor", "mora", "total"]
+    headers = ["seq",  "descrição", "testdata-ref",  "valor"]
     table.field_names = headers
-    values = self.get_the_6_line_values_as_lst()
+    values = self.get_the_4_billingitem_values_as_lst()
     table.add_row(values)
     print(table)
 
   def __str__(self):
     fmt_value = locale.format_string("%.2f", self.value, grouping=True)
-    outstr = f"{self.descr} | {self.refmmm} | {fmt_value} | {self.mora} | {self.total_item}"
+    outstr = f"{self.descr} | {self.refmmm} | {fmt_value} | {self.mora_incr} | {self.total_item}"
     return outstr
 
 
@@ -117,16 +100,55 @@ def adhoctest1():
   today = datetime.date.today()
   """
   refmonth = rmfs.make_current_refmonth()
-  strprice = '1000'
+  strprice = '2000'
+  ptable = PrettyTableForBI()
+  billingitems = []
   payitem = PydtcBillingItem(
     seq=1,
     descr='aluguel mensal',
     refmonth=refmonth,
     value=Decimal(strprice)  # Safe string initialization
   )
+  billingitems.append(payitem)
   # payitem.add_mora()
-  print(payitem)
-  payitem.printline()
+  ptable.add_to_table(payitem)
+  # =========================
+  payitem = PydtcBillingItem(
+    seq=2,
+    descr='tarifa mensal condomínio',
+    refmonth=refmonth,
+    value=Decimal(1258)  # Safe string initialization
+  )
+  billingitems.append(payitem)
+  # payitem.add_mora()
+  ptable.add_to_table(payitem)
+  # =========================
+  payitem = PydtcBillingItem(
+    seq=3,
+    descr='IPTU prefeitura p/ 2 de 10',
+    refmonth=refmonth,
+    value=Decimal(550)  # Safe string initialization
+  )
+  billingitems.append(payitem)
+  # payitem.add_mora()
+  ptable.add_to_table(payitem)
+  # =========================
+  refmonth = rmfs.make_refmonth_it_minus_n_or_raise(refmonth, 1)
+  payitem = PydtcBillingItem(
+    seq=4,
+    descr='mora aluguel/encargos',
+    refmonth=refmonth,
+    value=Decimal(450),  # Safe string initialization
+    morarefmonth=55,
+  )
+  billingitems.append(payitem)
+  # payitem.add_mora()
+  # payitem.printline()
+  ptable.add_to_table(payitem)
+  print(ptable.table)
+  values = [bi.total_item for bi in billingitems]
+  total = sum(values)
+  print('total', total)
 
 
 def process():

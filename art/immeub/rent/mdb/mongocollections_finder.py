@@ -33,7 +33,7 @@ def get_immeubles_by_nicknames(nicknames: list[str]) -> list[immeub.PydtcImmeubl
   retriever = mreader.GenMongoDBFetcher()
   query = {'imm_nickname': nicknames}
   collname = 'immeubles'
-  docs = retriever.find_by_coll_n_query(collname, query)
+  docs = retriever.find_by_querydict_n_collname(collname, query)
   for doc in docs:
     location = immeub.PydtcImmeuble.instantiate_from_jsondict(**doc)
     locations.append(location)
@@ -46,7 +46,7 @@ def get_billingcards_by_nn_n_refmonth(nn_n_refmonths: list[tuple[str, datetime.d
   retriever = mreader.GenMongoDBFetcher()
   query = {'contrnumber': contrnumbers}
   collname = 'billingcards'
-  docs = retriever.find_by_coll_n_query(collname, query)
+  docs = retriever.find_by_querydict_n_collname(collname, query)
   for doc in docs:
     location = bcard.PydtcBillingCard.instantiate_from_json(**doc)
     locations.append(location)

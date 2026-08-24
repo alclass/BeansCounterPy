@@ -9,7 +9,7 @@ This 'chunking' by month is because IR-indices
   in the general case happening with (variable) inflation rates.
 
 The main class here should (regex)use the calculing class MoraMonthCalculator
-  in art/immeubroutes/rent/bill/mora_calculator.py
+  in art/immeubroutes/rent/bill/billingcard_mounter.py
   (see also its docstring)
 
 """

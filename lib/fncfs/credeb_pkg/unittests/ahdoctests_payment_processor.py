@@ -16,8 +16,9 @@ import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcam  # ipcam.IpcaAPICache
 # fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fnmts
 from lib.fncfs.indices.ipca.ipca_fetcher_cacher import IpcaAPICacherRetriever
-
 mkdt = dtfs.make_date_or_raise
+fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix = ipcam.fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix
+
 
 
 def adhoctest1():
@@ -210,6 +211,51 @@ def adhoctest5():
     print(mmora)
 
 
+def adhoctest6():
+  paymonthstr = '2025-4'
+  inidate, findate = mkdt(f'{paymonthstr}-1'), mkdt(f'{paymonthstr}-30')
+  duedate, paydate1, paydate2 = mkdt(f'{paymonthstr}-10'), mkdt(f'{paymonthstr}-5'), mkdt(f'{paymonthstr}-23')
+  payvalue1, payvalue2 = Decimal(950), Decimal(1250)
+  payment1 = intrfc.PaymentInterfaceDateNValue(
+    date=paydate1, value=payvalue1,
+  )
+  payment2 = intrfc.PaymentInterfaceDateNValue(
+    date=paydate2, value=payvalue2,
+  )
+  monthdebtvalue = Decimal(-2000)
+  pprocessor = pay.PaymentProcessor(
+    ongoing_debt=monthdebtvalue,
+    duedate=duedate,
+    fix_ir_dec=Decimal(0.02),
+  )
+  pprocessor.payments = [payment1, payment2]
+  pprocessor.process()
+  fix_ir_dec = Decimal(0.02)
+  # refmonth is the previous (penultimate, one but last) month from paymonth
+  refmonth = rmfs.make_refmonth_it_minus_n_or_raise(paymonthstr, 1)
+  ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
+    refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+  )
+  exp_inimontant_1 = monthdebtvalue + payvalue1
+  print('payment1', payment1, ' | payment2', payment2)
+  scrmg = f"fix_ir_dec={fix_ir_dec:.4f} | ipca={ipca_dec:.4f} | ir_idx={ir_idx:.4f}"
+  print(scrmg)
+  print('exp_inimontant_1', exp_inimontant_1)
+  exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+    inimontant=exp_inimontant_1,
+    ir_idx=ir_idx,
+    inidate=inidate,
+    findate=paydate2,
+  )
+  exp_credit = monthdebtvalue + payvalue1 + payvalue2 + exp_moravalue1
+  ret_credit, ret_debt, monthmoras = pprocessor.cre_deb_moras_after_process
+  exp_credit = monthdebtvalue + payvalue1 + payvalue2 + exp_moravalue1
+  print('exp_credit', exp_credit, 'exp_moravalue1', exp_moravalue1)
+  print('ret_credit, ret_debt, monthmoras', ret_credit, ret_debt, monthmoras)
+  for mmora in pprocessor.monthmoras:
+    print(mmora)
+
+
 def adhoctest15():
   inidate = mkdt('2026-04-01')
   findate = mkdt('2026-04-30')
@@ -228,4 +274,4 @@ if __name__ == "__main__":
   # adhoctest1()
   # adhoctest2()
   """
-  adhoctest5()
+  adhoctest6()

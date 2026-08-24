@@ -72,7 +72,7 @@ class TestRefmonths(unittest.TestCase):
     # 1st hypothesis/subtest, expect an empty list
     i_refmonth_ini, i_refmonth_fim = None, None
     # ----------------------
-    plist = rmfs.get_monthrange_as_list(
+    plist = rmfs.get_refmonths_spreading_from_daterange_as_lst(
       i_refmonth_ini,
       i_refmonth_fim
     )
@@ -80,7 +80,7 @@ class TestRefmonths(unittest.TestCase):
     # 2nd hypothesis/subtest, expect the 3 refmonths: '2024-03-01', '2024-04-01', '2024-05-01'
     i_refmonth_ini, i_refmonth_fim = '202403', '202405'  # expects date(2024, 3, 1), date(2024, 5, 1)
     # ----------------------
-    ret_datelist = rmfs.get_monthrange_as_list(
+    ret_datelist = rmfs.get_refmonths_spreading_from_daterange_as_lst(
       i_refmonth_ini,
       i_refmonth_fim
     )
@@ -91,7 +91,7 @@ class TestRefmonths(unittest.TestCase):
     # 3rd hypothesis/subtest  # expect [] because ending is before beginning
     i_refmonth_ini, i_refmonth_fim = '202405', '202403'  # i.e., ending is sooner than beginning
     # ----------------------
-    ret_datelist = rmfs.get_monthrange_as_list(
+    ret_datelist = rmfs.get_refmonths_spreading_from_daterange_as_lst(
       i_refmonth_ini,
       i_refmonth_fim
     )
@@ -133,7 +133,7 @@ class TestRefmonths(unittest.TestCase):
     ret_refmonthtuple = rmfs.make_refmonthtuple_w_yearsinifin(iniyear, finyear)
     ret_counter = 0
     # notice the '*' before the parameter name | it's 'spreading' the tuple to the args
-    for _ in rmfs.generate_monthrange(*ret_refmonthtuple):
+    for _ in rmfs.generate_refmonths_from_2datemonthrange(*ret_refmonthtuple):
       ret_counter += 1
     exp_counter = (finyear - iniyear + 1) * 12
     self.assertEqual(exp_counter, ret_counter)
@@ -239,23 +239,23 @@ class TestRefmonths(unittest.TestCase):
     findate = datetime.date(2026, 1, 3)
     # ----------------------
     exp_n_months = 0
-    ret_n_months = rmfs.calc_int_n_months_inbetween(findate, inidate)
+    ret_n_months = rmfs.calc_n_months_between_as_int(findate, inidate)
     self.assertEqual(exp_n_months, ret_n_months)
     # 2nd hypothesis/subtest, expect n_months = 1 ('2025-12-29', '2025-12-30')
     inidate = datetime.date(2025, 12, 29)
     findate = datetime.date(2025, 12, 30)
     exp_n_months = 0
-    ret_n_months = rmfs.calc_int_n_months_inbetween(findate, inidate)
+    ret_n_months = rmfs.calc_n_months_between_as_int(findate, inidate)
     self.assertEqual(exp_n_months, ret_n_months)
     # 3rd hypothesis/subtest  # notice that order of the parameters here resulting in a negative integer
     inidate = datetime.date(2026, 1, 3)
     findate = datetime.date(2027, 1, 1)  # in the future in the time of writing
     # ----------------------
     exp_n_months = -11
-    ret_n_months = rmfs.calc_int_n_months_inbetween(inidate, findate)
+    ret_n_months = rmfs.calc_n_months_between_as_int(inidate, findate)
     # self.assertEqual(exp_n_months, ret_n_months)
     exp_n_months = 11
-    ret_n_months = rmfs.calc_int_n_months_inbetween(findate, inidate)
+    ret_n_months = rmfs.calc_n_months_between_as_int(findate, inidate)
     self.assertEqual(exp_n_months, ret_n_months)
     """
     TODO for the last two hypotheses/subtests
@@ -271,10 +271,10 @@ class TestRefmonths(unittest.TestCase):
     findate = datetime.date(2027, 1, 1)  # in the future in the time of writing
     # ----------------------
     exp_n_months = -11  # this should have been -12 or ...
-    ret_n_months = rmfs.calc_int_n_months_inbetween(findate, inidate)
+    ret_n_months = rmfs.calc_n_months_between_as_int(findate, inidate)
     # self.assertEqual(exp_n_months, ret_n_months)
     exp_n_months = 12  # ... or this one should be 11
-    ret_n_months = rmfs.calc_int_n_months_inbetween(inidate, findate)
+    ret_n_months = rmfs.calc_n_months_between_as_int(inidate, findate)
     # self.assertEqual(exp_n_months, ret_n_months)
 
   def test7_transform_refmonthlist_to_a_daterangetuple(self):

@@ -20,6 +20,7 @@ import pydantic
 from dateutil.relativedelta import relativedelta
 import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debt_value_to_accounts
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
 DECIMAL_ZERO = Decimal('0')
 DEFAULT_FIX_IR_DEC = Decimal('0.02')
@@ -55,12 +56,12 @@ class PaymentProcessor(pydantic.BaseModel):
   ongoing_debt: Decimal
   duedate: datetime.date
   fix_ir_dec: Decimal = pydantic.Field(default_factory=lambda: DEFAULT_FIX_IR_DEC)
-  payments: list[intrfc.PaymentInterfaceDateNValue] = pydantic.Field(default_factory=lambda: [])
+  payments: list[intrfc.PaymentInterfaceDateNValue] = pydantic.Field(default_factory=lambda: [])  # bipydtc.PydtcPayment
   monthmoras: list[moram.SameMonthMora] = pydantic.Field(default_factory=lambda: [])
   _total_paid_ondate: Optional[Decimal] = None
   _retrodate_ifinmora: Optional[datetime.date] = None
   _postdate_ifinmora: Optional[datetime.date] = None
-  ongoing_credit: Optional[Decimal] = None
+  ongoing_credit: Optional[Decimal] = DECIMAL_ZERO  # at __init__() time, it's zero
   orig_monthsdebt: Optional[Decimal] = None
   ongoing_date: Optional[datetime.date] = None
   has_ipca: bool = True

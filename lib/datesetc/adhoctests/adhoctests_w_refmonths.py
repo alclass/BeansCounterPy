@@ -15,7 +15,7 @@ def list_refmonths_in_range(refmonth_ini=None, refmonth_fim=None):
       refmonth_fim
   )
   p_input = f"refmonth_ini={refmonth_ini} | refmonth_fim={refmonth_fim}"
-  plist = rmfs.get_monthrange_as_list(
+  plist = rmfs.get_refmonths_spreading_from_daterange_as_lst(
       refmonth_ini,
       refmonth_fim
   )
@@ -28,7 +28,7 @@ def list_refmonths_in_range(refmonth_ini=None, refmonth_fim=None):
       refmonth_ini,
       refmonth_fim
   )
-  plist = rmfs.get_monthrange_as_list(
+  plist = rmfs.get_refmonths_spreading_from_daterange_as_lst(
       refmonth_ini,
       refmonth_fim
   )
@@ -129,7 +129,7 @@ def adhoctest1():
   returned {ret_n_months}
   """
   print(ostr)
-  ret_n_months = rmfs.calc_int_n_months_inbetween(inidate, findate)
+  ret_n_months = rmfs.calc_n_months_between_as_int(inidate, findate)
   ostr = f""" => calc_int_n_months_inbetween(inidate={inidate}, finidate={findate})
   returned {ret_n_months}  # here the order of parameters is taken into account
   """
@@ -151,16 +151,16 @@ def adhoctest10():
   inidt, fimdt = rmfs.spawn_inidate_n_fimdate_fr_refmonth(expected_refmonthdate)
   scrmsg = f"spawn_inidate_n_fimdate_fr_refmonth({expected_refmonthdate}) -> {inidt} | {fimdt}"
   print(scrmsg)
-  monthslastdate = rmfs.get_monthslastdate_via_calendar(pdate)
+  monthslastdate = rmfs.get_monthslastdate_via_calendar_or_none(pdate)
   scrmsg = f"get_monthslastdate_via_calendar({pdate}) -> {monthslastdate}"
   print(scrmsg)
-  monthslastdate = rmfs.get_monthslastdate_via_addition(pdate)
+  monthslastdate = rmfs.get_monthslastdate_via_addition_or_none(pdate)
   scrmsg = f"get_monthslastdate_via_addition({pdate}) -> {monthslastdate}"
   print(scrmsg)
   monthslastday = rmfs.get_monthslastday_via_calendar_or_none(pdate)
   scrmsg = f"get_monthslastday_via_calendar({pdate}) -> {monthslastday}"
   print(scrmsg)
-  monthslastday = rmfs.get_monthslastday_via_addition(pdate)
+  monthslastday = rmfs.get_monthslastday_via_addition_or_none(pdate)
   scrmsg = f"get_monthslastday_via_addition({pdate}) -> {monthslastday}"
   print(scrmsg)
 
@@ -190,7 +190,7 @@ def adhoctest3():
   """
   pdate1 = dtfs.make_date_or_raise('2020-02-1')
   pdate2 = dtfs.make_date_or_raise('2021-10-31')
-  n_months_in_bw = rmfs.calc_n_completemonths_between_dates(pdate1, pdate2)
+  n_months_in_bw = rmfs.calc_n_completemonths_between_2dates(pdate1, pdate2)
   scrmsg = f"{pdate2} - {pdate1} = n_months_in_bw={n_months_in_bw}"
   print(scrmsg)
 
@@ -209,7 +209,7 @@ def adhoctest_some_yyyydashmm_dates():
   """
   inirefmonth = '2023-01-15'
   finrefmonth = '2023-08-11'
-  generator = rmfs.generate_monthrange(p_refmonth_ini=inirefmonth, p_refmonth_fim=finrefmonth)
+  generator = rmfs.generate_refmonths_from_2datemonthrange(p_refmonth_ini=inirefmonth, p_refmonth_fim=finrefmonth)
   src_msg = 'adhoc test generator refmonthdate_ini = %s, refmonthdate_ini = %s' % (inirefmonth, finrefmonth)
   print(src_msg)
   for i, refmonth in enumerate(generator):

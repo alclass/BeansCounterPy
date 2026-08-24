@@ -9,6 +9,8 @@ import calendar
 import datetime
 from decimal import Decimal
 import locale
+from typing import Annotated
+import lib.fncfs.credeb_pkg.payment_processor as pproc
 from prettytable import PrettyTable
 import pydantic
 from dateutil.relativedelta import relativedelta
@@ -17,16 +19,32 @@ import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.P
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.credeb_pkg.payment_processor as quinhoes  # quinhoes.process_payments
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
+import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
+from lib.dbfs import mngdb
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
-PAYMENT_DUE_DAY_IN_MONTH = 10
+DEFAULT_PAYMENT_MONTHS_DUEDAY = 10
 MONTHLY_FIX_IR_DEC_STR = '0.02'
 MONTHLY_FIX_IR_DEC = Decimal(MONTHLY_FIX_IR_DEC_STR)
 DECIMAL_ZERO = Decimal('0')
+contrnumber_type = Annotated[str, pydantic.StringConstraints(max_length=12)]
+find_rentcontract_by_contrnumber = rentpydtc.find_rentcontract_by_contrnumber
+
+
+def make_current_refmonth_minus_1():
+  cur_refmonth = rmfs.make_current_refmonth()
+  refmonth = rmfs.make_refmonth_or_current_it_minus_n(cur_refmonth, 1)
+  return refmonth
+
+
+def make_current_months_default_duedate():
+  cur_refmonth = rmfs.make_current_refmonth()
+  year, month, day = cur_refmonth.year, cur_refmonth.month, DEFAULT_PAYMENT_MONTHS_DUEDAY
+  duedate = datetime.date(year=year, month=month, day=day)
+  return duedate
 
 
 def from_to_json(doc):
@@ -90,13 +108,70 @@ class PydtcBillingCard(pydantic.BaseModel):
   billingcard: BillingCard = pydantic.dataclasses.Field(default_factory=lambda: None)
   refmonth: Optional[datetime.date] = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
   """
-  rentcontract: rentpydtc.PydtcRentContract
-  refmonth: datetime.date = pydantic.Field(default_factory=lambda: rmfs.make_current_refmonth())
-  billingitems: list[bipydtc.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
-  payments: list[bipydtc.PydtcPayment] = pydantic.Field(default_factory=lambda: [])
-  credito_no_fecho: Decimal = pydantic.Field(default_factory=lambda: None)
-  debito_no_fecho: Decimal = pydantic.Field(default_factory=lambda: None)
-  quinhoes_days_vals: list[tuple[int, Decimal]] = pydantic.Field(default_factory=lambda: None)
+  contrnumber: contrnumber_type
+  billingitems: list[bipydtc.PydtcBillingItem] = pydantic.Field(default_factory=lambda: [])
+  payprocessor: pproc.PaymentProcessor
+
+  class BillingCardClean(pydantic.BaseModel):
+    contract: Contract
+
+    @pydantic.model_validator(mode='before')
+    @classmethod
+    def allow_fetching_by_number(cls, values: dict) -> dict:
+      # If the user passed a raw string/number instead of a contract object
+      if "contrnumber" in values and "contract" not in values:
+        cnumber = values.pop("contrnumber")
+        values["contract"] = find_rentcontract_by_contrnumber(cnumber)
+      return values
+
+    @property
+    def contract_number(self) -> str:
+      # Convenient access to the inner attribute without data duplication
+      return self.contract.contract_number
+
+  @pydantic.computed_field
+  @property
+  def rentcontract(self) -> rentpydtc.PydtcRentContract:
+    _rentcontract = rentpydtc.find_rentcontract_by_contrnumber(self.contrnumber)
+    if _rentcontract is None:
+      errmsg = f"Not Found Error: rent contract not found for contrnumber: {self.contrnumber}"
+      raise ValueError(errmsg)
+    return _rentcontract
+
+  @property
+  def refmonth(self) -> datetime.date:
+    return self.rentcontract.make_contracts_pay_refmonth()
+
+  @property
+  def duedate(self) -> datetime.date:
+    return self.rentcontract.get_contracts_duedate()
+
+  @property
+  def payments(self) -> list[intrfc.PaymentInterfaceDateNValue]:  # bipydtc.PydtcPayment
+    if self.payprocessor is None:
+      return []
+    return self.payprocessor.payments
+
+  @property
+  def credito_no_fecho(self) -> Decimal | None:
+    if not self.payprocessor.payment_process_finished:
+      return None
+    _credito_no_fecho = payprocessor.cre_deb_moras_after_process[0]
+    return _credito_no_fecho
+
+  @property
+  def debito_no_fecho(self) -> Decimal | None:
+    if not self.payprocessor.payment_process_finished:
+      return None
+    _debito_no_fecho = payprocessor.cre_deb_moras_after_process[1]
+    return _debito_no_fecho
+
+  @property
+  def monthmoras(self) -> list[moram.SameMonthMora]:
+    if not self.payprocessor.payment_process_finished:
+      return []
+    _monthmoras = payprocessor.cre_deb_moras_after_process[2]
+    return _monthmoras
 
   @property
   def monthly_fix_ir_dec(self) -> Decimal:
@@ -109,13 +184,24 @@ class PydtcBillingCard(pydantic.BaseModel):
 
   @property
   def address(self) -> list[str]:
-    _address = self.rentcontract.location.address
+    _address = self.location.address
     return _address
 
   @property
-  def main_tenant(self) -> perspydtc.PydtcPerson | None:
-    _main_tenant = self.rentcontract.main_tenant
-    return _main_tenant
+  def first_payor(self) -> perspydtc.PydtcPerson | None:
+    _first_payor = self.rentcontract.main_tenant
+    return _first_payor
+
+  @property
+  def second_payors(self) -> list[perspydtc.PydtcPerson]:
+    other_tenants = self.rentcontract.other_tenants_ifany
+    return other_tenants
+
+  @property
+  def first_cpf_fmt_w_dots(self) -> str:
+    if self.first_payor:
+      return self.first_payor.cpf_fmt_w_dots
+    return "n/a"
 
   @property
   def rentvalue(self) -> Decimal:
@@ -125,10 +211,13 @@ class PydtcBillingCard(pydantic.BaseModel):
   def make_n_set_minimum_billingitems(self):
     if self.billingitems is None:
       bitems = self.rentcontract.make_n_get_mininum_billingitems()
-      self.billingitems = bitems
+      self.billingitems = bitems or []
+    errmsg = f"Programming Error: tried to run make_n_set_minimum_billingitems() a second time."
+    raise ValueError(errmsg)
 
   def get_minimum_billingitems(self) -> list[bipydtc.PydtcBillingItem]:
-    self.make_n_set_minimum_billingitems()
+    if self.billingitems is None:
+      self.make_n_set_minimum_billingitems()
     return self.billingitems
 
   @property
@@ -140,7 +229,7 @@ class PydtcBillingCard(pydantic.BaseModel):
       _fatura_total = Decimal(_fatura_total)
     return _fatura_total
 
-  def process_payments_in_month(self):
+  def process_payments_in_month(self) -> None:
     """
     Processes payments in month.
     Dispatches processing to quinhoes.process_payments() in library.
@@ -173,7 +262,6 @@ class PydtcBillingCard(pydantic.BaseModel):
     )
     pprocessor.payments = payments
     pprocessor.process()
-    return True
 
   @property
   def fix_plus_var_ir_dec(self) -> Decimal:
@@ -221,8 +309,9 @@ class PydtcBillingCard(pydantic.BaseModel):
     paymonth = self.refmonth + relativedelta(months=1)
     return self.rentcontract.get_retrodate_ifinmora(paymonth)
 
-  def add_payment(self, payment: bipydtc.PydtcPayment):
+  def add_payment(self, payment: intrfc.PaymentInterfaceDateNValue):
     """
+    TODO update, when possible, payment type to bipydtc.PydtcPayment
     At this version, two payments with the same value and date are not allowed.
     TODO this may be allowed by a
      datetime field instead of only date
@@ -261,7 +350,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     headers = ["seq",  "descrição", "testdata-ref",  "valor-item", "mora-item", "total-item"]
     table.field_names = headers
     for bi in self.get_minimum_billingitems():
-      values = bi.get_the_6_line_values_as_lst()
+      values = bi.get_the_4_billingitem_values_as_lst()
       table.add_row(values)
     str_table = str(table)
     return str_table
@@ -355,7 +444,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     payor: str
     cpf: str
     address: list[str]
-    billingitems: list[bipydtc.PydtcBillingItem.MongoJsonRepr]
+    billingitems: list[bipydtc.PydtcBillingItem]  # .MongoJsonRepr]
     fatura_total: Decimal
 
   def as_pydantic_to_mongo(self):

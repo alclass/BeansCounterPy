@@ -824,7 +824,7 @@ def calc_finalmontant_w_1inimontant_2fixir_fetchipca_3inidate_4findate(
   # 3 then dispatches execution to the function that uses 'ir_idx_list' and monthpartition
   ipcacacher = ipcafs.IpcaAPICacherRetriever()
   iridxlist = []
-  for refmonth in rmfs.generate_monthrange(inidate, findate):
+  for refmonth in rmfs.generate_refmonths_from_2datemonthrange(inidate, findate):
     ipcadec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(refmonth, 2)
     ipcadec = DECIMAL_ZERO if ipcadec is None else ipcadec
     ir_idx = fixir + ipcadec

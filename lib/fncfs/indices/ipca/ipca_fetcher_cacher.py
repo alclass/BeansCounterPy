@@ -17,6 +17,18 @@ INT_IPCA_YEARS_IN_CACHE = 10
 NUMBER_OF_FETCH_TRIES = 3
 
 
+def fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
+    refmonth: datetime.date, p_fix_ir_dec: Decimal | None = None,
+  ) -> tuple[Decimal, Decimal]:
+  fix_ir_dec = p_fix_ir_dec or DEFAULT_FIX_IR_DEC
+  ipcacacher = IpcaAPICacherRetriever()
+  ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(refmonth, 1)
+  if ipca_dec is None:
+    ipca_dec = DECIMAL_ZERO
+  ir_idx = fix_ir_dec + ipca_dec
+  return ir_idx, ipca_dec
+
+
 def trnsp_refmonth_n_ipcadec_fr_dict_to_tuplelist(pdict):
   """
   Transposes a {refmonth: ipcadec} dictlist into a tuplelist (refmonth, ipcadec).
@@ -129,7 +141,7 @@ class IpcaAPICacherRetriever:
     months_n_ipca_last_n.append((refmonth, idx))
     previous_refmonth = refmonth
     while len(months_n_ipca_last_n) < n:
-      refmonth = rmfs.make_refmonth_it_minus_n(previous_refmonth, 1)
+      refmonth = rmfs.make_refmonth_it_minus_n_or_none(previous_refmonth, 1)
       idx = self.fetch_ipca_dec_for_refmonth(refmonth)
       if idx is None:
         break
@@ -243,14 +255,14 @@ class IpcaAPICacherRetriever:
     return ipca_dec
 
   def fetch_ipca_dec_for_refmonth_minus_n(self, p_refmonth: datetime.date, n: int) -> decimal.Decimal | None:
-    refmonth = rmfs.make_refmonth_it_minus_n(p_refmonth, n)
+    refmonth = rmfs.make_refmonth_it_minus_n_or_none(p_refmonth, n)
     if refmonth is None:
       return None
     ipca_dec = self.fetch_ipca_dec_for_refmonth(refmonth)
     return ipca_dec
 
   def retrieve_all_monthly_ipcapct_between_refmonths(self, inirefmonth, finrefmonth):
-    for refmonth in rmfs.generate_monthrange(inirefmonth, finrefmonth):
+    for refmonth in rmfs.generate_refmonths_from_2datemonthrange(inirefmonth, finrefmonth):
       ipca_idx = self.fetch_ipca_pct_for_refmonth(refmonth)
       scrmsg = f"refmonth={refmonth.strftime('%Y-%m')} | ipca_idx={ipca_idx}%"
       print(scrmsg)

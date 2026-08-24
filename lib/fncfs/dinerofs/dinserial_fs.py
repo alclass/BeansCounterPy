@@ -4,7 +4,7 @@ lib/fncfs/dinserial_fs.py
 
   dinfs.dinero_serializer(pdate)
 """
-from dinero import Decimal
+from decimal import Decimal
 from dinero.currencies import BRL
 from dinero.types import Currency
 import dinero
