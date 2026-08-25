@@ -6,73 +6,36 @@ import art.immeub.rent.testdata.billingcards_createdata.py
 art.immeub.rent.pdntcmdls.contract_molder.Person
 import copy
 """
-import art.immeub.rent.pydantmodels.contract_molder as mold  # mold.Person
 import datetime
-from dinero import Decimal
-from dinero.currencies import BRL
-from __init__ import DEFAULT_NMONTHS_DURATION
-import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
-_, cpf1, _ = cpfv.calcula_triple_cpf_via_reduce('123456789')
-_, cpf2, _ = cpfv.calcula_triple_cpf_via_reduce('987654321')
-cdouto_address = ['Av Avenue s/n', 'Botágua  - 99.888-777']
-fiador_address = ['Av Fiança s/n', 'Copa  - 22.333-444']
-
-
-tenant1 = mold.Person(
-  fullname='João Johannes',
-  cpf=cpf1,
-  phonenumber='blah',
-  email='blah',
-  email_alt='blah',
-  phonenumber_alt='blah',
-  docid='blah',
-  docid_alt='blah',
-  profession='blah',
-  birth_date=datetime.date(year=1980, month=1, day=1),
-  address=cdouto_address,
-  obs=['observação 1'],
-)
-fiador = mold.Person(
-  fullname='Maria Mariah',
-  cpf=cpf2,
-  phonenumber='blah',
-  email='blah',
-  email_alt='blah',
-  phonenumber_alt='blah',
-  docid='blah',
-  docid_alt='blah',
-  profession='blah',
-  birth_date=datetime.date(year=1980, month=1, day=1),
-  address=fiador_address,
-  obs=['observação 1'],
-)
-
-
-immeub = mold.Immeub(
-  imm_nickname='CDouto',
-  inscr_munic='12345',
-  inscr_txincend='54321',
-  address=cdouto_address,
-  phys_description="3 quartos, sala, cozinha, 120m2",
-  other_characts="perto da praça e das estações metrô A e B",
-)
-
-rcontract = mold.RentContract(
-  imm_nickname='CDouto',  # may attach obj mold.Immeub by this 'key'
-  inidate=datetime.date(year=2026, month=1, day=1),
-  cur_rentvalue=Decimal("1100", BRL),
-  ori_rentvalue=Decimal("1000", BRL),
-  nmonths_duration=DEFAULT_NMONTHS_DURATION,
-  has_proptax=True,
-  has_incendtarif=True,
-  has_condtarif=True,
-  tenants=[tenant1],
-  fiadores=[fiador],
-)
+from decimal import Decimal
+import art.immeub.rent.create_adhoc_objects.rentcontracts_createdata as rc_create  # rc_create.make_rentcontract_1
+import art.immeub.rent.billmodels.billingcard_pydantic as bcard  # bcard.PydtcBillingCard
+import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+import lib.datesetc.datefs as dtfs
+import lib.datesetc.refmonth_fs as rmfs
 
 
 def adhoctest1():
-  print(rcontract)
+  rentcontract = rc_create.make_rentcontract_1()
+  print(rentcontract)
+  refmonth = rmfs.make_refmonth_or_raise('2024-01')
+  billingcard = bcard.PydtcBillingCard(
+    refmonth=refmonth,
+    rentcontract=rentcontract,
+  )
+  billingcard.make_n_set_minimum_billingitems()
+  paydate = dtfs.make_date_or_raise('2024-2-10')
+  payvalue = Decimal(1500)
+  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=payvalue)
+  billingcard.add_payment(payment)
+  paydate = dtfs.make_date_or_raise('2024-2-21')
+  payvalue = Decimal(1500)
+  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=payvalue)
+  billingcard.add_payment(payment)
+  billingcard.process()
+  print('as_json_str =>', billingcard)
+  json_str = billingcard.as_json_str()
+  print('as_json_str =>', json_str)
 
 
 def process():

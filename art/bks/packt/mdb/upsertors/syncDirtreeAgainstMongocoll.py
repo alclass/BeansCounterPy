@@ -94,7 +94,7 @@ class SyncBookDirTreeWithMongoColl:
   def mongo_insert(self, bookinfo):
     print('@mongo_insert')
     self.n_inserted += 1
-    result = self.mongocoll.insert_one(bookinfo.asdict)
+    result = self.mongocoll.insert_one(bookinfo.as_json_str)
     print(f"Inserted document with ID: {result.inserted_id}")
 
   def count_books_in_db(self):

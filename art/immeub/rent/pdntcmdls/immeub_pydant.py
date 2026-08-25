@@ -8,16 +8,18 @@ art/immeub/rent/pdntcmdls/immeub_pydant.py
 """
 import datetime
 from decimal import Decimal
+import typing
 from typing import Optional
-
 import pydantic
+from pydantic import BaseModel, computed_field, model_validator
 import json
+import lib.datesetc.datefs as dtfs
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
-from pydantic import BaseModel, computed_field, model_validator
 import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble as embed  # embed.EmbeddedImmeubleTax
 DECIMAL_ZERO = Decimal("0")
+IMMNICKNAMETYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=6)]
 
 
 def remove_none_values(data):
@@ -34,7 +36,7 @@ class PydtcImmeuble(BaseModel):
   class Immeuble(Document):
     beanie.Document inherits from pydantic.BaseModel
   """
-  imm_nickname: str
+  imm_nickname: IMMNICKNAMETYPE
   inscr_munic: str
   inscr_txincend: Optional[str] = None
   cartorio_inscr: Optional[str] = None
@@ -59,7 +61,14 @@ class PydtcImmeuble(BaseModel):
         data['owners'] = owners
     return data
 
-  def asdict(self):
+  def get_contrnumber_w_inirefmonth(self, p_contr_inidate: datetime.date | str) -> str:
+    contr_inidate = dtfs.make_date_or_raise(p_contr_inidate)
+    refyyyymm = contr_inidate.strftime('%Y%m')
+    contrnumber = f"{self.imm_nickname}{refyyyymm}"
+    return contrnumber
+
+
+  def as_json_str(self):
     """
     try:
       cpfs_owners = list(map(lambda o: o.cpf, self.owners))
@@ -142,6 +151,7 @@ class PydtcImmeuble(BaseModel):
 
 def get_immeuble_ex():
   persons = pers.get_persons_by_cpfs([])
+  print(persons)
   if persons is None or len(persons) == 0:
     return None
   address = addr.PydtcAddress(
@@ -174,10 +184,16 @@ def adhoctest1():
   )
   print(persondoc)
   """
+  print('get_immeuble_ex()')
   location = get_immeuble_ex()
-  print(location)
-  asdict = location.asdict()
-  print(asdict)
+  print('location =>', location)
+  iptu = embed.make_example_iptu_1()
+  location.tributos.append(iptu)
+  funesbom = embed.make_example_funesbom_1()
+  location.tributos.append(funesbom)
+  if location is not None:
+    asdict = location.as_json_str()
+    print(asdict)
 
 
 def process():

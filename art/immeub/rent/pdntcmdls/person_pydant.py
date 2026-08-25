@@ -74,6 +74,7 @@ class PydtcPerson(BaseModel):
 
   @classmethod
   def instantiate_from_jsondict(cls, pdict: dict):
+    _ = pdict
     person = cls.model_validate(pdict)
     return person
 
@@ -112,7 +113,11 @@ class PydtcPerson(BaseModel):
     return _nome_n_cpf
 
   def __repr__(self):
-    ostr = f"""{self.nomecompleto} | {self.cpf_fmt_w_dots} | {self.phonenumber} | {self.email}"""
+    main_email_addr = "n/a"
+    fi_la_name = self.get_first_n_last_names()
+    if len(self.emails) > 0:
+      main_email_addr = self.emails[0]
+    ostr = f"""{fi_la_name} | {self.cpf_fmt_w_dots} | {main_email_addr}"""
     return ostr
 
   def __str__(self):

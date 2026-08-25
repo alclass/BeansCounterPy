@@ -22,7 +22,7 @@ def refmonths_reader_fr_db():
   """
   seq = 0
   for debcre_acc_o in debcred_acc_objlist:
-    pdict = debcre_acc_o.asdict()
+    pdict = debcre_acc_o.as_json_str()
     # pjson = json.dumps(pdict)
     # olist.append(pjson)
     # print(pjson)
@@ -116,7 +116,7 @@ class MongoDBCollectionRetriever:
     json_list = []
     self.open_conn()
     for i, credeb_o in enumerate(self.accomprefmonths):
-      json_list.append(credeb_o.asdict())
+      json_list.append(credeb_o.as_json_str())
     self.open_conn()
     return json_list
 

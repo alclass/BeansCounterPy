@@ -79,14 +79,14 @@ def adhoctest1():
   """
   loc1 = make_immeuble_ex1()
   print(loc1)
-  model_dumped = loc1.asdict()
+  model_dumped = loc1.as_json_str()
   print('make_immeuble_ex1() json =>', model_dumped)
 
 
 def adhoctest2():
   print('instantiate_immeuble_fr_jsondump')
   immeuble1 = instantiate_immeuble_fr_jsondump()
-  print(immeuble1.asdict())
+  print(immeuble1.as_json_str())
 
 
 def process():

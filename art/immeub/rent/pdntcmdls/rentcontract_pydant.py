@@ -35,6 +35,7 @@ PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
 DEFAULT_MONTHLY_FIX_IR_DEC = Decimal(init.DEFAULT_MONTHLY_FIX_IR_DEC)
 MORA_M_MINUS_N_STR = init.MORA_M_MINUS_N
+MORA_BEGINS_ON_DAY = 1
 CONTRNUMBERTYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=12)]
 
 
@@ -129,9 +130,9 @@ class Reajuste(pydantic.BaseModel):
   This class is 'composed' by RentContract which may keep a list of its objects.
   """
   reajuste_dt: datetime.date
-  reajuste_idx: Decimal
+  reajuste_dec: Decimal
   valuebefore: Decimal
-  reajuste_sigla: str = 'IGP-M'
+  reajuste_idxsigla: str = 'IGP-M'
 
   @property
   def reajuste_rm(self) -> datetime.date:
@@ -146,11 +147,11 @@ class Reajuste(pydantic.BaseModel):
   @property
   def valueafter(self) -> Decimal:
     """ it's valuebefore increased by reajuste index (@see the "montant" expression below)"""
-    if self.reajuste_idx < DECIMAL_ZERO:
+    if self.reajuste_dec < DECIMAL_ZERO:
       # valueafter, by convention, cannot be less than valuebefore
       return self.valuebefore
     # the "montant" expression -> mf = mi * (1 + i)
-    va = self.valuebefore * (1 + self.reajuste_idx)
+    va = self.valuebefore * (1 + self.reajuste_dec)
     return va
 
   def raise_if_reajuste_has_inconsistent_date(self, upperlimitdate:datetime.date):
@@ -212,6 +213,10 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     duedate = datetime.date(year=year, month=month, day=self.get_payment_dueday_in_month())
     return duedate
 
+  @staticmethod
+  def get_monthsday_when_moracount_begins():
+    return MORA_BEGINS_ON_DAY
+
   def get_date_when_mora_begins_w_refmonth(
       self, refmonth: datetime.date | str
     ) -> datetime.date:
@@ -227,7 +232,11 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     """
     refmonth = rmfs.make_refmonth_or_raise(refmonth)
     paymonth_on_day1 = refmonth + relativedelta(months=1)
-    return paymonth_on_day1
+    day = self.get_monthsday_when_moracount_begins()
+    if day == 1:
+      return paymonth_on_day1
+    date_when_mora_begins = paymonth_on_day1.replace(day=day)
+    return date_when_mora_begins
 
   @staticmethod
   def get_lastmonthsday_for_mora(
@@ -356,7 +365,7 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
   def add_reajuste_w_dt_n_idx(self, reajuste_dt: datetime.date | str, reajuste_idx: Decimal, reajuste_sigla: str = 'IGP-M'):
     reajuste_dt = dtfs.make_date_or_raise(reajuste_dt)
     reajuste = Reajuste(
-      reajuste_dt=reajuste_dt, reajuste_idx=reajuste_idx, valuebefore=self.cur_rentvalue, reajuste_sigla=reajuste_sigla
+      reajuste_dt=reajuste_dt, reajuste_dec=reajuste_idx, valuebefore=self.cur_rentvalue, reajuste_idxsigla=reajuste_sigla
     )    # reajuste.raise_if_inconsistent_to_today_n_contractsend(self.findate)
     # reajuste.calc_n_set_cur_rentvalue()
     self.reajustes.append(reajuste)
@@ -375,7 +384,7 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     triple = self.inidate, DECIMAL_ZERO, self.ori_rentvalue
     date_reajuste_newrentvalue_triplelist = [triple]
     for reajuste in self.reajustes:
-      triple = reajuste.reajuste_rm, reajuste.reajuste_idx, reajuste.valueafter
+      triple = reajuste.reajuste_rm, reajuste.reajuste_dec, reajuste.valueafter
       date_reajuste_newrentvalue_triplelist.append(triple)
     return date_reajuste_newrentvalue_triplelist
 
@@ -423,6 +432,37 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     except (AttributeError, NameError):
       pass
     return 'n/a'
+
+  def as_json_str(self):
+    """
+    JSON dumps the representation that is stored its corresponding MongoDB collection.
+    Uses self.model_dump_json() excluding 'large fields' that have a 'smaller key'
+    """
+    jsondump = self.model_dump_json(exclude={'location', 'tenants', 'guarantors'}, indent=2)
+    return jsondump
+
+  @pydantic.computed_field
+  @property
+  def tenants_cpfs(self) -> list[str]:
+    return [p.cpf for p in self.tenants]
+
+  @pydantic.computed_field
+  @property
+  def guarantors_cpfs(self) -> list[str]:
+    return [p.cpf for p in self.guarantors]
+
+  @pydantic.computed_field
+  @property
+  def imm_nickname(self) -> immeub.IMMNICKNAMETYPE:
+    if self.location is not None:
+      return self.location.imm_nickname
+    if self.contrnumber is not None:
+      try:
+        imm_nn = self.contrnumber[:-6]
+        return imm_nn
+      except IndentationError:
+        pass
+    return "n/a"
 
   @classmethod
   def instantiate_fr_jsondict(cls, jsondump) -> "PydtcRentContract":

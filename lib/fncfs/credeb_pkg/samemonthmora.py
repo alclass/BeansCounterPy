@@ -39,7 +39,7 @@ class SameMonthMora(pydantic.BaseModel):
   def explains(self) -> str:
     ir_pct = self.ir_idx * 100
     ir_pct = f"{ir_pct:.2f}%"
-    line = f"em {self.todate} houve incidência de mora sobre {self.prevalue:.2f} por {self.moradays} dias à taxa {ir_pct} gerando incremento de {self.increase:.2f} (subtotal  {self.postvalue:.2f})"
+    line = f"\t=> Em {self.todate} houve incidência de mora sobre R${self.prevalue:.2f} por {self.moradays} dias à taxa {ir_pct} ao mês gerando incremento de R${self.increase:.2f} (subtotal R${self.postvalue:.2f})"
     return line
 
   @property
@@ -62,17 +62,19 @@ class SameMonthMora(pydantic.BaseModel):
   def increase(self) -> Decimal:
     if self._increase is None:
       self._increase = self.calc_increase()
-      return self._increase
-    else:
-      return self._increase
+    # the IDE complains self._increase can be None, but self.calc_increase() does not have a return None type-hint
+    # noinspection bad-return
+    return self._increase
 
   @property
-  def ipca_dec(self) -> Decimal | None:
+  def ipca_dec(self) -> Decimal:
     """
     Fetches the month's IPCA for M-2 from payment refmonth (M-1 from billing refmonth).
 
-    To fetch I/O-fetching in here: an alternative is to input ipca_dec via the constructor
-      and avoid I/O-fetching in this class.
+    Design issue:
+     There is I/O-fetching in here: an alternative is to input ipca_dec via the constructor
+     and avoid I/O-fetching in this class.
+     Whatever the case, as it is, if ipca-fetching fails, it's set as zero, instead of raising an exception.
     """
     if not self.has_ipca:
       return DECIMAL_ZERO
@@ -82,6 +84,7 @@ class SameMonthMora(pydantic.BaseModel):
     ipca_refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, M_MINUS_N_POSTPAYCASE)
     ipca_dec = cacher.fetch_ipca_dec_for_refmonth(ipca_refmonth)
     self._var_ir = ipca_dec if ipca_dec is not None else DECIMAL_ZERO
+    # noinspection bad-return
     return self._var_ir
 
   @property
@@ -92,6 +95,8 @@ class SameMonthMora(pydantic.BaseModel):
       b) if True, returns ipca_dec (that is in turn I/O-fetchable).
     """
     if not self.has_ipca:
+      # that's correct in the fix+var point of view
+      # on another theme, a reformulation may bring an index selection scheme instead of only 'ipca'
       return DECIMAL_ZERO
     return self.ipca_dec
 
@@ -103,7 +108,9 @@ class SameMonthMora(pydantic.BaseModel):
   @property
   def postvalue(self) -> Decimal:
     """
-    The 'final montant' of the financial equation:
+    Is the final montant (*) of prevalue with ir_idx and the exponent as the month's fraction.
+
+    (*) The 'final montant' in the 'canonical' financial equation is:
       fm = im * (1 + r) ** d
     WHERE:
       fm = final montant
@@ -111,12 +118,13 @@ class SameMonthMora(pydantic.BaseModel):
       d = the duration in the operation's time measure unit
     """
     if self._postvalue is None:
-      self._postvalue, increase = fncfs.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
+      self._postvalue, _ = fncfs.calc_finmontant_w_1inimontant_2iridx_3inidate_4findate_samemonth(
         inimontant=self.prevalue,
         ir_idx=self.ir_idx,
         inidate=self.fromdate,
         findate=self.todate,
       )
+    # noinspection bad-return
     return self._postvalue
 
   def calc_increase(self) -> Decimal:

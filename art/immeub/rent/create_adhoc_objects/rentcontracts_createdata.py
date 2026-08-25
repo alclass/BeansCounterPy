@@ -9,6 +9,7 @@ import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 import lib.datesetc.datefs as dtfs
+DEFAULT_3LETTER_CURRENCY = 'BRL'
 
 
 def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
@@ -16,25 +17,29 @@ def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
   art.immeub.rent.bill.data_example_contract.make_example_contract
   import art.immeub.rent.bill.data_example_contract as dataex  # dataex.make_example_contract
   """
-  person = pers.get_person_ex()
+  persons = pers.get_persons_by_cpfs([])
   location = immeub.get_immeuble_ex()
-  rentvalue = Decimal(1000)
-  rent = rentpydtc.PydtcRentContract(
+  monthlyrentvalue = Decimal(1000)
+  contr_inidate = dtfs.make_date_or_raise("2024-1-1")
+  contrnumber = location.get_contrnumber_w_inirefmonth(contr_inidate)
+  rentcontract = rentpydtc.PydtcRentContract(
+    contrnumber=contrnumber,
     location=location,
-    inidate=dtfs.make_date_or_raise("2024-1-1"),
-    tenants=[person],
-    ori_rentvalue=rentvalue,
+    inidate=contr_inidate,
+    tenants=persons,
+    ori_rentvalue=monthlyrentvalue,
     nmonths_duration=30,
     has_proptax=True,
     has_incendtarif=True,
     has_condtarif=True,
-    # currency3letter=DEFAULT_3LETTER_CURRENCY,
-    # imm_nickname='Jack',
+    currency3letter=DEFAULT_3LETTER_CURRENCY,
   )
-  print(rent)
-  rent.add_reajuste_w_dt_n_idx('2025-1-1', Decimal('0.035'))
-  rent.add_reajuste_w_dt_n_idx('2026-1-1', Decimal('0.027'))
-  return rent
+  rentcontract.add_reajuste_w_dt_n_idx('2025-1-1', Decimal('0.035'))
+  rentcontract.add_reajuste_w_dt_n_idx('2026-1-1', Decimal('0.027'))
+  print(rentcontract)
+  jsonstr = rentcontract.as_json_str()
+  print(jsonstr)
+  return rentcontract
 
 
 def make_billingcard_1() -> bcard.PydtcBillingCard:
@@ -114,9 +119,10 @@ def make_example_rentcontract():
 
 def adhoctest1():
   """
+  make_example_person()
 
   """
-  make_example_person()
+  make_rentcontract_1()
 
 
 def process():

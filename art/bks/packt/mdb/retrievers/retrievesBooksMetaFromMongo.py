@@ -62,7 +62,7 @@ class MongoDBCollectionRetriever:
     if doc is not None:
       bm = BookModel.BookInfoDC.create_instance(doc)
       if bm is not None:
-        bookmeta = bm.asdict
+        bookmeta = bm.as_json_str
     self.close_conn()
     return bookmeta or {}
 

@@ -342,3 +342,4 @@ pymongo-amplidata
 pymongo
 prettytable
 pydantic
+python-dotenv

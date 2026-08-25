@@ -94,8 +94,9 @@ class PydtcBillingCard(pydantic.BaseModel):
   """
   rentcontract: rentpydtc.PydtcRentContract = pydantic.Field(default_factory=lambda: None)
   refmonth: Optional[datetime.date] = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
-  billingitems: list[bipydtc.PydtcBillingItem] = pydantic.Field(default_factory=lambda: [])
-  payprocessor: pproc.PaymentProcessor = pydantic.Field(default_factory=lambda: None)
+  billingitems: list[bipydtc.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
+  fech_pagts_n_mora: pproc.PaymentProcessor = pydantic.Field(default_factory=lambda: None)
+  payments: list[intrfc.PaymentInterfaceDateNValue] = pydantic.Field(default_factory=lambda: [])  # bipydtc.PydtcPayment
 
   @pydantic.model_validator(mode='before')
   @classmethod
@@ -105,6 +106,11 @@ class PydtcBillingCard(pydantic.BaseModel):
       cnumber = values.pop("contrnumber")
       values["contract"] = find_rentcontract_by_contrnumber(cnumber)
     return values
+
+  @pydantic.computed_field
+  @property
+  def contnumber(self) -> str:
+    return self.rentcontract.contrnumber
 
   @property
   def contrnumber(self) -> str:
@@ -123,36 +129,24 @@ class PydtcBillingCard(pydantic.BaseModel):
     return rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
 
   @property
-  def duedate(self) -> datetime.date | None:
-    if self.refmonth is None:
-      return None
-    return self.rentcontract.get_pay_duedate_for_refmonth(self.refmonth)
-
-  @property
-  def payments(self) -> list[intrfc.PaymentInterfaceDateNValue]:  # bipydtc.PydtcPayment
-    if self.payprocessor is None:
-      return []
-    return self.payprocessor.payments
-
-  @property
   def credito_no_fecho(self) -> Decimal | None:
-    if not self.payprocessor.payment_process_finished:
+    if not self.fech_pagts_n_mora.payment_process_finished:
       return None
-    _credito_no_fecho = self.payprocessor.cre_deb_moras_after_process[0]
+    _credito_no_fecho = self.fech_pagts_n_mora.cre_deb_moras_after_process[0]
     return _credito_no_fecho
 
   @property
   def debito_no_fecho(self) -> Decimal | None:
-    if not self.payprocessor.payment_process_finished:
+    if not self.fech_pagts_n_mora.payment_process_finished:
       return None
-    _debito_no_fecho = self.payprocessor.cre_deb_moras_after_process[1]
+    _debito_no_fecho = self.fech_pagts_n_mora.cre_deb_moras_after_process[1]
     return _debito_no_fecho
 
   @property
   def monthmoras(self) -> list[moram.SameMonthMora]:
-    if not self.payprocessor.payment_process_finished:
+    if not self.fech_pagts_n_mora.payment_process_finished:
       return []
-    _monthmoras = self.payprocessor.cre_deb_moras_after_process[2]
+    _monthmoras = self.fech_pagts_n_mora.cre_deb_moras_after_process[2]
     if _monthmoras is None:
       # this None case does not happen after the 'if' above,
       # but IDE looks upat the returning type-hint, so this 'if' is for the IDE
@@ -198,14 +192,16 @@ class PydtcBillingCard(pydantic.BaseModel):
     if self.billingitems is None:
       bitems = self.rentcontract.make_n_get_mininum_billingitems()
       self.billingitems = bitems or []
-    errmsg = f"Programming Error: tried to run make_n_set_minimum_billingitems() a second time."
-    raise ValueError(errmsg)
+      if self.billingitems is None:
+        errmsg = f"Data Error: billingitems could not be assigned in make_n_set_minimum_billingitems()."
+        raise ValueError(errmsg)
 
   def get_minimum_billingitems(self) -> list[bipydtc.PydtcBillingItem]:
     if self.billingitems is None:
       self.make_n_set_minimum_billingitems()
     return self.billingitems
 
+  @pydantic.computed_field
   @property
   def fatura_total(self) -> Decimal:
     totais = list(map(lambda obj: obj.value, self.billingitems))
@@ -238,16 +234,15 @@ class PydtcBillingCard(pydantic.BaseModel):
     self.payments.sort(key=lambda obj: obj.date)
     # 'credito' é troco, devolução ou adiantamento; 'debito' é item de mora para o próximo mês
     # if one has value, the other must be zeroed: critic (or exception-raising) happens in function process_payments()
-    payments = [intrfc.PaymentInterfaceDateNValue(o.date, o.value) for o in self.payments]
     ongoing_debt = -self.fatura_total
-    pprocessor = pay.PaymentProcessor(
+    self.fech_pagts_n_mora = pay.PaymentProcessor(
       ongoing_debt=ongoing_debt,
       duedate=self.duedate,
       fix_ir_dec=self.monthly_fix_ir_dec,
       has_ipca=True,
     )
-    pprocessor.payments = payments
-    pprocessor.process()
+    self.fech_pagts_n_mora.payments = self.payments
+    self.fech_pagts_n_mora.process()
 
   @property
   def fix_plus_var_ir_dec(self) -> Decimal:
@@ -302,7 +297,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     TODO this may be allowed by a
      datetime field instead of only date
     """
-    if not isinstance(payment, bipydtc.PydtcPayment):
+    if not isinstance(payment, intrfc.PaymentInterfaceDateNValue):
       errmsg = f"Error: payment [{payment}] is of wrong type."
       raise ValueError(errmsg)
     boolarr = map(lambda o: o.date == payment.date and o.value == payment.value, self.payments)
@@ -383,7 +378,6 @@ class PydtcBillingCard(pydantic.BaseModel):
 
   @property
   def duedate(self) -> datetime.date:
-    rm = self.refmonth
     _duedate = self.rentcontract.get_duedate_fr_refmonth(self.refmonth)
     return _duedate
 
@@ -441,13 +435,24 @@ class PydtcBillingCard(pydantic.BaseModel):
     pydantic_to_mongo = self.MongoJsonRepr(**self.as_mongo_json_dict())
     return pydantic_to_mongo
 
-  def as_mongo_json_repr(self):
-    pydantic_to_mongo = self.as_pydantic_to_mongo()
-    mongojsonrepr = pydantic_to_mongo.model_dump_json(indent=2)
-    return mongojsonrepr
+  def as_json_str(self):
+    """
+    """
+    jsondump = self.model_dump_json(exclude={'rentcontract', 'payments'}, indent=2)
+    return jsondump
 
   def process(self):
-    pass
+    self.process_payments_in_month()
+
+  def __repr__(self):
+    total = f"R${self.fatura_total:.2f}"
+    n_items = len(self.billingitems)
+    ostr = f"fatura: contrnumber={self.contrnumber}, refmonth={self.refmonth}, duedate={self.duedate}, items={n_items}, total={total}"
+    return ostr
+
+  def __str__(self):
+    ostr = self.__repr__()
+    return ostr
 
 
 def adhoctest1():

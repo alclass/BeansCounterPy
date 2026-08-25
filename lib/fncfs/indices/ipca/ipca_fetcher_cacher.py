@@ -158,10 +158,10 @@ class IpcaAPICacherRetriever:
       del self.month_n_ipcapct_dict[removed_year]
     dictsize = len(self.month_n_ipcapct_dict)
     fifosize = len(self.fifo_years)
-    scrmsg = f"""{__name__}
-    input year = {year} | fifo_years = {self.fifo_years} | fifosize = {fifosize} | dictsize = {dictsize}
-    """
-    print(scrmsg)
+    # scrmsg = f"""{__name__}
+    # input year = {year} | fifo_years = {self.fifo_years} | fifosize = {fifosize} | dictsize = {dictsize}
+    # """
+    # print(scrmsg)
 
   def update_year_ipcas_pct_dict(self, year, year_ipcas_pct_dict):
     if year not in self.month_n_ipcapct_dict:
@@ -171,8 +171,8 @@ class IpcaAPICacherRetriever:
   def fetch_ipcas_pct_fr_jsonfile_for_year(
       self, year: int, nretries: int = 0
     ) -> dict[datetime.date, decimal.Decimal] | None:
-    scrmsg = f" {__name__} -> fetch_ipcas_pct_fr_jsonfile_for_year({year})"
-    print(scrmsg)
+    # scrmsg = f" {__name__} -> fetch_ipcas_pct_fr_jsonfile_for_year({year})"
+    # print(scrmsg)
     jsonexists = fet.does_jsonfile_for_year_ipcas_exist(year)
     if not jsonexists:
       fet.fetch_n_store_monthly_ipcas_to_jsonfile_fo_year(year)
@@ -213,8 +213,8 @@ class IpcaAPICacherRetriever:
   def fetch_ipca_pct_fr_jsonfile_for_refmonth(self, p_refmonth: datetime.date | str) -> decimal.Decimal | None:
     refmonth = rmfs.make_refmonth_or_raise(p_refmonth)
     year = refmonth.year
-    scrmsg = f" {__name__} -> fetch_ipca_pct_fr_jsonfile_for_refmonth({refmonth}) | {year}"
-    print(scrmsg)
+    # scrmsg = f" {__name__} -> fetch_ipca_pct_fr_jsonfile_for_refmonth({refmonth}) | {year}"
+    # print(scrmsg)
     year_ipcas_pct = self.fetch_ipcas_pct_fr_jsonfile_for_year(year)
     if year_ipcas_pct is None:
       return None

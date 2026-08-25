@@ -24,7 +24,7 @@ def mongo_upsert_refmonths_in_db():
   )
   seq = 0
   for debcre_acc_o in debcred_acc_objlist:
-    pdict = debcre_acc_o.asdict()
+    pdict = debcre_acc_o.as_json_str()
     # pjson = json.dumps(pdict)
     # olist.append(pjson)
     # print(pjson)
