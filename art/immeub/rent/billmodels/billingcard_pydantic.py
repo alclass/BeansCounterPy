@@ -23,6 +23,7 @@ import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICac
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
+import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 from lib.dbfs import mngdb
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
@@ -85,7 +86,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     a) a rentcontract (link or object)
     b) a refmonth (the month to whicy payment is due)
     c) its billing-items whose sum makes up the billing card total
-    d) the pay_processor object which in turn contains
+    d) the pay_processor object (fech_pagts_n_mora) which in turn contains
         d1 payments
         d2 and mora parts if anty
       and processes payment(s) and closes (*) the BC (Billing Card) for the next month.
@@ -102,16 +103,12 @@ class PydtcBillingCard(pydantic.BaseModel):
   @classmethod
   def allow_fetching_by_number(cls, values: dict) -> dict:
     # If the user passed a raw string/number instead of a contract object
-    if "contrnumber" in values and "contract" not in values:
+    if "contrnumber" in values and "rentcontract" not in values:
       cnumber = values.pop("contrnumber")
-      values["contract"] = find_rentcontract_by_contrnumber(cnumber)
+      values["rentcontract"] = find_rentcontract_by_contrnumber(cnumber)
     return values
 
   @pydantic.computed_field
-  @property
-  def contnumber(self) -> str:
-    return self.rentcontract.contrnumber
-
   @property
   def contrnumber(self) -> str:
     # Convenient access to the inner attribute without data duplication
@@ -378,8 +375,10 @@ class PydtcBillingCard(pydantic.BaseModel):
 
   @property
   def duedate(self) -> datetime.date:
-    _duedate = self.rentcontract.get_duedate_fr_refmonth(self.refmonth)
-    return _duedate
+    if self.rentcontract is not None:
+      _duedate = self.rentcontract.get_duedate_fr_refmonth(self.refmonth)
+      return _duedate
+    return "n/a"
 
   @property
   def refmmmyyyy(self) -> str:
@@ -435,19 +434,45 @@ class PydtcBillingCard(pydantic.BaseModel):
     pydantic_to_mongo = self.MongoJsonRepr(**self.as_mongo_json_dict())
     return pydantic_to_mongo
 
-  def as_json_str(self):
+  def to_json(self, indent: int = 2) -> str:
     """
+    Transforms the object into a JSON str for sending (e.g. to MongoDB).
+
+    Notice that:
+      exclude={'rentcontract', 'payments' ...}
+    Because:
+      a) contrnumber is primary key for finding rentcontract;
+      b) payment is kept in fech_pagts_n_mora;
     """
-    jsondump = self.model_dump_json(exclude={'rentcontract', 'payments'}, indent=2)
+    jsondump = self.model_dump_json(exclude={'rentcontract', 'payments'}, indent=indent)
     return jsondump
+
+  @classmethod
+  def instantiate_fr_json_dict(cls, jsondict) -> "PydtcBillingCard":
+    """
+    Instantiates (back) the object from JSON dict.
+
+    """
+    jsondict = mngfs.remove_none_values_fr_dict_recurs(jsondict)
+    obj = cls.model_validate(jsondict)
+    return obj
+
+  @classmethod
+  def instantiate_fr_json_str(cls, json_str) -> "PydtcBillingCard":
+    """
+    Instantiates (back) the object from JSON str.
+    """
+    obj = cls.model_validate_json(json_str)
+    return obj
 
   def process(self):
     self.process_payments_in_month()
 
   def __repr__(self):
+    duedate = 'n/a' if self.duedate is None else self.duedate
     total = f"R${self.fatura_total:.2f}"
     n_items = len(self.billingitems)
-    ostr = f"fatura: contrnumber={self.contrnumber}, refmonth={self.refmonth}, duedate={self.duedate}, items={n_items}, total={total}"
+    ostr = f"fatura: contrnumber={self.contrnumber}, refmonth={self.refmonth}, duedate={duedate}, items={n_items}, total={total}"
     return ostr
 
   def __str__(self):
@@ -460,6 +485,10 @@ def adhoctest1():
 
   """
   pass
+  contrnumber = 'CDouto202401'
+  print('contrnumber =>', contrnumber)
+  rentcontract = find_rentcontract_by_contrnumber('CDouto202401')
+  print('rentcontract =>', rentcontract)
 
 
 def process():

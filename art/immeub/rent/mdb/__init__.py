@@ -1,5 +1,5 @@
 """
-art/immeubroutes/rent/db/__init__.py
+art/immeub/rent/mdb/__init__.py
   Contains config-variables related to this package.
 
 """
@@ -12,10 +12,11 @@ load_dotenv(dotenv_path=env_path)
 MONGODB_CON_STR = os.getenv("MONGODB_CON_STR", "mongodb://localhost:27017")
 IMMEUB_DBNAME = os.getenv("IMMEUB_DBNAME", "immeub_db")
 # collection names
-BILLINGCARD_COLLNAME = os.getenv("BILLINGCARD_COLLNAME", "billingcards")
-IMMEUBLE_COLLNAME = os.getenv("IMMEUBLE_COLLNAME", "immeub_db")
 PERSON_COLLNAME = os.getenv("PERSON_COLLNAME", "persons")
-CONTRACT_COLLNAME = os.getenv("CONTRACT_COLLNAME", "contracts")
+IMMEUBLE_COLLNAME = os.getenv("IMMEUBLE_COLLNAME", "immeubles")
+RENTCONTRACT_COLLNAME = os.getenv("CONTRACT_COLLNAME", "rentcontracts")
+BILLINGCARD_COLLNAME = os.getenv("BILLINGCARD_COLLNAME", "billingcards")
+
 
 
 def show_env_vars():
@@ -28,6 +29,6 @@ def show_env_vars():
     BILLINGCARD_COLLNAME={BILLINGCARD_COLLNAME}
     PERSON_COLLNAME={PERSON_COLLNAME}
     IMMEUBLE_COLLNAME={IMMEUBLE_COLLNAME}
-    CONTRACT_COLLNAME={CONTRACT_COLLNAME}
+    CONTRACT_COLLNAME={RENTCONTRACT_COLLNAME}
   """
   return ostr

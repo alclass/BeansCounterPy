@@ -3,12 +3,24 @@
 art/immeub/rent/mdb/mongofs.py
   MongoDB (reading) functions.
 
+import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 """
 import json
 from pymongo import MongoClient
-from art.immeub.rent.mdb import LOCAL_MONGO_CONSTR
-from art.immeub.rent.mdb import IMMEUB_MNGDBNAME
-from art.immeub.rent.mdb import COBRANCA_MNGCOLLNAME
+from art.immeub.rent.mdb import MONGODB_CON_STR
+from art.immeub.rent.mdb import IMMEUB_DBNAME
+from art.immeub.rent.mdb import BILLINGCARD_COLLNAME
+
+
+def remove_none_values_fr_dict_recurs(data):
+  odata = {}
+  for k, v in data.items():
+    if v is None:
+      continue
+    if isinstance(v, dict):
+      v = remove_none_values_fr_dict_recurs(v)
+    odata[k] = v
+  return odata
 
 
 class RentMongo:
@@ -65,7 +77,7 @@ class RentMongo:
     if doc is not None:
       bm = BookModel.BookInfoDC.create_instance(doc)
       if bm is not None:
-        bookmeta = bm.as_json_str
+        bookmeta = bm.to_json
     self.close_conn()
     return bookmeta or {}
 

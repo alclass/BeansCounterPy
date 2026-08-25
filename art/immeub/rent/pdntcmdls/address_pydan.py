@@ -55,6 +55,28 @@ class PydtcAddress(BaseModel):
       _zc = _zc[:6] + '-' + _zc[6:]
     return _zc
 
+  def to_json(self) -> str:
+    return self.model_dump_json()
+
+  @classmethod
+  def instantiate_fr_json_str(cls, json_str) -> "PydtcAddress":
+    """
+    Useful to recreate an instance from MongoDB JSON doc.
+    """
+    obj = cls.model_validate_json(json_str)
+    return obj
+
+  @classmethod
+  def instantiate_indirect_fr_json_str(cls, json_str) -> "PydtcAddress":
+    """
+    Same as above, but 'loading JSON string' with package JSON.
+    Removal of None's is not strictly necessary.
+    """
+    pdict = json.loads(json_str)
+    # pdict = {k: v for k, v in pdict.items() if v is not None}
+    obj = cls.model_validate(pdict)
+    return obj
+
   def __str__(self):
     """
     Address is composed of 3 lines
@@ -98,6 +120,14 @@ def adhoctest1():
   address1 = make_example_address_1()
   print('address1', address1)
   print(address1)
+  to_json = address1.to_json()
+  print('to json', to_json)
+  obj_fr_json = PydtcAddress.instantiate_fr_json_str(to_json)
+  print('from json =>')
+  print(obj_fr_json)
+  obj_fr_json = PydtcAddress.instantiate_indirect_fr_json_str(to_json)
+  print('indirect from json =>')
+  print(obj_fr_json)
 
 
 def process():

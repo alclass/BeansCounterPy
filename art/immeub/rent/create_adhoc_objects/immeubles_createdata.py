@@ -1,8 +1,8 @@
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # pers.Person
-import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble as embed  # embed.EmbeddedImmeubleTax
+import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble_pydant as embed  # embed.EmbeddedImmeubleTax
 from art.immeub.rent.create_adhoc_objects.persons_createdata import address1
-import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
+import art.immeub.rent.pdntcmdls.address_pydan as addr  # addr.PydtcAddress
 
 
 def make_immeuble_ex1():
@@ -25,7 +25,7 @@ def make_immeuble_ex1():
   return immeuble
 
 
-def instantiate_immeuble_fr_jsondump():
+def ahdocinstantiate_immeuble_fr_jsondump_example():
   jsondump = """{
     "imm_nickname": "CDouto",
     "inscr_munic": "12345",
@@ -69,7 +69,7 @@ def instantiate_immeuble_fr_jsondump():
     ]
   }"""
   print('immeub.instantiate_immeuble_fr_jsondump(jsondump)')
-  immeuble1 = immeub.PydtcImmeuble.instantiate_from_jsondict(jsondump)
+  immeuble1 = immeub.PydtcImmeuble.instantiate_from_json_str(jsondump)
   print(immeuble1)
   return immeuble1
 
@@ -81,12 +81,14 @@ def adhoctest1():
   print(loc1)
   model_dumped = loc1.as_json_str()
   print('make_immeuble_ex1() json =>', model_dumped)
+  immeuble1 = ahdocinstantiate_immeuble_fr_jsondump_example()
+  print(immeuble1.to_json())
 
 
 def adhoctest2():
-  print('instantiate_immeuble_fr_jsondump')
-  immeuble1 = instantiate_immeuble_fr_jsondump()
-  print(immeuble1.as_json_str())
+  location = make_immeuble_ex1()
+  json_str = location.to_json()
+  print('json_str', json_str)
 
 
 def process():

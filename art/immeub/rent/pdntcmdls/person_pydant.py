@@ -20,7 +20,7 @@ CustomDate = Annotated[date, BeforeValidator(parse_custom_date)]
 import json
 from typing import Annotated, Optional
 import datetime
-import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
+import art.immeub.rent.pdntcmdls.address_pydan as addr  # addr.PydtcAddress
 import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch.get_rentcontract_by_number
 from beanie import Document, Link
@@ -29,7 +29,7 @@ import pydantic
 CPFTYPE = Annotated[str, StringConstraints(pattern=r"\d{11}")]
 
 
-def get_persons_by_cpfs(cpfs: list[str]):
+def get_persons_by_cpfs(cpfs: list[str]) -> list["PydtcPerson"]:
   persondocs = mngfetch.get_persons_by_cpfs(cpfs)
   persons = []
   for persondoc in persondocs:
@@ -112,6 +112,18 @@ class PydtcPerson(BaseModel):
     _nome_n_cpf = f"{self.get_first_n_last_names()} | CPF {self.cpf_fmt_w_dots}"
     return _nome_n_cpf
 
+  def to_json(self, indent=2) -> str:
+    return self.model_dump_json(indent=indent)
+
+  @classmethod
+  def instantiate_fr_json_str(cls, json_str) -> "PydtcPerson":
+    """
+    Useful to recreate an instance from MongoDB JSON doc.
+    """
+    obj = cls.model_validate_json(json_str)
+    return obj
+
+
   def __repr__(self):
     main_email_addr = "n/a"
     fi_la_name = self.get_first_n_last_names()
@@ -121,8 +133,9 @@ class PydtcPerson(BaseModel):
     return ostr
 
   def __str__(self):
-    ostr = f"""{self.__class__.__name__} "{self.firstname} {self.lastname}"
-    cpf={self.cpf_fmt_w_dots} | emails ={self.emails} | phones={self.phonenumbers}"""
+    ostr = f"""{self.__class__.__name__}
+    nome="{self.firstname} {self.lastname}" | cpf="{self.cpf_fmt_w_dots}"
+    emails=[{self.emails}] | phones={self.phonenumbers}"""
     return ostr
 
 

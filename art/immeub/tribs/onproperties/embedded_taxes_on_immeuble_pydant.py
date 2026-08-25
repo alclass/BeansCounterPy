@@ -1,4 +1,6 @@
 import datetime
+from typing import Optional
+
 import pydantic
 from decimal import Decimal
 import lib.datesetc.refmonth_fs as rmfs
@@ -27,7 +29,7 @@ class EmbeddedImmeubleTax(pydantic.BaseModel):
   refmonth_beginning: datetime.date
   opted_monthly: bool = True
   n_parcels_if_opt_mon: int = 1
-  monthvalue: Decimal = pydantic.Field(default_factory=lambda: None)
+  monthvalue: Optional[Decimal] = None
 
   @property
   def refyear(self) -> int:

@@ -16,8 +16,8 @@ import json
 import lib.datesetc.datefs as dtfs
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
-import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
-import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble as embed  # embed.EmbeddedImmeubleTax
+import art.immeub.rent.pdntcmdls.address_pydan as addr  # addr.PydtcAddress
+import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble_pydant as embed  # embed.EmbeddedImmeubleTax
 DECIMAL_ZERO = Decimal("0")
 IMMNICKNAMETYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=6)]
 
@@ -31,6 +31,15 @@ def remove_none_values(data):
   return data
 
 
+def get_immeuble_by_nickname(imm_nickname: str) -> "PydtcImmeuble":
+  dbname, collname = 'immeub_db', 'immeubles'
+  mngfetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
+  querydict = {'imm_nickname': imm_nickname}
+  jsondict = mngfetcher.find_one_w_querydict_n_collname(querydict)
+  location = PydtcImmeuble.instantiate_from_jsondict(jsondict)
+  return location
+
+
 class PydtcImmeuble(BaseModel):
   """
   class Immeuble(Document):
@@ -41,7 +50,7 @@ class PydtcImmeuble(BaseModel):
   inscr_txincend: Optional[str] = None
   cartorio_inscr: Optional[str] = None
   address: addr.PydtcAddress = pydantic.dataclasses.Field(default_factory=lambda: None)
-  owners:  list[pers.PydtcPerson] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  owners:  Optional[list[pers.PydtcPerson]] = None
   phys_description: str = ""
   other_characts: str = ""
   tributos: list[embed.EmbeddedImmeubleTax] = pydantic.dataclasses.Field(default_factory=lambda: [])
@@ -57,7 +66,7 @@ class PydtcImmeuble(BaseModel):
       if 'owners_cpfs' in data and not data.get('owners'):
         cpfs = data.pop('owners_cpfs')  # Extract CPFs
         # Fetch full objects using your existing DB lookup function
-        owners = mngfetch.get_persons_by_cpfs(cpfs)
+        owners = pers.get_persons_by_cpfs(cpfs)
         data['owners'] = owners
     return data
 
@@ -66,7 +75,6 @@ class PydtcImmeuble(BaseModel):
     refyyyymm = contr_inidate.strftime('%Y%m')
     contrnumber = f"{self.imm_nickname}{refyyyymm}"
     return contrnumber
-
 
   def as_json_str(self):
     """
@@ -126,17 +134,28 @@ class PydtcImmeuble(BaseModel):
     total = Decimal(sum(values))
     return total
 
+  def to_json(self, indent: int = 2) -> str:
+    jsondumpstr = self.model_dump_json(exclude={'owners'}, indent=indent)
+    return jsondumpstr
+
   @classmethod
-  def instantiate_from_jsondict(cls, jsondump):
+  def instantiate_from_json_str(cls, json_str: str) -> "PydtcImmeuble":
+    _ = json_str
+    obj = cls.model_validate_json(json_str)
+    return obj
+
+  @classmethod
+  def instantiate_from_jsondict(cls, jsondict: dict) -> "PydtcImmeuble":
     """
     The updated version
-    """
-    pdict = json.loads(jsondump)
-    owners_cpfs = pdict.pop('owners_cpfs')
+    pdict = json.loads(jsondict)
+
+    owners_cpfs = jsondict.pop('owners_cpfs')
     owners = pers.get_persons_by_cpfs(owners_cpfs)
-    pdict['owners'] = owners
-    cleaned_data = remove_none_values(pdict)
-    obj = cls.model_validate(cleaned_data)
+    jsondict['owners'] = owners
+    jsondict = remove_none_values(jsondict)
+    """
+    obj = cls.model_validate(jsondict)
     return obj
 
   def __str__(self):
@@ -195,6 +214,12 @@ def adhoctest1():
     asdict = location.as_json_str()
     print(asdict)
 
+def adhoctest2():
+  imm_nickname = 'CDouto'
+  print('imm_nickname', imm_nickname)
+  location = get_immeuble_by_nickname(imm_nickname)
+  print('location', location)
+
 
 def process():
   """
@@ -208,4 +233,4 @@ if __name__ == "__main__":
   adhoctest1()
   process()
   """
-  adhoctest1()
+  adhoctest2()

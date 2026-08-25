@@ -37,7 +37,7 @@ def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
   rentcontract.add_reajuste_w_dt_n_idx('2025-1-1', Decimal('0.035'))
   rentcontract.add_reajuste_w_dt_n_idx('2026-1-1', Decimal('0.027'))
   print(rentcontract)
-  jsonstr = rentcontract.as_json_str()
+  jsonstr = rentcontract.to_json_str()
   print(jsonstr)
   return rentcontract
 
@@ -135,4 +135,3 @@ if __name__ == "__main__":
   process()
   """
   adhoctest1()
-

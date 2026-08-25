@@ -13,16 +13,28 @@ from pydantic import BaseModel, Field
 from bson import ObjectId  # , errors
 from mongoengine import connect, disconnect, Document, StringField, ReferenceField, PULL, ListField
 import art.immeub.rent.mdb as init  #
-DEFAULT_MONGO_URLCONNSTR = init.LOCAL_MONGO_CONSTR
-IMMEUB_MNGDBNAME = init.IMMEUB_MNGDBNAME
-PERSON_MNGCOLLNAME = init.PERSON_MNGCOLLNAME
-CONTRACT_MNGCOLLNAME = init.CONTRACT_MNGCOLLNAME
+import art.immeub.rent.pdntcmdls.address_pydan as addr  # addr.PydtcAddress
+DEFAULT_MONGO_URLCONNSTR = init.MONGODB_CON_STR
+IMMEUB_MNGDBNAME = init.IMMEUB_DBNAME
+# ===============
+PERSON_MNGCOLLNAME = init.PERSON_COLLNAME
+IMMEUBLE_COLLNAME = init.IMMEUBLE_COLLNAME
+RENTCONTRACT_COLLNAME = init.RENTCONTRACT_COLLNAME
+BILLINGCARD_COLLNAME = init.BILLINGCARD_COLLNAME
 
 
 # ==========================================
 # MONGOENGINE ODM LAYOUT (Synchronous)
 # ==========================================
-class Tenant(Document):
+class Address(Document, addr.PydtcAddress):
+  """
+  TODO In fact, Tenant should inherit from Person
+  """
+  name = StringField(required=True)
+  email = StringField(required=True)
+
+
+class Person(Document):
   """
   TODO In fact, Tenant should inherit from Person
   """
@@ -30,6 +42,7 @@ class Tenant(Document):
   email = StringField(required=True)
   meta = {'collection': PERSON_MNGCOLLNAME}
   # Helper method to match the standard MongoDB/Beanie JSON output
+
   def to_api_dict(self):
     return {
       "_id": str(self.id),
@@ -38,17 +51,36 @@ class Tenant(Document):
     }
 
 
-class Contract(Document):
-  contract_number = StringField(required=True)
-  # ReferenceField handles foreign-key references.
-  # reverse_delete_rule=PULL automatically updates the contract if a tenant is deleted.
-  tenants = ListField(ReferenceField(Tenant, reverse_delete_rule=PULL))
-  meta = {'collection': CONTRACT_MNGCOLLNAME}
+class Immeuble(Document):
+  """
+  TODO In fact, Tenant should inherit from Person
+  """
+  imm_nickname = StringField(required=True)
+
+  email = StringField(required=True)
+  meta = {'collection': IMMEUBLE_COLLNAME}
+  # Helper method to match the standard MongoDB/Beanie JSON output
 
   def to_api_dict(self):
     return {
       "_id": str(self.id),
-      "contract_number": self.contract_number,
+      "name": self.name,
+      "email": self.email
+    }
+
+
+class RentContract(Document):
+  contrnumber = StringField(required=True)
+  # ReferenceField handles foreign-key references.
+  # reverse_delete_rule=PULL automatically updates the contract if a tenant is deleted.
+  location = ListField(ReferenceField(Immeuble, reverse_delete_rule=PULL))
+  tenants = ListField(ReferenceField(Person, reverse_delete_rule=PULL))
+  meta = {'collection': RENTCONTRACT_COLLNAME}
+
+  def to_api_dict(self):
+    return {
+      "_id": str(self.id),
+      "contrnumber": self.contrnumber,
       # Resolves the relational loop into plain objects like fetch_links() did
       "tenants": [tenant.to_api_dict() for tenant in self.tenants if tenant]
     }
@@ -93,14 +125,14 @@ class ContractCreateRequest(BaseModel):
 def create_tenant(payload: BaseModel):
   # Dynamically extract testdata to avoid Pydantic conflict on MongoEngine objects
   data = payload.model_dump() if hasattr(payload, 'model_dump') else payload.model_dump()
-  tenant = Tenant(name=data.get("name"), email=data.get("email")).save()
+  tenant = Person(name=data.get("name"), email=data.get("email")).save()
   return tenant.to_api_dict()
 
 
 @app.get("/tenants")
 def list_tenants():
   # Fetch all tenants from local MongoDB
-  return [tenant.to_api_dict() for tenant in Tenant.objects]
+  return [tenant.to_api_dict() for tenant in Person.objects]
 
 
 # Contract Engine
@@ -113,14 +145,14 @@ def create_contract(payload: ContractCreateRequest):
       raise HTTPException(status_code=400, detail=f"Malformed Hex ID: {t_id}")
 
     # Look up tenant document synchronously
-    tenant = Tenant.objects(id=t_id).first()
+    tenant = Person.objects(id=t_id).first()
     if not tenant:
       raise HTTPException(status_code=44, detail=f"Tenant ID {t_id} missing in DB")
 
     tenant_documents.append(tenant)
 
   # Instantiate and save contract reference
-  new_contract = Contract(
+  new_contract = RentContract(
     contract_number=payload.contract_number,
     tenants=tenant_documents
   ).save()
@@ -132,7 +164,7 @@ def create_contract(payload: ContractCreateRequest):
 def list_contracts():
   # Loop over all contracts. Calling `.to_api_dict()` automatically
   # traverses and dereferences linked Tenant profiles.
-  return [contract.to_api_dict() for contract in Contract.objects]
+  return [contract.to_api_dict() for contract in RentContract.objects]
 
 
 @app.delete("/contracts/{contract_id}")
@@ -140,7 +172,7 @@ def delete_contract(contract_id: str):
   if not ObjectId.is_valid(contract_id):
     raise HTTPException(status_code=400, detail="Malformed contract ID")
 
-  contract = Contract.objects(id=contract_id).first()
+  contract = RentContract.objects(id=contract_id).first()
   if not contract:
     raise HTTPException(status_code=404, detail="Contract not found")
 

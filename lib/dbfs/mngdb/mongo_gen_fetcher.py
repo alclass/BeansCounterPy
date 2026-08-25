@@ -169,7 +169,6 @@ class GenMongoDBFetcher:
     if collname is not None:
       self.set_or_change_collname(collname)
 
-
   def find_as_cursor_by_querydict_n_collname(self, querydict: dict, collname: str | None = None):
     self.reset_coll_if_needed(collname)
     # jsonquery = json.dumps(querydict)
@@ -178,8 +177,9 @@ class GenMongoDBFetcher:
 
   def find_one_w_querydict_n_collname(self, querydict: dict, collname: str | None = None):
     self.reset_coll_if_needed(collname)
-    odict = self.mongodb_coll.find_one(querydict)
-    return odict
+    docdict = self.mongodb_coll.find_one(querydict)
+    pass
+    return docdict
 
   def find_by_querydict_n_collname(
       self, query: dict, collname: str | None = None
@@ -279,11 +279,12 @@ def get_persons_by_cpfs(cpfs: list[str]) -> list:
 def get_rentcontract_by_number(contrnumber: str) -> str:
   collname = 'rentcontracts'
   mngfetcher = GenMongoDBFetcher(
-    dbname='immeubles',
+    dbname='immeub_db',
     collname=collname,
   )
+  querydict = {'contrnumber': contrnumber}
   mngdoc = mngfetcher.find_one_w_querydict_n_collname(
-    querydict={'contrnumber': contrnumber}
+    querydict=querydict
   )
   return mngdoc
 

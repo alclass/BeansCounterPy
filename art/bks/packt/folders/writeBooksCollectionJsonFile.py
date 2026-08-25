@@ -59,7 +59,7 @@ class GenerateJsonCollection:
   def stored_bookinfo_dictlist(self):
     if not self.store_collection_has_run:
       self.get_n_store_collection_thru_dirs()
-    dicts = map(lambda bi: bi.as_json_str, self.bookinfos)
+    dicts = map(lambda bi: bi.to_json, self.bookinfos)
     return list(dicts)
 
   @property

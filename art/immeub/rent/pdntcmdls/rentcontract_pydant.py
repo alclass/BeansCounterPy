@@ -30,6 +30,7 @@ import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch.get_rentcontract
 import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
 from tabulate import tabulate
 from lib.fncfs.credeb_pkg.credit_debt_fs import ONE_THOUSANDTH_AS_STR
+import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
 PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
@@ -37,6 +38,7 @@ DEFAULT_MONTHLY_FIX_IR_DEC = Decimal(init.DEFAULT_MONTHLY_FIX_IR_DEC)
 MORA_M_MINUS_N_STR = init.MORA_M_MINUS_N
 MORA_BEGINS_ON_DAY = 1
 CONTRNUMBERTYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=12)]
+remove_none_values_fr_dict_recurs = mngfs.remove_none_values_fr_dict_recurs
 
 
 def mk_contrnumber_w_immnickname_n_refmstr(
@@ -178,8 +180,8 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
   location: immeub.PydtcImmeuble
   inidate: datetime.date
   ori_rentvalue: typing.Annotated[Decimal, pydantic.Field(max_digits=12, decimal_places=4)]
-  tenants: List[pers.PydtcPerson] = pydantic.dataclasses.Field(default=[])
-  guarantors: List[pers.PydtcPerson] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  tenants: typing.Optional[List[pers.PydtcPerson]] = None
+  guarantors: typing.Optional[List[pers.PydtcPerson]] = None
   nmonths_duration: int = 30
   has_proptax: bool = True
   has_incendtarif: bool = True
@@ -196,13 +198,15 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     # If the user passed a raw string/number instead of a contract object
     if "imm_nickname" in values and "location" not in values:
       imm_nickname = values.pop("imm_nickname")
-      values["location"] = find_immeuble_by_nickname(imm_nickname)
-    return values
+      location = immeub.get_immeuble_by_nickname(imm_nickname)
+      values["location"] = location
     if "tenants_cpfs" in values and "tenants" not in values:
       tenants_cpfs = values.pop("tenants_cpfs")
-      values["tenants"] = find_persons_by_cpfs(tenants_cpfs)
+      values["tenants"] = pers.get_persons_by_cpfs(tenants_cpfs)
+    if "guarantors_cpfs" in values and "guarantors" not in values:
+      guarantors_cpfs = values.pop("guarantors_cpfs")
+      values["guarantors"] = pers.get_persons_by_cpfs(guarantors_cpfs)
     return values
-
 
   def get_pay_duedate_for_refmonth(self, refmonth):
     if refmonth is None:
@@ -433,22 +437,37 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
       pass
     return 'n/a'
 
-  def as_json_str(self):
+  def to_json_str(self):
     """
     JSON dumps the representation that is stored its corresponding MongoDB collection.
     Uses self.model_dump_json() excluding 'large fields' that have a 'smaller key'
     """
-    jsondump = self.model_dump_json(exclude={'location', 'tenants', 'guarantors'}, indent=2)
+    param_set = set()
+    if self.location is not None:
+      param_set.add('location')
+    if self.tenants is not None:
+      param_set.add('tenants')
+    if self.guarantors is not None:
+      param_set.add('guarantors')
+    # jsondict = self.model_dump(exclude=param_set)
+    # # remove_none_values_fr_dict_recurs
+    # print('jsondict', jsondict)
+    jsondump = self.model_dump_json(indent=2)
+    # jsondump = json.dumps(jsondict, indent=2)
     return jsondump
 
   @pydantic.computed_field
   @property
   def tenants_cpfs(self) -> list[str]:
+    if self.tenants is None:
+      return []
     return [p.cpf for p in self.tenants]
 
   @pydantic.computed_field
   @property
   def guarantors_cpfs(self) -> list[str]:
+    if self.guarantors is None:
+      return []
     return [p.cpf for p in self.guarantors]
 
   @pydantic.computed_field
@@ -465,18 +484,17 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     return "n/a"
 
   @classmethod
-  def instantiate_fr_jsondict(cls, jsondump) -> "PydtcRentContract":
+  def instantiate_fr_jsondict(cls, jsondict) -> "PydtcRentContract":
     """
     The updated version with cls.model_validate(cleaned_data)
     The previous one had cls(**pdict)
     """
-    def remove_none_values(data):
-      data = {k: v for k, v in data.items() if v is not None}
-      return data
-    pdict = json.loads(jsondump)
-    cleaned_data = remove_none_values(pdict)
+    if jsondict is None:
+      return None
+    jsondict = remove_none_values_fr_dict_recurs(jsondict)
     # if 'location' in cleaned_data:
-    obj = cls.model_validate(cleaned_data)
+    # pass
+    obj = cls.model_validate(jsondict)
     return obj
 
   @property
@@ -499,13 +517,13 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     return 'n/a'
 
   def commasep_fiadores(self):
-    ostr = ""
-    if len(self.guarantors) > 0:
-      for fiador in self.guarantors:
-        ostr += fiador.nomecompleto + ", "
-      ostr = ostr.rstrip(", ")
-      return ostr
-    return 'n/a'
+    ostr = "n/a"
+    if self.guarantors is not None:
+      if len(self.guarantors) > 0:
+        for fiador in self.guarantors:
+          ostr += fiador.nomecompleto + ", "
+        ostr = ostr.rstrip(", ")
+    return ostr
 
   @property
   def din_currency_dictlike(self) -> dinero.types.Currency:
@@ -652,6 +670,13 @@ def adhoctest1():
   print(bitems)
 
 
+def adhoctest2():
+  contrnumber = 'CDouto202401'
+  rentcontract = mngfetch.get_rentcontract_by_number(contrnumber)
+  print('contrnumber', contrnumber)
+  print('rentcontract', rentcontract)
+
+
 def process():
   """
 
@@ -664,4 +689,4 @@ if __name__ == "__main__":
   adhoctest1()
   process()
   """
-  adhoctest1()
+  adhoctest2()
