@@ -90,7 +90,7 @@ def adhoctest2():
   if docdict is not None:
     del docdict['_id']
   obj = bcard.PydtcBillingCard.instantiate_fr_json_dict(docdict)
-  obj.rentcontract.payee = pers.get_payee_person()
+  obj.rentcontract.payee = pers.make_example_person_123456781()
   print('instantiate_fr_json_dict =>', obj)
 
 
@@ -101,7 +101,7 @@ def adhoctest3():
   pretty_print(dictdoc)
   billingcard = bcard.PydtcBillingCard.instantiate_fr_json_dict(dictdoc)
   return
-  payee = pers.get_payee_person()
+  payee = pers.make_example_person_123456781()
   billingcard.payee = payee
   jj2.render_html(billingcard=billingcard)
 

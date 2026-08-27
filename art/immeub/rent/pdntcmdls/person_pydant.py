@@ -29,8 +29,8 @@ import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 CPFTYPE = Annotated[str, StringConstraints(pattern=r"\d{11}")]
 
 
-def get_persons_by_cpfs(cpfs: list[str]) -> list["PydtcPerson"]:
-  persondocs = mngfetch.get_persons_by_cpfs_as_strlst(cpfs)
+def fetch_persons_by_cpfs(cpfs: list[str]) -> list["PydtcPerson"]:
+  persondocs = mngfetch.get_persons_by_cpfs_as_jsonstrlst(cpfs)
   persons = []
   for persondoc in persondocs:
     person = PydtcPerson.instantiate_fr_jsonstr(persondoc)
@@ -38,17 +38,11 @@ def get_persons_by_cpfs(cpfs: list[str]) -> list["PydtcPerson"]:
   return persons
 
 
-def get_payee_person() -> "PydtcPerson":
-  cpf_payee_d9 = '123456781'
-  _, cpf, _ = ccpf.calc_cpf_ret_dv_cpf_cpffmt_via_reduce_w_d9(cpf_payee_d9)
-  chave_pix = 'livrosetc@yahoo.com.br'
-  payee = PydtcPerson(
-    nomecompleto="Luiz Lewis",
-    cpf=cpf,
-    emails=[chave_pix],
-    chave_pix=chave_pix,
-  )
-  return payee
+def fetch_person_by_cpf(cpf: str) -> "PydtcPerson | None":
+  persons = fetch_persons_by_cpfs([cpf])
+  if len(persons) > 0:
+    return persons[0]
+  return None
 
 
 class PydtcPerson(BaseModel):
@@ -64,7 +58,7 @@ class PydtcPerson(BaseModel):
   phonenumbers: Optional[list[str]] = []
   address: Optional[addr.PydtcAddress] = None
   obs: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
-  chave_pix: Optional[str] = None
+  chavepix: Optional[str] = None
   birthdate: Optional[datetime.date] = None
   birthcity: Optional[str] = None
   marital_st: Optional[str] = None
@@ -124,6 +118,9 @@ class PydtcPerson(BaseModel):
   def to_json(self, indent: int = 2, is_for_db: bool = False) -> str:
     return self.model_dump_json(indent=indent)
 
+  def to_jsondict(self, is_for_db: bool = False) -> str:
+    return self.model_dump()
+
   @classmethod
   def instantiate_fr_jsonstr(cls, json_str) -> "PydtcPerson":
     """
@@ -149,7 +146,7 @@ class PydtcPerson(BaseModel):
 
   def __str__(self):
     ostr = f"""{self.__class__.__name__}
-    nome="{self.firstname} {self.lastname}" | cpf="{self.cpf_fmt_w_dots} | pix={self.chave_pix}"
+    nome="{self.firstname} {self.lastname}" | cpf="{self.cpf_fmt_w_dots} | pix={self.chavepix}"
     emails={self.emails} | phones={self.phonenumbers}"""
     return ostr
 
@@ -184,7 +181,7 @@ def adhoctest1():
 def adhoctest2():
   address1 = make_address_1()
   print('address1', address1)
-  payee = get_payee_person()
+  payee = make_example_person_123456781()
   print('payee', payee)
   json_str = payee.to_json()
   print('json_str', json_str)
@@ -196,8 +193,11 @@ def adhoctest3():
   querydict = {'cpf': '12345678143'}
   docdict = dbfetch.find_one_w_querydict_n_collname_as_dict(querydict)
   print('docdict', docdict)
-  person = PydtcPerson.instantiate_fr_jsondict(docdict)
-  print('person', person)
+  if docdict is not None:
+    person = PydtcPerson.instantiate_fr_jsondict(docdict)
+    print('person', person)
+  else:
+    print('person docdict', docdict)
 
 
 def process():

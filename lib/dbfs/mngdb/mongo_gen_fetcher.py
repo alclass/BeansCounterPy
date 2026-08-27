@@ -273,10 +273,10 @@ def get_all_persons_strlst(dbname: str, collname:str) -> list[str]:
   return jsondocs
 
 
-def get_persons_by_cpfs_as_strlst(cpfs: list[str]) -> list:
+def get_persons_by_cpfs_as_jsonstrlst(cpfs: list[str]) -> list:
   dbname, collname = 'immeub_db', 'persons'
   if cpfs is None or len(cpfs) == 0:
-    return get_all_persons_strlst(dbname=dbname, collname=collname)
+    return []
   fieldname, valuelist = 'cpf', cpfs
   jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_strlst(
     fieldname=fieldname, valuelist=valuelist, collname=collname, dbname=dbname
@@ -295,7 +295,6 @@ def get_rentcontract_by_number(contrnumber: str) -> str:
     querydict=querydict
   )
   return mngdoc
-
 
 
 def mngfetch_rentcontract_by_contrnumber(contrnumber: str) -> str | None:
@@ -344,7 +343,7 @@ def adhoctest1():
   # persons
   cpfs = ['12345678909']
   print('cpfs', cpfs)
-  persons = get_persons_by_cpfs_as_strlst(cpfs)
+  persons = get_persons_by_cpfs_as_jsonstrlst(cpfs)
   # persons = json.dumps(persons, indent=2)
   print('persons', persons)
   # immeubles
@@ -358,10 +357,11 @@ def adhoctest1():
   billingcards = get_billingcards_by_contrnumbers_as_strlst(contrnumbers)
   print('billingcards', billingcards)
 
+
 def adhoctest2():
   """
   """
-  persons = get_persons_by_cpfs_as_strlst([])
+  persons = get_persons_by_cpfs_as_jsonstrlst([])
   # persons = json.dumps(persons, indent=2)
   print('persons', persons)
   # =======================
@@ -369,6 +369,20 @@ def adhoctest2():
   print('contract', contract)
 
 
+def adhoctest3():
+  cpfs = ['12345678143']
+  print('cpfs', cpfs)
+  retval = get_persons_by_cpfs_as_jsonstrlst(cpfs)
+  print('retval', retval)
+  cpfs = ['12345678224']
+  print('cpfs', cpfs)
+  retval = get_persons_by_cpfs_as_jsonstrlst(cpfs)
+  print('retval', retval)
+  dbname, collname = 'immeub_db', 'persons'
+  dbfetcher = GenMongoDBFetcher(dbname=dbname, collname=collname)
+  querydict = {'cpf': '12345678224'}
+  dictdoc = dbfetcher.find_one_w_querydict_n_collname_as_dict(querydict=querydict)
+  print('dictdoc', dictdoc)
 
 
 def process():
@@ -382,4 +396,4 @@ if __name__ == '__main__':
   process()
   batch_set_runonce_colations_to_mongodb_collections()
   """
-  adhoctest2()
+  adhoctest3()

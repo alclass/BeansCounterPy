@@ -20,7 +20,6 @@ locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 
 
-
 def make_4_billingitems():
   """
   Instantiates 4 billing items example.
@@ -77,18 +76,6 @@ def make_4_billingitems():
   return billingitems
 
 
-class PydtcPayment(pydantic.BaseModel):
-  """
-  @see also a simplified version
-    which is a @dataclass with only fields date and value
-  """
-  date: datetime.date
-  value: Decimal
-  payor: pers.PydtcPerson = pydantic.Field(default_factory=lambda: None)
-  refdoc: str = pydantic.Field(default_factory=lambda: "ref pagamento")
-  comment: str = pydantic.Field(default_factory=lambda: "p/ aluguel e encargos")
-
-
 class PydtcBillingItem(pydantic.BaseModel):
   seq: int
   descr: str
@@ -140,7 +127,6 @@ class PydtcBillingItem(pydantic.BaseModel):
     fmt_value = locale.format_string("%.2f", self.value, grouping=True)
     outstr = f"{self.descr} | {self.refmmm} | {fmt_value} | {self.mora_incr} | {self.total_item}"
     return outstr
-
 
 
 def adhoctest1():

@@ -67,7 +67,7 @@ class PydtcImmeuble(BaseModel):
       if 'owners_cpfs' in data and not data.get('owners'):
         cpfs = data.pop('owners_cpfs')  # Extract CPFs
         # Fetch full objects using your existing DB lookup function
-        owners = pers.get_persons_by_cpfs(cpfs)
+        owners = pers.fetch_persons_by_cpfs(cpfs)
         data['owners'] = owners
     return data
 
@@ -243,7 +243,7 @@ class PydtcImmeuble(BaseModel):
 
 
 def get_immeuble_ex():
-  persons = pers.get_persons_by_cpfs([])
+  persons = pers.fetch_persons_by_cpfs([])
   print(persons)
   if persons is None or len(persons) == 0:
     return None

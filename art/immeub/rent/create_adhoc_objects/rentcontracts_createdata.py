@@ -17,16 +17,29 @@ def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
   art.immeub.rent.bill.data_example_contract.make_example_contract
   import art.immeub.rent.bill.data_example_contract as dataex  # dataex.make_example_contract
   """
-  persons = pers.get_persons_by_cpfs([])
+  tenant1 = pers.fetch_person_by_cpf('12345678224')
+  tenant2 = pers.fetch_person_by_cpf('12345678496')
+  if tenant1 is None or tenant2 is None:
+    errmsg = 'Error: tenant(s) not found.'
+    raise ValueError(errmsg)
+  tenants = [tenant1, tenant2]
+  if None in tenants:
+    errmsg = 'Error: tenants not found.'
+    raise ValueError(errmsg)
+  guarantor = pers.fetch_person_by_cpf('12345678305')
+  if guarantor is None:
+    errmsg = 'Error: guarantor not found.'
+    raise ValueError(errmsg)
   location = immeub.get_immeuble_ex()
-  monthlyrentvalue = Decimal(1000)
-  contr_inidate = dtfs.make_date_or_raise("2024-1-1")
+  monthlyrentvalue = Decimal(2000)
+  contr_inidate = dtfs.make_date_or_raise("2024-2-1")
   contrnumber = location.get_contrnumber_w_inirefmonth(contr_inidate)
   rentcontract = rentpydtc.PydtcRentContract(
     contrnumber=contrnumber,
     location=location,
     inidate=contr_inidate,
-    tenants=persons,
+    tenants=tenants,
+    guarantors=[guarantor],
     ori_rentvalue=monthlyrentvalue,
     nmonths_duration=30,
     has_proptax=True,
@@ -121,7 +134,9 @@ def adhoctest1():
   """
   make_example_person()
   """
-  make_rentcontract_1()
+  immeuble = make_rentcontract_1()
+  json_str = immeuble.to_json_str(is_for_db=True)
+
 
 
 def adhoctest2():
@@ -139,8 +154,6 @@ def adhoctest2():
   print('pydtc_rentcontr', pydtc_rentcontr)
 
 
-
-
 def process():
   pass
 
@@ -148,6 +161,7 @@ def process():
 if __name__ == "__main__":
   """
   adhoctest1()
+  adhoctest2()
   process()
   """
-  adhoctest2()
+  adhoctest1()

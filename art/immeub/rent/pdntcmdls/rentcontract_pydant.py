@@ -180,13 +180,13 @@ class PydtcRentContract(pydantic.BaseModel):
       values["location"] = location
     if "tenants_cpfs" in values and "tenants" not in values:
       tenants_cpfs = values.pop("tenants_cpfs")
-      values["tenants"] = pers.get_persons_by_cpfs(tenants_cpfs)
+      values["tenants"] = pers.fetch_persons_by_cpfs(tenants_cpfs)
     if "guarantors_cpfs" in values and "guarantors" not in values:
       guarantors_cpfs = values.pop("guarantors_cpfs")
-      values["guarantors"] = pers.get_persons_by_cpfs(guarantors_cpfs)
+      values["guarantors"] = pers.fetch_persons_by_cpfs(guarantors_cpfs)
     if "payee_cpf" in values and "payee" not in values:
       payee_cpf = values.pop("payee_cpf")
-      values["payee"] = pers.get_payee_person()
+      values["payee"] = pers.make_example_person_123456781()
     return values
 
   def get_pay_duedate_fr_refmonth(self, refmonth):
@@ -631,7 +631,7 @@ def adhoctest1():
     tenants=[person],
     fiadores=[person],
   """
-  persons = mngfetch.get_persons_by_cpfs_as_strlst([])
+  persons = mngfetch.get_persons_by_cpfs_as_jsonstrlst([])
   if persons is None or len(persons) == 0:
     print('No persons found. Returning.')
     return

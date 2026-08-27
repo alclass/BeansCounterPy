@@ -111,7 +111,40 @@ def make_example_address_1():
   """
   address = PydtcAddress(
     street="Rua Camilo Douto",
-    number="123",
+    number="67",
+    complement="apt 101",
+    neighborhood="Barra Central",
+    city="Rio de Janeiro",
+    zipcode='22333111',
+  )
+  return address
+
+
+def make_example_address_2():
+  """
+  Example address
+  """
+  address = PydtcAddress(
+    street="Rua Camilo Douto",
+    number="67",
+    complement="apt 501",
+    neighborhood="Barra Central",
+    city="Rio de Janeiro",
+    zipcode='22333111',
+  )
+  return address
+
+
+def make_example_address_for_immeub1():
+  """
+  Example address
+  """
+  address = PydtcAddress(
+    street="Rua Camilo Douto",
+    number="67",
+    complement="apt 401",
+    neighborhood="Barra Central",
+    city="Rio de Janeiro",
     zipcode='22333111',
   )
   return address

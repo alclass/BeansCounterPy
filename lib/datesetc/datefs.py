@@ -11,6 +11,7 @@ import datetime
 from typing import Any
 import lib.datesetc as init  # init.ALLOWED_DATE_SEPARATORS
 ALLOWED_DATE_SEPARATORS = init.ALLOWED_DATE_SEPARATORS
+HORAZERO = datetime.time(hour=0, minute=0, second=0)
 
 
 def str_has_char_in_list(p_str, str_or_list):
@@ -257,6 +258,35 @@ def make_date_or_today(pdate: Any | None) -> datetime.date:
     today = datetime.date.today()
     return today
   return odate
+
+
+def make_datetime_w_horazero_or_none(pdate: Any | None) -> datetime.datetime | None:
+  pdate = make_date_or_none(pdate)
+  if pdate is None:
+    return None
+  pdatetime = datetime.datetime.combine(pdate, HORAZERO)
+  return pdatetime
+
+
+def make_datetime_w_horazero_or_raise(pdate: Any | None) -> datetime.datetime:
+  pdatetime = make_datetime_w_horazero_or_none(pdate)
+  if pdatetime is None:
+    errmsg = f"{pdate} is not transformable to Python-datetime."
+    raise ValueError(errmsg)
+  return pdatetime
+
+
+def make_current_datetime_w_horazero() -> datetime.datetime:
+  today = datetime.date.today()
+  pdatetime = datetime.datetime.combine(today, HORAZERO)
+  return pdatetime
+
+
+def make_datetime_w_horazero_or_current(pdate: Any | None) -> datetime.datetime:
+  pdatetime = make_datetime_w_horazero_or_none(pdate)
+  if pdatetime is None:
+    pdatetime = make_current_datetime_w_horazero()
+  return pdatetime
 
 
 def transform_obj_impl_year_month_day_to_date(impl_obj: Any) -> datetime.date | None:

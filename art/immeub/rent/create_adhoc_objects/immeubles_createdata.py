@@ -7,19 +7,35 @@ import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 
 
 def make_immeuble_ex1():
-  persons = pers.get_persons_by_cpfs([])
+  owner = pers.fetch_person_by_cpf('12345678143')
+  if owner is None:
+    errmsg = 'Error: owner not found.'
+    raise ValueError(errmsg)
+  tenant1 = pers.fetch_person_by_cpf('12345678224')
+  tenant2 = pers.fetch_person_by_cpf('12345678496')
+  if tenant1 is None or tenant2 is None:
+    errmsg = 'Error: tenant(s) not found.'
+    raise ValueError(errmsg)
+  tenants = [tenant1, tenant2]
+  if None in tenants:
+    errmsg = 'Error: tenants not found.'
+    raise ValueError(errmsg)
+  guarantor = pers.fetch_person_by_cpf('12345678305')
+  if guarantor is None:
+    errmsg = 'Error: guarantor not found.'
+    raise ValueError(errmsg)
   tributos = []
   iptu = embed.make_example_iptu_1()
   tributos.append(iptu)
   funesbom = embed.make_example_funesbom_1()
   tributos.append(funesbom)
-  address = addr.make_example_address_1()
+  address = addr.make_example_address_for_immeub1()
   immeuble = immeub.PydtcImmeuble(
     imm_nickname="CDouto",
     inscr_txincend="1234",
     inscr_munic="12345",
     address=address,
-    owners=persons,
+    owners=[owner],
     tributos=tributos,
   )
   print(immeuble)
@@ -109,6 +125,12 @@ def adhoctest3():
   print('jsondump location', jsondump)
 
 
+def adhoctest4():
+  immeuble = make_immeuble_ex1()
+  print(immeuble)
+  json_str = immeuble.to_json(is_for_db=True)
+  print('json_str', json_str)
+
 
 def process():
   """
@@ -122,4 +144,4 @@ if __name__ == '__main__':
   adhoctest2()
   process()
   """
-  adhoctest3()
+  adhoctest4()
