@@ -991,7 +991,7 @@ def get_refmonth_fr_obj_impl_year_month_or_none(p_refmonth):
     year = int(pstr[:4])
     month = int(pstr[4:6])
     return datetime.date(year=year, month=month, day=1)
-  except ValueError:
+  except (TypeError, ValueError):
     pass
   try:  # try with sep's
     sepfound = None

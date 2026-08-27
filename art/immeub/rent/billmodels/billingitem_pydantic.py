@@ -6,11 +6,13 @@ from dataclasses import dataclass, field
 """
 import locale
 import datetime
+from dateutil.relativedelta import relativedelta
 from prettytable import PrettyTable
 import pydantic
 import lib.datesetc.refmonth_fs as rmfs
 from decimal import Decimal
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
+import art.immeub.rent.create_adhoc_objects.prettytable_bitems as ppbitems  # ppbitems.PrettyTableForBI
 DECIMAL_ZERO = Decimal("0")
 # from art.immeub.rent.pdntcmdls.schema_bizmodels import BillingCard
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
@@ -18,16 +20,62 @@ locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 
 
-class PrettyTableForBI:
 
-  def __init__(self):
-    self.table = PrettyTable()
-    self.headers = ["seq", "descrição", "mês ref.", "valor"]
-    self.table.field_names = self.headers
+def make_4_billingitems():
+  """
+  Instantiates 4 billing items example.
+  """
+  refmonth = rmfs.make_current_refmonth()
+  strprice = '2000'
+  ptable = ppbitems.PrettyTableForBI()
+  billingitems = []
+  payitem = PydtcBillingItem(
+    seq=1,
+    descr='aluguel mensal',
+    refmonth=refmonth,
+    value=Decimal(strprice)  # Safe string initialization
+  )
+  billingitems.append(payitem)
+  # payitem.add_mora()
+  ptable.add_to_table(payitem)
+  # =========================
+  payitem = PydtcBillingItem(
+    seq=2,
+    descr='tarifa mensal condomínio',
+    refmonth=refmonth,
+    value=Decimal(1258)  # Safe string initialization
+  )
+  billingitems.append(payitem)
+  # payitem.add_mora()
+  ptable.add_to_table(payitem)
+  # =========================
+  payitem = PydtcBillingItem(
+    seq=3,
+    descr='IPTU prefeitura p/ 2 de 10',
+    refmonth=refmonth,
+    value=Decimal(550)  # Safe string initialization
+  )
+  billingitems.append(payitem)
+  # payitem.add_mora()
+  ptable.add_to_table(payitem)
+  # =========================
+  morarefmonth = rmfs.make_refmonth_it_minus_n_or_raise(refmonth, 1)
+  payitem = PydtcBillingItem(
+    seq=4,
+    descr='mora aluguel/encargos',
+    refmonth=morarefmonth,
+    value=Decimal(450),  # Safe string initialization
+  )
+  billingitems.append(payitem)
+  # payitem.add_mora()
+  # payitem.printline()
+  ptable.add_to_table(payitem)
+  print(ptable.table)
+  values = [bi.total_item for bi in billingitems]
+  total = sum(values)
+  print('total', total)
+  return billingitems
 
-  def add_to_table(self, bitem):
-    values = bitem.get_the_4_billingitem_values_as_lst()
-    self.table.add_row(values)
 
 class PydtcPayment(pydantic.BaseModel):
   """
@@ -94,61 +142,10 @@ class PydtcBillingItem(pydantic.BaseModel):
     return outstr
 
 
-def adhoctest1():
-  """
 
-  today = datetime.date.today()
-  """
-  refmonth = rmfs.make_current_refmonth()
-  strprice = '2000'
-  ptable = PrettyTableForBI()
-  billingitems = []
-  payitem = PydtcBillingItem(
-    seq=1,
-    descr='aluguel mensal',
-    refmonth=refmonth,
-    value=Decimal(strprice)  # Safe string initialization
-  )
-  billingitems.append(payitem)
-  # payitem.add_mora()
-  ptable.add_to_table(payitem)
-  # =========================
-  payitem = PydtcBillingItem(
-    seq=2,
-    descr='tarifa mensal condomínio',
-    refmonth=refmonth,
-    value=Decimal(1258)  # Safe string initialization
-  )
-  billingitems.append(payitem)
-  # payitem.add_mora()
-  ptable.add_to_table(payitem)
-  # =========================
-  payitem = PydtcBillingItem(
-    seq=3,
-    descr='IPTU prefeitura p/ 2 de 10',
-    refmonth=refmonth,
-    value=Decimal(550)  # Safe string initialization
-  )
-  billingitems.append(payitem)
-  # payitem.add_mora()
-  ptable.add_to_table(payitem)
-  # =========================
-  refmonth = rmfs.make_refmonth_it_minus_n_or_raise(refmonth, 1)
-  payitem = PydtcBillingItem(
-    seq=4,
-    descr='mora aluguel/encargos',
-    refmonth=refmonth,
-    value=Decimal(450),  # Safe string initialization
-    morarefmonth=55,
-  )
-  billingitems.append(payitem)
-  # payitem.add_mora()
-  # payitem.printline()
-  ptable.add_to_table(payitem)
-  print(ptable.table)
-  values = [bi.total_item for bi in billingitems]
-  total = sum(values)
-  print('total', total)
+def adhoctest1():
+  scrmsg = "Look at ahdoctest make_4_billingitems() in module [billingitems_createdata.py]."
+  print(scrmsg)
 
 
 def process():
@@ -157,6 +154,8 @@ def process():
 
 if __name__ == "__main__":
   """
+  adhoctest1()
   process()
   """
   adhoctest1()
+  make_4_billingitems()

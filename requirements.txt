@@ -343,3 +343,7 @@ pymongo
 prettytable
 pydantic
 python-dotenv
+fastapi
+mongoengine
+dinero
+tabulate

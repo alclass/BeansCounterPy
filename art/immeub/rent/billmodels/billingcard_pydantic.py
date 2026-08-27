@@ -14,7 +14,7 @@ import lib.fncfs.credeb_pkg.payment_processor as pproc
 from prettytable import PrettyTable
 import pydantic
 from dateutil.relativedelta import relativedelta
-import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.PydtcBillingItem
+import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bipydtc.PydtcBillingItem
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
@@ -24,7 +24,6 @@ import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInte
 import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
 import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
-from lib.dbfs import mngdb
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 DEFAULT_PAYMENT_MONTHS_DUEDAY = 10
@@ -33,51 +32,6 @@ MONTHLY_FIX_IR_DEC = Decimal(MONTHLY_FIX_IR_DEC_STR)
 DECIMAL_ZERO = Decimal('0')
 contrnumber_type = Annotated[str, pydantic.StringConstraints(max_length=12)]
 find_rentcontract_by_contrnumber = rentpydtc.find_rentcontract_by_contrnumber
-
-
-def make_current_refmonth_minus_1():
-  cur_refmonth = rmfs.make_current_refmonth()
-  refmonth = rmfs.make_refmonth_or_current_it_minus_n(cur_refmonth, 1)
-  return refmonth
-
-
-def make_current_months_default_duedate():
-  cur_refmonth = rmfs.make_current_refmonth()
-  year, month, day = cur_refmonth.year, cur_refmonth.month, DEFAULT_PAYMENT_MONTHS_DUEDAY
-  duedate = datetime.date(year=year, month=month, day=day)
-  return duedate
-
-
-def from_to_json(doc):
-  billingcard_o = None
-  if doc is not None:
-    # pdict = srlz.deserialize_mongo_doc(doc, is_data_from_db=True)
-    for i, elem in enumerate(doc):
-      _ = elem
-      elem = {key: value for key, value in elem.items() if value is not None}
-
-      def remove_nones_fr_billingitems(p_list: list):
-        """
-        None's must be removed from the testdata
-        The outer dict was cleaned up above, now we must remove None's in the billing_items
-        (Because billing_items is a dictlist, the dict's are recreated, but the list is used mutably.)
-        """
-        for ii, supposed_billingitem in enumerate(p_list):
-          if not isinstance(supposed_billingitem, dict):
-            # there are 2 lists in the outer doc, the address one is not a dict, the 'billingitems' is a dict
-            continue
-          supposed_billingitem = {key: value for key, value in supposed_billingitem.items() if value is not None}
-          # the dict is used immutably (it's recreated), the list is used mutably (the new dict goes back in place)
-          p_list[ii] = supposed_billingitem
-
-      for key in elem:
-        obj = elem[key]
-        if isinstance(obj, list):
-          # here we look for lists so that we can look for inner dict's that may contain None's
-          alist = obj
-          remove_nones_fr_billingitems(alist)
-      billingcard_o = PydtcBillingCard.MongoJsonRepr(**elem)
-    return billingcard_o
 
 
 class PydtcBillingCard(pydantic.BaseModel):
@@ -94,10 +48,9 @@ class PydtcBillingCard(pydantic.BaseModel):
       (*) if mora exists at closing, it becomes a billing_item to the next BC.
   """
   rentcontract: rentpydtc.PydtcRentContract = pydantic.Field(default_factory=lambda: None)
-  refmonth: Optional[datetime.date] = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
-  billingitems: list[bipydtc.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
+  refmonth: Optional[datetime.date]  # = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
+  billingitems: list[bitems.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
   fech_pagts_n_mora: pproc.PaymentProcessor = pydantic.Field(default_factory=lambda: None)
-  payments: list[intrfc.PaymentInterfaceDateNValue] = pydantic.Field(default_factory=lambda: [])  # bipydtc.PydtcPayment
 
   @pydantic.model_validator(mode='before')
   @classmethod
@@ -106,6 +59,8 @@ class PydtcBillingCard(pydantic.BaseModel):
     if "contrnumber" in values and "rentcontract" not in values:
       cnumber = values.pop("contrnumber")
       values["rentcontract"] = find_rentcontract_by_contrnumber(cnumber)
+    if "refmonth" not in values:
+      values["refmonth"] = rmfs.make_refmonth_or_current_it_minus_n(None, 1)
     return values
 
   @pydantic.computed_field
@@ -115,6 +70,46 @@ class PydtcBillingCard(pydantic.BaseModel):
     if self.rentcontract is None:
       return "n/a"
     return self.rentcontract.contrnumber
+
+  @pydantic.computed_field
+  @property
+  def billing_id(self) -> str:
+    if self.rentcontract is None:
+      return "n/a"
+      if self.rentcontract.location is None:
+        return "n/a"
+    rmstr = self.rm_as_yyyymm
+    _billing_id = f"{self.rentcontract.location.imm_nickname}MR{rmstr}"
+    return _billing_id
+
+  @property
+  def rm_as_yyyymm(self) -> str:
+    rmstr = self.refmonth.strftime("%Y%m")
+    return rmstr
+
+  @property
+  def rm_as_3letrasbaryyyy(self) -> str:
+    mes3letras = rmfs.get_pt_3lettermonth_fr_nmonth(self.refmonth.month)
+    rmstr = f"{mes3letras}/{self.refmonth.year}"
+    return rmstr
+
+  @property
+  def paym_as_3letrasbaryyyy(self) -> str:
+    if self.rentcontract is None:
+      return "n/a"
+    paymonth = self.rentcontract.get_pay_duedate_fr_refmonth(self.refmonth)
+    mes3letras = rmfs.get_pt_3lettermonth_fr_nmonth(paymonth.month)
+    rmstr = f"{mes3letras}/{paymonth.year}"
+    return rmstr
+
+  @property
+  def currency3letter_n_symbol(self) -> tuple[str, str]:
+    currency3letter, symbol = "", ""
+    if self.rentcontract is not None:
+      currency3letter = self.rentcontract.currency3letter
+      symbol = self.rentcontract.get_currency_symbol()
+    return currency3letter, symbol
+
 
   @property
   def charging_month(self) -> datetime.date | None:
@@ -160,11 +155,6 @@ class PydtcBillingCard(pydantic.BaseModel):
     return _location
 
   @property
-  def address(self) -> list[str]:
-    _address = self.location.address
-    return _address
-
-  @property
   def first_payor(self) -> perspydtc.PydtcPerson | None:
     _first_payor = self.rentcontract.main_tenant
     return _first_payor
@@ -185,28 +175,50 @@ class PydtcBillingCard(pydantic.BaseModel):
     _rentvalue = self.rentcontract.cur_rentvalue
     return _rentvalue
 
-  def make_n_set_minimum_billingitems(self):
-    if self.billingitems is None:
-      bitems = self.rentcontract.make_n_get_mininum_billingitems()
-      self.billingitems = bitems or []
-      if self.billingitems is None:
-        errmsg = f"Data Error: billingitems could not be assigned in make_n_set_minimum_billingitems()."
-        raise ValueError(errmsg)
+  def make_n_set_standard_billingitems(self):
+    self.billingitems = self.rentcontract.make_n_get_standard_billingitems(self.refmonth) or []
 
-  def get_minimum_billingitems(self) -> list[bipydtc.PydtcBillingItem]:
+  def get_standard_billingitems(self) -> list[bitems.PydtcBillingItem]:
     if self.billingitems is None:
-      self.make_n_set_minimum_billingitems()
+      self.make_n_set_standard_billingitems()
     return self.billingitems
+
+  def add_billingitem(self, bitem: bitems.PydtcBillingItem) -> None:
+    self.billingitems.append(bitem)
+
+  def add_billingitem_w_fields(
+      self, descr: str, refmonth: datetime.date | str, value: Decimal, seq: int | None = None
+    ) -> None:
+    nitems = len(self.billingitems)
+    if seq is None:
+      seq = nitems + 1
+    refmonth = rmfs.make_refmonth_or_raise(refmonth)
+    bitem = bitems.PydtcBillingItem(seq=seq, descr=descr, refmonth=refmonth, value=value)
+    self.add_billingitem(bitem)
 
   @pydantic.computed_field
   @property
-  def fatura_total(self) -> Decimal:
+  def mesreftotal(self) -> Decimal:
     totais = list(map(lambda obj: obj.value, self.billingitems))
-    # _fatura_total = functools.reduce(lambda x, y: x + y, totais, 0)
     _fatura_total = sum(totais)
     if not isinstance(_fatura_total, Decimal):
       _fatura_total = Decimal(_fatura_total)
     return _fatura_total
+
+  def instantiate_fech_pagts_n_mora(self):
+    if self.fech_pagts_n_mora is not None:
+      return
+    if self.billingitems is None:
+      errmsg = "Error: billingitems is None when attempting to instantiate fech_pagts_n_mora."
+      raise ValueError(errmsg)
+    ongoing_debt = -self.mesreftotal
+    self.fech_pagts_n_mora = pay.PaymentProcessor(
+      ongoing_debt=ongoing_debt,
+      duedate=self.duedate,
+      fix_ir_dec=self.monthly_fix_ir_dec,
+      has_ipca=True,
+    )
+
 
   def process_payments_in_month(self) -> None:
     """
@@ -228,17 +240,10 @@ class PydtcBillingCard(pydantic.BaseModel):
 
     """
     # sort payments date-asc
-    self.payments.sort(key=lambda obj: obj.date)
     # 'credito' é troco, devolução ou adiantamento; 'debito' é item de mora para o próximo mês
     # if one has value, the other must be zeroed: critic (or exception-raising) happens in function process_payments()
-    ongoing_debt = -self.fatura_total
-    self.fech_pagts_n_mora = pay.PaymentProcessor(
-      ongoing_debt=ongoing_debt,
-      duedate=self.duedate,
-      fix_ir_dec=self.monthly_fix_ir_dec,
-      has_ipca=True,
-    )
-    self.fech_pagts_n_mora.payments = self.payments
+    self.instantiate_fech_pagts_n_mora()
+    self.fech_pagts_n_mora.payments.sort(key=lambda obj: obj.date)
     self.fech_pagts_n_mora.process()
 
   @property
@@ -287,26 +292,23 @@ class PydtcBillingCard(pydantic.BaseModel):
     paymonth = self.refmonth + relativedelta(months=1)
     return self.rentcontract.get_date_when_mora_begins_w_refmonth(paymonth)
 
-  def add_payment(self, payment: intrfc.PaymentInterfaceDateNValue):
+  def add_payment_lst(self, payments: list[intrfc.PaymentInterfaceDateNValue]) -> None:
     """
     TODO update, when possible, payment type to bipydtc.PydtcPayment
     At this version, two payments with the same value and date are not allowed.
     TODO this may be allowed by a
      datetime field instead of only date
     """
-    if not isinstance(payment, intrfc.PaymentInterfaceDateNValue):
-      errmsg = f"Error: payment [{payment}] is of wrong type."
+    bills_payment = []
+    if payments is None or len(payments) == 0:
+      return
+    if self.billingitems is None:
+      errmsg = f"Error: attempt to input payments at a point when billingitems is still None."
       raise ValueError(errmsg)
-    boolarr = map(lambda o: o.date == payment.date and o.value == payment.value, self.payments)
-    boolarr = list(boolarr)
-    if True in boolarr:
-      errmsg = f"Error: payment [{payment}] date and value has already been entered.."
-      errmsg += f"\n\t if two payments are equal on the same day, they should be consolidated."
-      raise ValueError(errmsg)
-    #  okay, at this payment may be appended
-    self.payments.append(payment)
-    # all the time a payment is entered, a new process_payment must happen
-    # but the client must call it with obj.process_payments_in_month()
+    for payment in payments:
+      bills_payment.append(payment)
+    self.instantiate_fech_pagts_n_mora()
+    self.fech_pagts_n_mora.payments = bills_payment
 
   def lastpaydate(self):
     # sort it asc and return lastpaydate
@@ -327,7 +329,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     table = PrettyTable()
     headers = ["seq",  "descrição", "testdata-ref",  "valor-item", "mora-item", "total-item"]
     table.field_names = headers
-    for bi in self.get_minimum_billingitems():
+    for bi in self.get_standard_billingitems():
       values = bi.get_the_4_billingitem_values_as_lst()
       table.add_row(values)
     str_table = str(table)
@@ -396,7 +398,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     Endereço: {self.rentcontract.location.address}\n"""
     # at this version, billingitems will be [dynamically] created at this point
     ostr += self.str_table_billingitems()
-    fatura_total = self.fatura_total
+    fatura_total = self.mesreftotal
     fmt_total_mes = f"{fatura_total:.02f}"
     strtotal = f"\n               Total mês: {fmt_total_mes}\n"
     ostr += strtotal
@@ -412,7 +414,7 @@ class PydtcBillingCard(pydantic.BaseModel):
       'cpf':  self.rentcontract.main_tenant.cpf_fmt_w_dots,
       'address': self.rentcontract.location.address,
       'billingitems': billingitems_dictlist,
-      'fatura_total': self.fatura_total,
+      'fatura_total': self.mesreftotal,
     }
     return pdict
 
@@ -423,7 +425,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     payor: str
     cpf: str
     address: list[str]
-    billingitems: list[bipydtc.PydtcBillingItem]  # .MongoJsonRepr]
+    billingitems: list[bitems.PydtcBillingItem]  # .MongoJsonRepr]
     fatura_total: Decimal
 
   def as_pydantic_to_mongo(self):
@@ -434,7 +436,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     pydantic_to_mongo = self.MongoJsonRepr(**self.as_mongo_json_dict())
     return pydantic_to_mongo
 
-  def to_json(self, indent: int = 2) -> str:
+  def to_json(self, indent: int = 2, is_for_db=False) -> str:
     """
     Transforms the object into a JSON str for sending (e.g. to MongoDB).
 
@@ -444,15 +446,20 @@ class PydtcBillingCard(pydantic.BaseModel):
       a) contrnumber is primary key for finding rentcontract;
       b) payment is kept in fech_pagts_n_mora;
     """
-    jsondump = self.model_dump_json(exclude={'rentcontract', 'payments'}, indent=indent)
+    excludeset = {}
+    if is_for_db:
+      excludeset = {'rentcontract'}
+    jsondump = self.model_dump_json(exclude=excludeset, indent=indent)
     return jsondump
 
   @classmethod
-  def instantiate_fr_json_dict(cls, jsondict) -> "PydtcBillingCard":
+  def instantiate_fr_json_dict(cls, jsondict: dict) -> "PydtcBillingCard":
     """
     Instantiates (back) the object from JSON dict.
 
     """
+    if jsondict is None:
+      return None
     jsondict = mngfs.remove_none_values_fr_dict_recurs(jsondict)
     obj = cls.model_validate(jsondict)
     return obj
@@ -470,13 +477,14 @@ class PydtcBillingCard(pydantic.BaseModel):
 
   def __repr__(self):
     duedate = 'n/a' if self.duedate is None else self.duedate
-    total = f"R${self.fatura_total:.2f}"
+    _, symbol = self.currency3letter_n_symbol
+    total = f"{symbol} {self.mesreftotal:.2f}"
     n_items = len(self.billingitems)
     ostr = f"fatura: contrnumber={self.contrnumber}, refmonth={self.refmonth}, duedate={duedate}, items={n_items}, total={total}"
     return ostr
 
   def __str__(self):
-    ostr = self.__repr__()
+    ostr = self.to_json(indent=2, is_for_db=False)
     return ostr
 
 
@@ -484,11 +492,31 @@ def adhoctest1():
   """
 
   """
-  pass
   contrnumber = 'CDouto202401'
   print('contrnumber =>', contrnumber)
-  rentcontract = find_rentcontract_by_contrnumber('CDouto202401')
-  print('rentcontract =>', rentcontract)
+  billingcard = find_rentcontract_by_contrnumber('CDouto202401')
+  print('rentcontract =>', billingcard)
+  contrnumber = 'CDouto202401'
+  print('contrnumber =>', contrnumber)
+  billingitems = bitems.make_4_billingitems()
+  refmonth = rmfs.make_refmonth_or_raise('2026-4')
+  billingcard = PydtcBillingCard(
+    refmonth=refmonth,
+    contrnumber='CDouto202401',
+    billingitems=billingitems
+  )
+  payments = []
+  paydate = billingcard.rentcontract.get_duedate_fr_refmonth(refmonth)
+  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
+  payments.append(payment)
+  paydate = paydate + relativedelta(days=11)
+  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
+  payments.append(payment)
+  billingcard.add_payment_lst(payments)
+  billingcard.process()
+  print('billingcard =>', billingcard)
+  json_str = billingcard.to_json(indent=2, is_for_db=True)
+  print('json_str =>', json_str)
 
 
 def process():

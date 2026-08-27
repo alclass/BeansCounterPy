@@ -20,22 +20,35 @@ CustomDate = Annotated[date, BeforeValidator(parse_custom_date)]
 import json
 from typing import Annotated, Optional
 import datetime
-import art.immeub.rent.pdntcmdls.address_pydan as addr  # addr.PydtcAddress
-import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
-import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch.get_rentcontract_by_number
-from beanie import Document, Link
-from pydantic import field_validator, EmailStr, BaseModel, StringConstraints  # Field
 import pydantic
+from pydantic import field_validator, EmailStr, BaseModel, StringConstraints  # Field
+import art.immeub.rent.pdntcmdls.address_pydant as addr  # addr.PydtcAddress
+import lib.numberfs.cpf_verifica as ccpf  # cpfv.calcula_cpf_via_reduce
+import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch.get_rentcontract_by_number
+import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 CPFTYPE = Annotated[str, StringConstraints(pattern=r"\d{11}")]
 
 
 def get_persons_by_cpfs(cpfs: list[str]) -> list["PydtcPerson"]:
-  persondocs = mngfetch.get_persons_by_cpfs(cpfs)
+  persondocs = mngfetch.get_persons_by_cpfs_as_strlst(cpfs)
   persons = []
   for persondoc in persondocs:
-    person = PydtcPerson.instantiate_from_json(persondoc)
+    person = PydtcPerson.instantiate_fr_jsonstr(persondoc)
     persons.append(person)
   return persons
+
+
+def get_payee_person() -> "PydtcPerson":
+  cpf_payee_d9 = '123456781'
+  _, cpf, _ = ccpf.calc_cpf_ret_dv_cpf_cpffmt_via_reduce_w_d9(cpf_payee_d9)
+  chave_pix = 'livrosetc@yahoo.com.br'
+  payee = PydtcPerson(
+    nomecompleto="Luiz Lewis",
+    cpf=cpf,
+    emails=[chave_pix],
+    chave_pix=chave_pix,
+  )
+  return payee
 
 
 class PydtcPerson(BaseModel):
@@ -49,8 +62,9 @@ class PydtcPerson(BaseModel):
   cpf: CPFTYPE
   emails: list[pydantic.EmailStr] = pydantic.dataclasses.Field(default_factory=lambda: [])
   phonenumbers: Optional[list[str]] = []
-  address: addr.PydtcAddress = pydantic.dataclasses.Field(default_factory=lambda: None)
+  address: Optional[addr.PydtcAddress] = None
   obs: list[str] = pydantic.dataclasses.Field(default_factory=lambda: [])
+  chave_pix: Optional[str] = None
   birthdate: Optional[datetime.date] = None
   birthcity: Optional[str] = None
   marital_st: Optional[str] = None
@@ -62,26 +76,16 @@ class PydtcPerson(BaseModel):
   @classmethod
   def verify_cpf(cls, value: str) -> str:
     # Pydantic has already guaranteed that 'value' is a string
-    cpfv.raise_ve_if_inconsistent_11char_cpf(value)
+    ccpf.raise_ve_if_inconsistent_11char_cpf(value)
     return value
 
   def get_fmt_cpf(self, adds_dots: bool = True) -> str:
-    return cpfv.format_cpf(self.cpf, adds_dots)
+    return ccpf.format_cpf(self.cpf, adds_dots)
 
   @property
   def cpf_fmt_w_dots(self) -> str:
     return self.get_fmt_cpf(adds_dots=True)
 
-  @classmethod
-  def instantiate_from_jsondict(cls, pdict: dict):
-    _ = pdict
-    person = cls.model_validate(pdict)
-    return person
-
-  @classmethod
-  def instantiate_from_json(cls, jsondump: str):
-    pdict = json.loads(jsondump)
-    return cls.instantiate_from_jsondict(pdict)
 
   @property
   def firstname(self):
@@ -112,17 +116,28 @@ class PydtcPerson(BaseModel):
     _nome_n_cpf = f"{self.get_first_n_last_names()} | CPF {self.cpf_fmt_w_dots}"
     return _nome_n_cpf
 
-  def to_json(self, indent=2) -> str:
+  def get_main_email(self) -> EmailStr | None:
+    if len(self.emails) > 0:
+      return self.emails[0]
+    return None
+
+  def to_json(self, indent: int = 2, is_for_db: bool = False) -> str:
     return self.model_dump_json(indent=indent)
 
   @classmethod
-  def instantiate_fr_json_str(cls, json_str) -> "PydtcPerson":
+  def instantiate_fr_jsonstr(cls, json_str) -> "PydtcPerson":
     """
     Useful to recreate an instance from MongoDB JSON doc.
     """
     obj = cls.model_validate_json(json_str)
     return obj
 
+  @classmethod
+  def instantiate_fr_jsondict(cls, json_dict: dict):
+    _ = json_dict
+    json_dict = mngfs.remove_none_values_fr_dict_recurs(json_dict)
+    person = cls.model_validate(json_dict)
+    return person
 
   def __repr__(self):
     main_email_addr = "n/a"
@@ -134,14 +149,9 @@ class PydtcPerson(BaseModel):
 
   def __str__(self):
     ostr = f"""{self.__class__.__name__}
-    nome="{self.firstname} {self.lastname}" | cpf="{self.cpf_fmt_w_dots}"
-    emails=[{self.emails}] | phones={self.phonenumbers}"""
+    nome="{self.firstname} {self.lastname}" | cpf="{self.cpf_fmt_w_dots} | pix={self.chave_pix}"
+    emails={self.emails} | phones={self.phonenumbers}"""
     return ostr
-
-
-class PersonDoc(PydtcPerson, Document):
-  class Settings:
-    name = "persons"
 
 
 def make_address_1():
@@ -174,7 +184,20 @@ def adhoctest1():
 def adhoctest2():
   address1 = make_address_1()
   print('address1', address1)
-  print(address1)
+  payee = get_payee_person()
+  print('payee', payee)
+  json_str = payee.to_json()
+  print('json_str', json_str)
+
+
+def adhoctest3():
+  dbname, collname = 'immeub_db', 'persons'
+  dbfetch = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
+  querydict = {'cpf': '12345678143'}
+  docdict = dbfetch.find_one_w_querydict_n_collname_as_dict(querydict)
+  print('docdict', docdict)
+  person = PydtcPerson.instantiate_fr_jsondict(docdict)
+  print('person', person)
 
 
 def process():
@@ -189,4 +212,4 @@ if __name__ == "__main__":
   adhoctest1()
   process()
   """
-  adhoctest2()
+  adhoctest3()

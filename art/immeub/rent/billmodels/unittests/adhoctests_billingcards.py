@@ -29,7 +29,6 @@ def adhoctest1():
     rentcontract='cdouto202401',
     refmonth=refmonth,
     billingitems=billingitems,
-    payments=1,
   )
   pass
 

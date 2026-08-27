@@ -162,7 +162,7 @@ def calc_etapa_cpf_via_reduce(p_digits):
   return dig_ver
 
 
-def calcula_triple_cpf_via_reduce(digits9):
+def calc_cpf_ret_dv_cpf_cpffmt_via_reduce_w_d9(digits9):
   """
   Returns the triple (dv, cpf, format_cpf(cpf))
   In the encompassing module, there are two functions for calculating
@@ -294,12 +294,12 @@ def adhoctest1():
   print(scrmsg)
   # calculate via redude()
   inpt = '987654321'
-  dv, cpf, formatted = calcula_triple_cpf_via_reduce(inpt)
+  dv, cpf, formatted = calc_cpf_ret_dv_cpf_cpffmt_via_reduce_w_d9(inpt)
   scrmsg = f"{inpt} (via reduce()) => dv={dv} | cpf={cpf} | formatted={formatted}"
   print(scrmsg)
   # calculate via redude()
   inpt = '587523365'
-  dv, cpf, formatted = calcula_triple_cpf_via_reduce(inpt)
+  dv, cpf, formatted = calc_cpf_ret_dv_cpf_cpffmt_via_reduce_w_d9(inpt)
   scrmsg = f"{inpt} (via reduce()) => dv={dv} | cpf={cpf} | formatted={formatted}"
   print(scrmsg)
 

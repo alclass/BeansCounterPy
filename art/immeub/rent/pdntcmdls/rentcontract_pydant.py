@@ -6,31 +6,30 @@ art/immeub/rent/pdntcmdls/rentcontract_pydant.py
   (@see diagram context with BillignCard, BillingItem, Contract, Person, etc.).
 
 # from dinero.currencies import BRL
+from dinero.currencies import BRL
+import j_son
 """
 import calendar
 from prettytable import PrettyTable
 import datetime
+import dinero
 from decimal import Context, Decimal, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
-import json
-import dinero
-from dinero.currencies import BRL
 from typing import List
 import pydantic
 import typing
 # from typing_extensions import Annotated
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
+import art.immeub.rent.billmodels.billingitem_pydantic as bitem  # pers.Person
 import art.immeub.rent.pdntcmdls as init
-# incendmod.get_incendtarif_fo_location_if_available(imovel_apelido)
 import art.immeub.tribs.onproperties.mongo_tribs_retriever as funesbom
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch  # mngfetch.get_rentcontract_by_number
-import art.immeub.rent.billmodels.billingitem_pydantic as bipydtc  # bipydtc.BillingItem
+import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 from tabulate import tabulate
 from lib.fncfs.credeb_pkg.credit_debt_fs import ONE_THOUSANDTH_AS_STR
-import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
 PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
@@ -38,7 +37,6 @@ DEFAULT_MONTHLY_FIX_IR_DEC = Decimal(init.DEFAULT_MONTHLY_FIX_IR_DEC)
 MORA_M_MINUS_N_STR = init.MORA_M_MINUS_N
 MORA_BEGINS_ON_DAY = 1
 CONTRNUMBERTYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=12)]
-remove_none_values_fr_dict_recurs = mngfs.remove_none_values_fr_dict_recurs
 
 
 def mk_contrnumber_w_immnickname_n_refmstr(
@@ -57,7 +55,7 @@ def mk_contrnumber_w_immnickname_n_refmstr(
 
 
 def find_immeuble_by_nickname(imm_nickname):
-  location = mngfetch.find_immeuble_by_nickname(imm_nickname)
+  location = mngfetch.find_immeuble_by_nickname_as_dict(imm_nickname)
   return location
 
 
@@ -97,29 +95,6 @@ def make_dinero_fr_decimal(dec, din_currency_dictlike):
   return din
 
 
-def fetch_monthly_value_ifany_for_iptu(cur_refmonth):
-  m = cur_refmonth.month
-  if m < 3:
-    return None, None
-  seq = m - 2
-  iptuvalue = Decimal(500)
-  iptudescr = f"imposto predial {seq} de 10"
-  return iptuvalue, iptudescr
-
-
-def fetch_monthly_value_ifany_for_cond(cur_refmonth):
-  """
-  TODO this function must pick up condvalue from a database or raise IOError
-  return condpkpg.fetch_monthly_value_for_cond(self.immeub_cond, cur_refmonth)
-
-  r_int = random.randint(-100, 100)
-  """
-  r_int = 50  # now removing the random, knowing that it was for tests and
-  condvalue = Decimal(1200 + r_int)
-  conddescr = "tarifa no mês ref"
-  return condvalue, conddescr
-
-
 class Reajuste(pydantic.BaseModel):
   """
   Models a contract 'reajuste'
@@ -131,40 +106,42 @@ class Reajuste(pydantic.BaseModel):
 
   This class is 'composed' by RentContract which may keep a list of its objects.
   """
-  reajuste_dt: datetime.date
-  reajuste_dec: Decimal
-  valuebefore: Decimal
-  reajuste_idxsigla: str = 'IGP-M'
+  reaj_date: datetime.date
+  prevalue: Decimal
+  reaj_mul_fo_incr: Decimal
+  reaj_idxsigla: str = 'IGP-M'
 
   @property
-  def reajuste_rm(self) -> datetime.date:
-    """ reajuste refmonth derived from reajuste date"""
-    if self.reajuste_dt.day == 1:
+  def reaj_refmonth(self) -> datetime.date:
+    """
+    Gets 'reajuste refmonth'.
+    'reajuste refmonth' is 'reajuste date' on day 1
+    """
+    if self.reaj_date.day == 1:
       # refmonth is, by convention, a date on day 1
-      return self.reajuste_dt
-    y, m = self.reajuste_dt.year, self.reajuste_dt.month
-    refmonth = datetime.date(year=y, month=m, day=1)
+      return self.reaj_date
+    refmonth = self.reaj_date.replace(day=1)
     return refmonth
 
   @property
-  def valueafter(self) -> Decimal:
+  def postvalue(self) -> Decimal:
     """ it's valuebefore increased by reajuste index (@see the "montant" expression below)"""
-    if self.reajuste_dec < DECIMAL_ZERO:
+    if self.reaj_mul_fo_incr < DECIMAL_ZERO:
       # valueafter, by convention, cannot be less than valuebefore
-      return self.valuebefore
+      return self.prevalue
     # the "montant" expression -> mf = mi * (1 + i)
-    va = self.valuebefore * (1 + self.reajuste_dec)
+    va = self.prevalue * (1 + self.reaj_mul_fo_incr)
     return va
 
-  def raise_if_reajuste_has_inconsistent_date(self, upperlimitdate:datetime.date):
+  def raise_if_reajuste_has_inconsistent_date(self, upperlimitdate: datetime.date):
     """ raises ValueError on two conditions: 1 date in the future 2 date after contract's end-date"""
     upperlimitdate = dtfs.make_date_or_raise(upperlimitdate)
     today = datetime.date.today()
-    if self.reajuste_rm > today:
-      errmsg = f"reajuste refmonth [{self.reajuste_rm}] cannot be later than today [{today}]."
+    if self.reaj_refmonth > today:
+      errmsg = f"reajuste refmonth [{self.reaj_refmonth}] cannot be later than today [{today}]."
       raise ValueError(errmsg)
-    if self.reajuste_rm > upperlimitdate:
-      errmsg = f"reajuste refmonth [{self.reajuste_rm}] cannot be later than contract's final date [{upperlimitdate}]."
+    if self.reaj_refmonth > upperlimitdate:
+      errmsg = f"reajuste refmonth [{self.reaj_refmonth}] cannot be later than contract's final date [{upperlimitdate}]."
       raise ValueError(errmsg)
 
 
@@ -173,7 +150,7 @@ class PydtcRentContract(pydantic.BaseModel):
 
   # imm_nickname: str = 'CDouto'
   contrnumber: str = pydantic.PrivateAttr(default_factory=lambda: None)
-CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
+  CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
 
   """
   contrnumber: CONTRNUMBERTYPE
@@ -182,6 +159,7 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
   ori_rentvalue: typing.Annotated[Decimal, pydantic.Field(max_digits=12, decimal_places=4)]
   tenants: typing.Optional[List[pers.PydtcPerson]] = None
   guarantors: typing.Optional[List[pers.PydtcPerson]] = None
+  payee: typing.Optional[pers.PydtcPerson] = None
   nmonths_duration: int = 30
   has_proptax: bool = True
   has_incendtarif: bool = True
@@ -206,9 +184,12 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     if "guarantors_cpfs" in values and "guarantors" not in values:
       guarantors_cpfs = values.pop("guarantors_cpfs")
       values["guarantors"] = pers.get_persons_by_cpfs(guarantors_cpfs)
+    if "payee_cpf" in values and "payee" not in values:
+      payee_cpf = values.pop("payee_cpf")
+      values["payee"] = pers.get_payee_person()
     return values
 
-  def get_pay_duedate_for_refmonth(self, refmonth):
+  def get_pay_duedate_fr_refmonth(self, refmonth):
     if refmonth is None:
       paymonth = datetime.date.today()
     else:
@@ -283,9 +264,9 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     lastdate_inmonth = datetime.date(year=year, month=month, day=day)
     return lastdate_inmonth
 
-  def make_n_get_mininum_billingitems(
+  def make_n_get_standard_billingitems(
       self, p_refmonth: datetime.date | str | None = None
-    ) -> list[bipydtc.PydtcBillingItem]:
+    ) -> list[bitem.PydtcBillingItem]:
     """
     Creates the monthly BillingCard 'main mold'.
     (The 'main mold' are the repetitive billing items. Others enter afterward.)
@@ -296,7 +277,7 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
       4 funesbom (which is an annual fire dept charge)
     If other items apply, they must be included at the end of the billing card 'making' process.
     """
-    cur_refmonth = rmfs.make_current_refmonth() \
+    refmonth = rmfs.make_current_refmonth() \
         if p_refmonth is None \
         else rmfs.make_refmonth_or_raise(p_refmonth)
     billingitems = []
@@ -304,41 +285,41 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     bi = bipydtc.PydtcBillingItem(
       seq=bi_seq,
       descr="Aluguel mensal",
-      refmonth=cur_refmonth,
+      refmonth=refmonth,
       value=self.cur_rentvalue,
     )
     billingitems.append(bi)
     if self.has_proptax:
-      value, descr = fetch_monthly_value_ifany_for_iptu(cur_refmonth)
+      value, descr = self.location.fetch_iptu_value_n_descr_w_refmonth(refmonth)
       if value:
         bi_seq += 1
         bi = bipydtc.PydtcBillingItem(
           seq=bi_seq,
           descr=f"IPTU ({descr})",
-          refmonth=cur_refmonth,
+          refmonth=refmonth,
           value=value,
         )
         billingitems.append(bi)
     if self.has_condtarif:
-      value, descr = fetch_monthly_value_ifany_for_cond(cur_refmonth)
+      value, descr = self.location.fetch_condtarifa_n_descr_w_refmonth(refmonth)
       if value:
         bi_seq += 1
         bi = bipydtc.PydtcBillingItem(
           seq=bi_seq,
-          descr=f"Condomínio ({descr})",
-          refmonth=cur_refmonth,
+          descr=descr,
+          refmonth=refmonth,
           value=value,
         )
         billingitems.append(bi)
-    incendtarif, incend_descr = self.get_incendtarif_n_descr_if_available()
-    if self.has_incendtarif and incendtarif is not None:
+    incendtarif, incend_descr = self.location.fetch_funesbom_value_n_descr_w_refmonth(refmonth)
+    if incendtarif is not None:
       value, descr = incendtarif, incend_descr
       if value:
         bi_seq += 1
         bi = bipydtc.PydtcBillingItem(
           seq=bi_seq,
           descr=f"Funesbom ({descr})",
-          refmonth=cur_refmonth,
+          refmonth=refmonth,
           value=value,
         )
         billingitems.append(bi)
@@ -362,14 +343,15 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
 
   @property
   def other_tenants_ifany(self) -> list[pers.PydtcPerson]:
-    if len(self.tenants) > 1:
-      return self.tenants[1:]
+    if self.tenants is not None:
+      if len(self.tenants) > 1:
+        return self.tenants[1:]
     return []
 
   def add_reajuste_w_dt_n_idx(self, reajuste_dt: datetime.date | str, reajuste_idx: Decimal, reajuste_sigla: str = 'IGP-M'):
     reajuste_dt = dtfs.make_date_or_raise(reajuste_dt)
     reajuste = Reajuste(
-      reajuste_dt=reajuste_dt, reajuste_dec=reajuste_idx, valuebefore=self.cur_rentvalue, reajuste_idxsigla=reajuste_sigla
+      reaj_date=reajuste_dt, reaj_mul_fo_incr=reajuste_idx, prevalue=self.cur_rentvalue, reaj_idxsigla=reajuste_sigla
     )    # reajuste.raise_if_inconsistent_to_today_n_contractsend(self.findate)
     # reajuste.calc_n_set_cur_rentvalue()
     self.reajustes.append(reajuste)
@@ -379,16 +361,16 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     if len(self.reajustes) == 0:
       self._cur_rentvalue = self.ori_rentvalue
       return
-    self.reajustes.sort(key = lambda obj: obj.reajuste_dt)
+    self.reajustes.sort(key = lambda obj: obj.reaj_date)
     last_reajuste = self.reajustes[-1]
-    self._cur_rentvalue = last_reajuste.valueafter
+    self._cur_rentvalue = last_reajuste.postvalue
 
   def make_triplelist_date_reajuste_newrentvalue(self):
     # first triple has 0.0 reajuste
     triple = self.inidate, DECIMAL_ZERO, self.ori_rentvalue
     date_reajuste_newrentvalue_triplelist = [triple]
     for reajuste in self.reajustes:
-      triple = reajuste.reajuste_rm, reajuste.reajuste_dec, reajuste.valueafter
+      triple = reajuste.reaj_refmonth, reajuste.reaj_mul_fo_incr, reajuste.postvalue
       date_reajuste_newrentvalue_triplelist.append(triple)
     return date_reajuste_newrentvalue_triplelist
 
@@ -437,24 +419,31 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
       pass
     return 'n/a'
 
-  def to_json_str(self):
+  def to_json_str(self, indent: int = 2, is_for_db: bool = False):
     """
-    JSON dumps the representation that is stored its corresponding MongoDB collection.
-    Uses self.model_dump_json() excluding 'large fields' that have a 'smaller key'
+    Produces the Object's JSON string representation.
+    If parameter is_for_db is True, fields {'location','tenants','guarantors'} are excluded.
+    Else, if parameter is_for_db is False, the embedded objects go included.
     """
+
     param_set = set()
-    if self.location is not None:
+    if is_for_db:
       param_set.add('location')
-    if self.tenants is not None:
       param_set.add('tenants')
-    if self.guarantors is not None:
       param_set.add('guarantors')
     # jsondict = self.model_dump(exclude=param_set)
     # # remove_none_values_fr_dict_recurs
     # print('jsondict', jsondict)
-    jsondump = self.model_dump_json(indent=2)
+    jsondump = self.model_dump_json(exclude=param_set, indent=indent)
     # jsondump = json.dumps(jsondict, indent=2)
     return jsondump
+
+  def to_json_str_for_db(self):
+    """
+    Produces the Object's JSON string representation for MongoDB (location and persons go with primary keys).
+    Dispatches to to_json_str() with is_for_db=True.
+    """
+    return self.to_json_str(indent=indent, is_for_db=True)
 
   @pydantic.computed_field
   @property
@@ -469,6 +458,13 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     if self.guarantors is None:
       return []
     return [p.cpf for p in self.guarantors]
+
+  @pydantic.computed_field
+  @property
+  def payee_cpf(self) -> str:
+    if self.payee is None:
+      return "n/a"
+    return self.payee.cpf
 
   @pydantic.computed_field
   @property
@@ -491,7 +487,7 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
     """
     if jsondict is None:
       return None
-    jsondict = remove_none_values_fr_dict_recurs(jsondict)
+    jsondict = mngfs.remove_none_values_fr_dict_recurs(jsondict)
     # if 'location' in cleaned_data:
     # pass
     obj = cls.model_validate(jsondict)
@@ -571,14 +567,13 @@ CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
   def get_duedate_fr_refmonth(self, p_refmonth: datetime.date) -> datetime.date:
     """
     Gets due date from refmonth
-    The rule is one month later up to day 10
-      (at this version, it's hardcorded in constant PAYMENT_DUE_DAY_IN_MONTH)
+    The rule is one month later (the next month) on (up to) day 10
+      (at this version, day number may be configured via constant PAYMENT_DUE_DAY_IN_MONTH)
     """
-    # 'remake' refmonth to make sure it's a date on day 1
-    rm = p_refmonth
     refmonth = rmfs.make_refmonth_or_raise(p_refmonth)
-    deltadays = self.get_payment_dueday_in_month() - 1
-    duedate = refmonth + relativedelta(months=1, days=deltadays)
+    nextmonth = refmonth + relativedelta(months=1)
+    dueday = self.get_payment_dueday_in_month()
+    duedate =  nextmonth.replace(day=dueday)
     return duedate
 
   def get_currency_symbol(self):
@@ -636,7 +631,7 @@ def adhoctest1():
     tenants=[person],
     fiadores=[person],
   """
-  persons = mngfetch.get_persons_by_cpfs([])
+  persons = mngfetch.get_persons_by_cpfs_as_strlst([])
   if persons is None or len(persons) == 0:
     print('No persons found. Returning.')
     return
@@ -666,15 +661,18 @@ def adhoctest1():
   print(rent.line())
   rent.tabulate_dates_reajustes_newrentvalues()
   rent.pprint_dates_n_rentvalues()
-  bitems = rent.make_n_get_mininum_billingitems()
+  bitems = rent.make_n_get_standard_billingitems()
   print(bitems)
 
 
 def adhoctest2():
   contrnumber = 'CDouto202401'
-  rentcontract = mngfetch.get_rentcontract_by_number(contrnumber)
+  rentcontract_doc = mngfetch.get_rentcontract_by_number(contrnumber)
   print('contrnumber', contrnumber)
-  print('rentcontract', rentcontract)
+  print('rentcontract_doc', rentcontract_doc)
+  rentcontract = PydtcRentContract.instantiate_fr_jsondict(rentcontract_doc)
+  print(rentcontract)
+
 
 
 def process():

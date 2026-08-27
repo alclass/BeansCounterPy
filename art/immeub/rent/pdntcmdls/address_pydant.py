@@ -69,6 +69,7 @@ class PydtcAddress(BaseModel):
   @classmethod
   def instantiate_indirect_fr_json_str(cls, json_str) -> "PydtcAddress":
     """
+    TO BE REMOVED
     Same as above, but 'loading JSON string' with package JSON.
     Removal of None's is not strictly necessary.
     """

@@ -13,11 +13,12 @@ from pydantic import BaseModel, Field
 from bson import ObjectId  # , errors
 from mongoengine import connect, disconnect, Document, StringField, ReferenceField, PULL, ListField
 import art.immeub.rent.mdb as init  #
-import art.immeub.rent.pdntcmdls.address_pydan as addr  # addr.PydtcAddress
+import art.immeub.rent.pdntcmdls.address_pydant as addr  # addr.PydtcAddress
+import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 DEFAULT_MONGO_URLCONNSTR = init.MONGODB_CON_STR
-IMMEUB_MNGDBNAME = init.IMMEUB_DBNAME
+IMMEUB_MNGDBNAME = init.IMMEUB_MNGDBNAME
 # ===============
-PERSON_MNGCOLLNAME = init.PERSON_COLLNAME
+PERSON_COLLNAME = init.PERSON_COLLNAME
 IMMEUBLE_COLLNAME = init.IMMEUBLE_COLLNAME
 RENTCONTRACT_COLLNAME = init.RENTCONTRACT_COLLNAME
 BILLINGCARD_COLLNAME = init.BILLINGCARD_COLLNAME
@@ -26,23 +27,17 @@ BILLINGCARD_COLLNAME = init.BILLINGCARD_COLLNAME
 # ==========================================
 # MONGOENGINE ODM LAYOUT (Synchronous)
 # ==========================================
-class Address(Document, addr.PydtcAddress):
+class Person(pers.PydtcPerson, Document):
   """
   TODO In fact, Tenant should inherit from Person
   """
   name = StringField(required=True)
   email = StringField(required=True)
 
+  class Settings:
+    name = PERSON_COLLNAME
 
-class Person(Document):
-  """
-  TODO In fact, Tenant should inherit from Person
-  """
-  name = StringField(required=True)
-  email = StringField(required=True)
-  meta = {'collection': PERSON_MNGCOLLNAME}
   # Helper method to match the standard MongoDB/Beanie JSON output
-
   def to_api_dict(self):
     return {
       "_id": str(self.id),
@@ -56,11 +51,13 @@ class Immeuble(Document):
   TODO In fact, Tenant should inherit from Person
   """
   imm_nickname = StringField(required=True)
-
   email = StringField(required=True)
-  meta = {'collection': IMMEUBLE_COLLNAME}
-  # Helper method to match the standard MongoDB/Beanie JSON output
 
+  class Settings:
+    name = IMMEUBLE_COLLNAME
+
+
+  # Helper method to match the standard MongoDB/Beanie JSON output
   def to_api_dict(self):
     return {
       "_id": str(self.id),
@@ -75,7 +72,9 @@ class RentContract(Document):
   # reverse_delete_rule=PULL automatically updates the contract if a tenant is deleted.
   location = ListField(ReferenceField(Immeuble, reverse_delete_rule=PULL))
   tenants = ListField(ReferenceField(Person, reverse_delete_rule=PULL))
-  meta = {'collection': RENTCONTRACT_COLLNAME}
+
+  class Settings:
+    name = RENTCONTRACT_COLLNAME
 
   def to_api_dict(self):
     return {
@@ -84,7 +83,6 @@ class RentContract(Document):
       # Resolves the relational loop into plain objects like fetch_links() did
       "tenants": [tenant.to_api_dict() for tenant in self.tenants if tenant]
     }
-
 
 # ==========================================
 # LIFESPAN MANAGEMENT (Fixes Deprecation Warnings)

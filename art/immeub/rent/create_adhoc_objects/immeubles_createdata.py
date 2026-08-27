@@ -2,7 +2,8 @@ import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # pers.Person
 import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble_pydant as embed  # embed.EmbeddedImmeubleTax
 from art.immeub.rent.create_adhoc_objects.persons_createdata import address1
-import art.immeub.rent.pdntcmdls.address_pydan as addr  # addr.PydtcAddress
+import art.immeub.rent.pdntcmdls.address_pydant as addr  # addr.PydtcAddress
+import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 
 
 def make_immeuble_ex1():
@@ -91,6 +92,24 @@ def adhoctest2():
   print('json_str', json_str)
 
 
+def adhoctest3():
+  """
+  read from localhost MongoDB
+  """
+  dbname, collname = 'immeub_db', 'immeubles'
+  fetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
+  imm_nickname = 'CDouto'
+  querydict = {'imm_nickname': imm_nickname}
+  print('querydict', querydict)
+  docdict = fetcher.find_one_w_querydict_n_collname_as_dict(querydict)
+  print('docdict', docdict)
+  location = immeub.PydtcImmeuble.instantiate_fr_jsondict(docdict)
+  print('location', location)
+  jsondump = location.to_json(indent=2)
+  print('jsondump location', jsondump)
+
+
+
 def process():
   """
   """
@@ -99,7 +118,8 @@ def process():
 
 if __name__ == '__main__':
   """
+  adhoctest1()
+  adhoctest2()
   process()
   """
-  adhoctest2()
-  adhoctest1()
+  adhoctest3()

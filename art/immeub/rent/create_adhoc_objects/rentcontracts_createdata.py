@@ -37,7 +37,7 @@ def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
   rentcontract.add_reajuste_w_dt_n_idx('2025-1-1', Decimal('0.035'))
   rentcontract.add_reajuste_w_dt_n_idx('2026-1-1', Decimal('0.027'))
   print(rentcontract)
-  jsonstr = rentcontract.to_json_str()
+  jsonstr = rentcontract.to_json_str(is_for_db=True)
   print(jsonstr)
   return rentcontract
 
@@ -63,7 +63,7 @@ def make_billingcard_1() -> bcard.PydtcBillingCard:
   )
   payvalue = payment.value
   paydate = payment.date
-  billingcard.add_payment(payment)
+  billingcard.add_payment_lst(payment)
   billingcard.process_payments_in_month()
   ostr = """billingcard.process_payment()
   cre = billingcard.credito_no_fecho
@@ -74,7 +74,7 @@ def make_billingcard_1() -> bcard.PydtcBillingCard:
   deb = billingcard.debito_no_fecho
   moraquinhoes = billingcard.quinhoes_days_vals
   ipca = billingcard.var_ir_as_ipca_dec
-  scrmsg = f"""cre={cre:.2f}; deb={deb:.2f} | billsvalue = {billingcard.fatura_total} | duedate={billingcard.duedate} | ipca = {ipca}
+  scrmsg = f"""cre={cre:.2f}; deb={deb:.2f} | billsvalue = {billingcard.mesreftotal} | duedate={billingcard.duedate} | ipca = {ipca}
    | payvalue={payvalue:.2f} | paydate={paydate} | quinhoes={moraquinhoes}"""
   print(scrmsg)
   report = billingcard.report_quinhoes_days_vals()
@@ -98,7 +98,7 @@ def make_example_person():
     'emails': ["johndoe@example.com"],
     'docum_id': "1234567",
   }
-  person = pers.PydtcPerson.instantiate_from_jsondict(pdict)
+  person = pers.PydtcPerson.instantiate_fr_jsondict(pdict)
   print('via instantiate_fr_json', person)
 
 
@@ -108,7 +108,7 @@ def make_example_rentcontract():
   print(rent.line())
   rent.tabulate_dates_reajustes_newrentvalues()
   rent.pprint_dates_n_rentvalues()
-  bitems = rent.make_n_get_mininum_billingitems()
+  bitems = rent.make_n_get_standard_billingitems()
   print(rent)
   print(rent.line())
   rent.tabulate_dates_reajustes_newrentvalues()
@@ -120,9 +120,25 @@ def make_example_rentcontract():
 def adhoctest1():
   """
   make_example_person()
-
   """
   make_rentcontract_1()
+
+
+def adhoctest2():
+  """
+  read from localhost MongoDB
+  """
+  dbname, collname = 'immeub_db', 'rentcontracts'
+  fetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
+  contrnumber = 'CDouto202401'
+  querydict = {'contrnumber': contrnumber}
+  print('querydict', querydict)
+  docdict = fetcher.find_one_w_querydict_n_collname_as_dict(querydict)
+  print('docdict', docdict)
+  pydtc_rentcontr = rentpydtc.PydtcRentContract.instantiate_fr_jsondict(docdict)
+  print('pydtc_rentcontr', pydtc_rentcontr)
+
+
 
 
 def process():
@@ -134,4 +150,4 @@ if __name__ == "__main__":
   adhoctest1()
   process()
   """
-  adhoctest1()
+  adhoctest2()

@@ -38,7 +38,7 @@ class DBRentabFundo(dbb.DBBase):
     conn = self.get_connection()
     cursor = conn.cursor()
     rows = cursor.execute(sql)
-    rowlist = rows.fetch_all()
+    rowlist = rows.fetch_all_as_strlst()
     cursor.close()
     conn.commit()
     conn.close()

@@ -175,24 +175,32 @@ class GenMongoDBFetcher:
     cursordocs = self.mongodb_coll.find(querydict)
     return cursordocs
 
-  def find_one_w_querydict_n_collname(self, querydict: dict, collname: str | None = None):
+  def find_one_w_querydict_n_collname_as_dict(self, querydict: dict, collname: str | None = None) -> dict:
     self.reset_coll_if_needed(collname)
     docdict = self.mongodb_coll.find_one(querydict)
-    pass
     return docdict
 
-  def find_by_querydict_n_collname(
+  def find_by_querydict_n_collname_as_dictlst(
       self, query: dict, collname: str | None = None
     ) -> list[str]:
-    docs = []
     cursordocs = self.find_as_cursor_by_querydict_n_collname(
       querydict=query, collname=collname
     )
     # Convert cursor to a list of dicts, then serialize to JSON string
-    json_str_list = list(map(lambda j: dumps(j), cursordocs))
-    return json_str_list
+    json_dictlst = list(map(lambda j: dict(j), cursordocs))
+    return json_dictlst
 
-  def find_w_1coll_2fieldname_3list(
+  def find_by_querydict_n_collname_as_strlst(
+      self, query: dict, collname: str | None = None
+    ) -> list[str]:
+    cursordocs = self.find_as_cursor_by_querydict_n_collname(
+      querydict=query, collname=collname
+    )
+    # Convert cursor to a list of dicts, then serialize to JSON string
+    json_strlist = list(map(lambda j: dumps(j), cursordocs))
+    return json_strlist
+
+  def find_w_1coll_2fieldname_3list_as_strlst(
       self, fieldname: str, valuelist: list, collname: str | None = None
     ) -> list[str]:
     """
@@ -203,18 +211,18 @@ class GenMongoDBFetcher:
       self.set_or_change_collname(collname)
     query = {fieldname: {"$in": valuelist}}
     if valuelist is None or len(valuelist) > 0:
-      docs = self.fetch_all(collname=collname)
+      docs = self.fetch_all_as_strlst(collname=collname)
     else:
-      docs = self.find_by_querydict_n_collname(
+      docs = self.find_by_querydict_n_collname_as_strlst(
         query=query, collname=collname
       )
     return docs
 
-  def fetch_all(self, collname: str | None = None) -> list[str]:
+  def fetch_all_as_strlst(self, collname: str | None = None) -> list[str]:
     """
     Encapsulates find_by_coll_n_query() sending an empty {}.
     """
-    return self.find_by_querydict_n_collname(
+    return self.find_by_querydict_n_collname_as_strlst(
       query={}, collname=collname
     )
 
@@ -242,7 +250,7 @@ class GenMongoDBFetcher:
       self.mng_cli_con.close()
 
 
-def get_jdocs_by_1fieldname_2valuelist_3collname_4dbname(
+def get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_strlst(
     fieldname: str, valuelist: list[str], collname: str, dbname: str | None = None
   ) -> list[str]:
   # dbname, collname = 'immeub_db', 'persons'
@@ -250,27 +258,27 @@ def get_jdocs_by_1fieldname_2valuelist_3collname_4dbname(
     dbname=dbname,
     collname=collname,
   )
-  jsondocs = retriever.find_w_1coll_2fieldname_3list(
+  jsondocs = retriever.find_w_1coll_2fieldname_3list_as_strlst(
     fieldname=fieldname, valuelist=valuelist
   )
   retriever.close_conn()
   return jsondocs
 
 
-def get_all_persons(dbname: str, collname:str) -> list[str]:
+def get_all_persons_strlst(dbname: str, collname:str) -> list[str]:
   retriever = GenMongoDBFetcher()
-  jsondocs = retriever.find_by_querydict_n_collname(query={}, collname='persons')
+  jsondocs = retriever.find_by_querydict_n_collname_as_strlst(query={}, collname='persons')
   if jsondocs is None:
     return []
   return jsondocs
 
 
-def get_persons_by_cpfs(cpfs: list[str]) -> list:
+def get_persons_by_cpfs_as_strlst(cpfs: list[str]) -> list:
   dbname, collname = 'immeub_db', 'persons'
   if cpfs is None or len(cpfs) == 0:
-    return get_all_persons(dbname=dbname, collname=collname)
+    return get_all_persons_strlst(dbname=dbname, collname=collname)
   fieldname, valuelist = 'cpf', cpfs
-  jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname(
+  jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_strlst(
     fieldname=fieldname, valuelist=valuelist, collname=collname, dbname=dbname
   )
   return jsondocs
@@ -283,7 +291,7 @@ def get_rentcontract_by_number(contrnumber: str) -> str:
     collname=collname,
   )
   querydict = {'contrnumber': contrnumber}
-  mngdoc = mngfetcher.find_one_w_querydict_n_collname(
+  mngdoc = mngfetcher.find_one_w_querydict_n_collname_as_dict(
     querydict=querydict
   )
   return mngdoc
@@ -295,7 +303,7 @@ def mngfetch_rentcontract_by_contrnumber(contrnumber: str) -> str | None:
   fieldname, value = 'contrnumber', contrnumber
   fetcher = GenMongoDBFetcher(dbname=dbname, collname=collname)
   querydict = {fieldname: value}
-  mngdocs = fetcher.find_by_querydict_n_collname(querydict)
+  mngdocs = fetcher.find_by_querydict_n_collname_as_strlst(querydict)
   if mngdocs is None:
     return None
   mngdoc = mngdocs[0]
@@ -305,28 +313,28 @@ def mngfetch_rentcontract_by_contrnumber(contrnumber: str) -> str | None:
 def get_immeubles_by_nicknames(nicknames: list[str]) -> list:
   dbname, collname = 'immeub_db', 'immeubles'
   fieldname, valuelist = 'imm_nickname', nicknames
-  jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname(
+  jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_strlst(
     fieldname=fieldname, valuelist=valuelist, collname=collname, dbname=dbname
   )
   return jsondocs
 
 
-def find_immeuble_by_nickname(imm_nickname):
+def find_immeuble_by_nickname_as_dict(imm_nickname):
   collname, dbname = 'immeubles', 'immeub_db'
   mngfetcher = GenMongoDBFetcher(
     dbname=dbname,
     collname=collname,
   )
-  mngdoc = mngfetcher.find_one_w_querydict_n_collname(
+  mngdoc = mngfetcher.find_one_w_querydict_n_collname_as_dict(
     querydict={'imm_nickname': imm_nickname}
   )
   return mngdoc
 
 
-def get_billingcards_by_contrnumbers(contrnumbers: list[str]) -> list:
+def get_billingcards_by_contrnumbers_as_strlst(contrnumbers: list[str]) -> list:
   dbname, collname = 'immeub_db', 'billingcards'
   fieldname, valuelist = 'contrnumber', contrnumbers
-  jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname(
+  jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_strlst(
     fieldname=fieldname, valuelist=valuelist, collname=collname, dbname=dbname
   )
   return jsondocs
@@ -336,7 +344,7 @@ def adhoctest1():
   # persons
   cpfs = ['12345678909']
   print('cpfs', cpfs)
-  persons = get_persons_by_cpfs(cpfs)
+  persons = get_persons_by_cpfs_as_strlst(cpfs)
   # persons = json.dumps(persons, indent=2)
   print('persons', persons)
   # immeubles
@@ -347,13 +355,13 @@ def adhoctest1():
   # billingcards
   contrnumbers = ['CDouto202401']
   print('contrnumbers', contrnumbers)
-  billingcards = get_billingcards_by_contrnumbers(contrnumbers)
+  billingcards = get_billingcards_by_contrnumbers_as_strlst(contrnumbers)
   print('billingcards', billingcards)
 
 def adhoctest2():
   """
   """
-  persons = get_persons_by_cpfs([])
+  persons = get_persons_by_cpfs_as_strlst([])
   # persons = json.dumps(persons, indent=2)
   print('persons', persons)
   # =======================

@@ -7,13 +7,16 @@ import art.immeub.rent.mdb.mongo_rent_retriever as mreader  # .MongoDBCollection
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub
 import art.immeub.rent.bill.billingcard_pydantic as bcard  #
+
+from art.immeub.rent.billmodels.billingcard_pydantic import PydtcBillingCard
+
 PERSON_COLL = 'persons'
 
 
 def get_persons_by_cpfs(cpfs: list[str]) -> list[pers.PydtcPerson]:
   persons = []
   retriever = mreader.GenMongoDBFetcher()
-  docs = retriever.find_w_1coll_2fieldname_3list(
+  docs = retriever.find_w_1coll_2fieldname_3list_as_strlst(
     collname=PERSON_COLL,
     fieldname='cpf',
     valuelist=cpfs,
@@ -23,7 +26,7 @@ def get_persons_by_cpfs(cpfs: list[str]) -> list[pers.PydtcPerson]:
     doc['nomecompleto'] = doc['name']
     del doc['name']
     # del doc['cpf']
-    person = pers.PydtcPerson.instantiate_from_jsondict(doc)
+    person = pers.PydtcPerson.instantiate_fr_jsondict(doc)
     persons.append(person)
   return persons
 
@@ -33,9 +36,9 @@ def get_immeubles_by_nicknames(nicknames: list[str]) -> list[immeub.PydtcImmeubl
   retriever = mreader.GenMongoDBFetcher()
   query = {'imm_nickname': nicknames}
   collname = 'immeubles'
-  docs = retriever.find_by_querydict_n_collname(collname, query)
+  docs = retriever.find_by_querydict_n_collname_as_strlst(collname, query)
   for doc in docs:
-    location = immeub.PydtcImmeuble.instantiate_from_jsondict(**doc)
+    location = immeub.PydtcImmeuble.instantiate_fr_jsondict(**doc)
     locations.append(location)
   return locations
 
@@ -46,9 +49,9 @@ def get_billingcards_by_nn_n_refmonth(nn_n_refmonths: list[tuple[str, datetime.d
   retriever = mreader.GenMongoDBFetcher()
   query = {'contrnumber': contrnumbers}
   collname = 'billingcards'
-  docs = retriever.find_by_querydict_n_collname(collname, query)
+  docs = retriever.find_by_querydict_n_collname_as_strlst(collname, query)
   for doc in docs:
-    location = bcard.PydtcBillingCard.instantiate_from_json(**doc)
+    location = bcard.PydtcBillingCard.instantiate_fr_json_str(**doc)
     locations.append(location)
   return locations
 

@@ -10,7 +10,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 env_path = SCRIPT_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
 MONGODB_CON_STR = os.getenv("MONGODB_CON_STR", "mongodb://localhost:27017")
-IMMEUB_DBNAME = os.getenv("IMMEUB_DBNAME", "immeub_db")
+IMMEUB_MNGDBNAME = os.getenv("IMMEUB_MNGDBNAME", "immeub_db")
 # collection names
 PERSON_COLLNAME = os.getenv("PERSON_COLLNAME", "persons")
 IMMEUBLE_COLLNAME = os.getenv("IMMEUBLE_COLLNAME", "immeubles")
@@ -25,7 +25,7 @@ def show_env_vars():
   """
   ostr = f"""
     LOCAL_MONGODB_CONSTR={MONGODB_CON_STR}
-    IMMEUB_DBNAME={IMMEUB_DBNAME}
+    IMMEUB_MNGDBNAME={IMMEUB_MNGDBNAME}
     BILLINGCARD_COLLNAME={BILLINGCARD_COLLNAME}
     PERSON_COLLNAME={PERSON_COLLNAME}
     IMMEUBLE_COLLNAME={IMMEUBLE_COLLNAME}

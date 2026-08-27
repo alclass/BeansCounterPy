@@ -8,11 +8,13 @@ import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 import json
 from pymongo import MongoClient
 from art.immeub.rent.mdb import MONGODB_CON_STR
-from art.immeub.rent.mdb import IMMEUB_DBNAME
+from art.immeub.rent.mdb import IMMEUB_MNGDBNAME
 from art.immeub.rent.mdb import BILLINGCARD_COLLNAME
 
 
-def remove_none_values_fr_dict_recurs(data):
+def remove_none_values_fr_dict_recurs(data: dict) -> dict | None:
+  if data is None:
+    return None
   odata = {}
   for k, v in data.items():
     if v is None:
