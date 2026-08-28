@@ -39,7 +39,7 @@ class PydtcPayment(pydantic.BaseModel):
     # if the user passed a raw string/number instead of a person object
     if "payor_cpf" in values and "payor" not in values:
       payor_cpf = values.pop("payor_cpf")
-      values["payor"] = pers.fetch_person_by_cpf(payor_cpf)
+      values["payor"] = pers.fetch_pydtcperson_by_cpf(payor_cpf)
     return values
 
   @pydantic.computed_field

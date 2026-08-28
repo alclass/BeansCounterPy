@@ -8,11 +8,12 @@ import settings as sett
 from pathlib import Path
 import art.immeub.rent.billmodels.billingcard_pydantic as bcard  # bcard.PydtcBillingCard
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.
+import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentm  # pers.
 # Set up the template environment to load files from the current directory
 middlepath = "js/templates/jinjatemplates"
 appsrootfolder = Path(sett.APP_ROOTFOLDER)
 templates_abspath = appsrootfolder / middlepath
-templatefilename = 'person_template.html'
+templatefilename = 'rentcontract_template.html'
 templatefile = templates_abspath / templatefilename
 
 
@@ -32,13 +33,13 @@ def get_template() -> jinja2.Template:
   return template
 
 
-def render_html(person) -> None:
+def render_html(rentcontract) -> None:
   """
   To import it:
     import art.immeub.rent.htmltemplates.jinja2_adhoctest1 as jj2  # jj2.render_html()
   """
   template = get_template()
-  rendered_html = template.render(person=person)
+  rendered_html = template.render(rc=rentcontract)
   outputfile = templates_abspath / "output_person_template.html"
   # Save the generated content to a new HTML file
   with open(outputfile, "w", encoding="utf-8") as f:
@@ -47,18 +48,22 @@ def render_html(person) -> None:
   print(scrmsg)
 
 
-def adhoctest1() -> None:
-  cpf = '12345678224'
-  person = pers.fetch_pydtcperson_by_cpf(cpf)
-  if person is None:
-    scrmsg = f"Person {cpf} not found!"
+def jinjarender_example_rentcontract() -> None:
+  contrnumber = 'CDouto202401'
+  rentcontract = rentm.fetch_rentcontract_by_contrnumber(contrnumber)
+  if rentcontract is None:
+    scrmsg = f"rentcontract {contrnumber} not found!"
     print(scrmsg)
     return
-  print('person', person)
-  persondict = person.to_jsondict()
-  print(persondict)
+  print('rentcontract', rentcontract)
+  rentcontractdict = rentcontract.to_jsondict()
+  print(rentcontractdict)
   print('Render')
-  render_html(person)
+  render_html(rentcontract)
+
+
+def adhoctest1() -> None:
+  jinjarender_example_rentcontract()
 
 
 def process():

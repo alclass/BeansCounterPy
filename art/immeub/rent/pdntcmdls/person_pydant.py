@@ -29,19 +29,29 @@ import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 CPFTYPE = Annotated[str, StringConstraints(pattern=r"\d{11}")]
 
 
-def fetch_persons_by_cpfs(cpfs: list[str]) -> list["PydtcPerson"]:
-  persondocs = mngfetch.get_persons_by_cpfs_as_jsonstrlst(cpfs)
-  persons = []
-  for persondoc in persondocs:
-    person = PydtcPerson.instantiate_fr_jsonstr(persondoc)
-    persons.append(person)
+def dbfetch_pydtcpersons_by_cpfs(cpfs: list[str]) -> "list[PydtcPerson]":
+  dbname, collname = 'immeub_db', 'persons'
+  dbfetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
+  docs = dbfetcher.find_w_1coll_2fieldname_3list_as_dictlst(
+    fieldname='cpf',
+    valuelist=cpfs,
+  )
+  inst_fn = PydtcPerson.instantiate_fr_jsondict
+  persons = [inst_fn(doc) for doc in docs]
+  pass
   return persons
 
 
-def fetch_person_by_cpf(cpf: str) -> "PydtcPerson | None":
-  persons = fetch_persons_by_cpfs([cpf])
-  if len(persons) > 0:
-    return persons[0]
+def dbfetch_pydtcperson_by_cpf(cpf: str) -> "PydtcPerson | None":
+  dbname, collname = 'immeub_db', 'persons'
+  dbfetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
+  querydict = {'cpf': cpf}
+  doc = dbfetcher.find_one_w_querydict_n_collname_as_dict(
+    querydict=querydict,
+  )
+  if doc:
+    person = PydtcPerson.instantiate_fr_jsondict(doc)
+    return person
   return None
 
 
@@ -80,6 +90,19 @@ class PydtcPerson(BaseModel):
   def cpf_fmt_w_dots(self) -> str:
     return self.get_fmt_cpf(adds_dots=True)
 
+  @property
+  def main_email(self):
+    if self.emails is not None:
+      if len(self.emails) > 0:
+        return self.emails[0]
+    return None
+
+  @property
+  def main_phone(self):
+    if self.phonenumbers is not None:
+      if len(self.phonenumbers) > 0:
+        return self.phonenumbers[0]
+    return None
 
   @property
   def firstname(self):
@@ -200,6 +223,26 @@ def adhoctest3():
     print('person docdict', docdict)
 
 
+def adhoctest4():
+  """
+
+  owner Luiz Lewis '12345678143'
+  tenant John Doe '12345678224'
+  tenant Mary Mariah '12345678496'
+  guarantor Stephen Warrants '12345678305'
+  """
+  owner_cpf = '12345678143'
+  owner = dbfetch_pydtcperson_by_cpf(owner_cpf)
+  print('owner', owner)
+  tentants_cpfs = ['12345678224', '12345678496']
+  tentants = dbfetch_pydtcpersons_by_cpfs(tentants_cpfs)
+  print('tentants', tentants)
+  guarantor_cpf = '12345678305'
+  guarantor = dbfetch_pydtcperson_by_cpf(guarantor_cpf)
+  print('guarantor', guarantor)
+
+
+
 def process():
   """
 
@@ -212,4 +255,4 @@ if __name__ == "__main__":
   adhoctest1()
   process()
   """
-  adhoctest3()
+  adhoctest4()

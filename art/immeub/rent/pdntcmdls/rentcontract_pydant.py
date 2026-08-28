@@ -59,7 +59,7 @@ def find_immeuble_by_nickname(imm_nickname):
   return location
 
 
-def find_rentcontract_by_contrnumber(contrnumber) -> "PydtcRentContract":
+def fetch_rentcontract_by_contrnumber(contrnumber) -> "PydtcRentContract":
   rentcontractdoc = mngfetch.get_rentcontract_by_number(contrnumber)
   rentcontract = PydtcRentContract.instantiate_fr_jsondict(rentcontractdoc)
   return rentcontract
@@ -159,7 +159,8 @@ class PydtcRentContract(pydantic.BaseModel):
   ori_rentvalue: typing.Annotated[Decimal, pydantic.Field(max_digits=12, decimal_places=4)]
   tenants: typing.Optional[List[pers.PydtcPerson]] = None
   guarantors: typing.Optional[List[pers.PydtcPerson]] = None
-  payee: typing.Optional[pers.PydtcPerson] = None
+  payor_ifother: typing.Optional[pers.PydtcPerson] = None
+  payee_ifother: typing.Optional[pers.PydtcPerson] = None
   nmonths_duration: int = 30
   has_proptax: bool = True
   has_incendtarif: bool = True
@@ -180,13 +181,16 @@ class PydtcRentContract(pydantic.BaseModel):
       values["location"] = location
     if "tenants_cpfs" in values and "tenants" not in values:
       tenants_cpfs = values.pop("tenants_cpfs")
-      values["tenants"] = pers.fetch_persons_by_cpfs(tenants_cpfs)
+      values["tenants"] = pers.dbfetch_pydtcpersons_by_cpfs(tenants_cpfs)
     if "guarantors_cpfs" in values and "guarantors" not in values:
       guarantors_cpfs = values.pop("guarantors_cpfs")
-      values["guarantors"] = pers.fetch_persons_by_cpfs(guarantors_cpfs)
-    if "payee_cpf" in values and "payee" not in values:
-      payee_cpf = values.pop("payee_cpf")
-      values["payee"] = pers.make_example_person_123456781()
+      values["guarantors"] = pers.dbfetch_pydtcpersons_by_cpfs(guarantors_cpfs)
+    if "payee_ifother_cpf" in values and "payee_ifother" not in values:
+      payee_ifother_cpf = values.pop("payee_ifother_cpf")
+      values["payee_ifother"] = pers.dbfetch_pydtcperson_by_cpf(payee_ifother_cpf)
+    if "payor_ifother_cpf" in values and "payor_ifother" not in values:
+      payor_ifother_cpf = values.pop("payor_ifother_cpf")
+      values["payor_ifother"] = pers.dbfetch_pydtcperson_by_cpf(payor_ifother_cpf)
     return values
 
   def get_pay_duedate_fr_refmonth(self, refmonth):
@@ -282,7 +286,7 @@ class PydtcRentContract(pydantic.BaseModel):
         else rmfs.make_refmonth_or_raise(p_refmonth)
     billingitems = []
     bi_seq = 1
-    bi = bipydtc.PydtcBillingItem(
+    bi = bitem.PydtcBillingItem(
       seq=bi_seq,
       descr="Aluguel mensal",
       refmonth=refmonth,
@@ -293,7 +297,7 @@ class PydtcRentContract(pydantic.BaseModel):
       value, descr = self.location.fetch_iptu_value_n_descr_w_refmonth(refmonth)
       if value:
         bi_seq += 1
-        bi = bipydtc.PydtcBillingItem(
+        bi = bitem.PydtcBillingItem(
           seq=bi_seq,
           descr=f"IPTU ({descr})",
           refmonth=refmonth,
@@ -304,7 +308,7 @@ class PydtcRentContract(pydantic.BaseModel):
       value, descr = self.location.fetch_condtarifa_n_descr_w_refmonth(refmonth)
       if value:
         bi_seq += 1
-        bi = bipydtc.PydtcBillingItem(
+        bi = bitem.PydtcBillingItem(
           seq=bi_seq,
           descr=descr,
           refmonth=refmonth,
@@ -316,7 +320,7 @@ class PydtcRentContract(pydantic.BaseModel):
       value, descr = incendtarif, incend_descr
       if value:
         bi_seq += 1
-        bi = bipydtc.PydtcBillingItem(
+        bi = bitem.PydtcBillingItem(
           seq=bi_seq,
           descr=f"Funesbom ({descr})",
           refmonth=refmonth,
@@ -431,6 +435,8 @@ class PydtcRentContract(pydantic.BaseModel):
       param_set.add('location')
       param_set.add('tenants')
       param_set.add('guarantors')
+      param_set.add('payee_ifother')
+      param_set.add('payor_ifother')
     # jsondict = self.model_dump(exclude=param_set)
     # # remove_none_values_fr_dict_recurs
     # print('jsondict', jsondict)
@@ -444,6 +450,24 @@ class PydtcRentContract(pydantic.BaseModel):
     Dispatches to to_json_str() with is_for_db=True.
     """
     return self.to_json_str(indent=indent, is_for_db=True)
+
+  @property
+  def payee(self) -> pers.PydtcPerson | None:
+    """
+    payee is the payment recipient.
+    The general rule is that this is the location's main owner.
+    If not her/him, this person should be in payee_ifother.
+
+    Obs:
+      the billingcard 'mounter' should look up payee_ifother first.
+      if payee_ifother is not None, she/he is the contract's payee.
+    """
+    try:
+      _payee = self.location.main_owner
+      return _payee
+    except (AttributeError, NameError):
+      pass
+    return None
 
   @pydantic.computed_field
   @property
@@ -461,16 +485,25 @@ class PydtcRentContract(pydantic.BaseModel):
 
   @pydantic.computed_field
   @property
-  def payee_cpf(self) -> str:
-    if self.payee is None:
+  def payee_ifother_cpf(self) -> str:
+    if self.payee_ifother is None:
       return "n/a"
-    return self.payee.cpf
+    return self.payee_ifother.cpf
+
+  @pydantic.computed_field
+  @property
+  def payor_ifother_cpf(self) -> str:
+    if self.payor_ifother is None:
+      return "n/a"
+    return self.payor_ifother.cpf
 
   @pydantic.computed_field
   @property
   def imm_nickname(self) -> immeub.IMMNICKNAMETYPE:
     if self.location is not None:
       return self.location.imm_nickname
+    # in case location is None, finding falls to
+    # imm_nickname which is a prefix to contrnumber
     if self.contrnumber is not None:
       try:
         imm_nn = self.contrnumber[:-6]
@@ -497,8 +530,9 @@ class PydtcRentContract(pydantic.BaseModel):
   def commasep_landlords(self) -> str:
     try:
       landlords = self.location.owners
-      if len(landlords) > 0:
-        return self.location.comma_sep_owner_names()
+      if landlords is not None:
+        if len(landlords) > 0:
+          return self.location.comma_sep_owner_names()
     except (AttributeError, NameError):
       pass
     return 'n/a'

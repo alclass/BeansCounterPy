@@ -31,7 +31,7 @@ MONTHLY_FIX_IR_DEC_STR = '0.02'
 MONTHLY_FIX_IR_DEC = Decimal(MONTHLY_FIX_IR_DEC_STR)
 DECIMAL_ZERO = Decimal('0')
 contrnumber_type = Annotated[str, pydantic.StringConstraints(max_length=12)]
-find_rentcontract_by_contrnumber = rentpydtc.find_rentcontract_by_contrnumber
+find_rentcontract_by_contrnumber = rentpydtc.fetch_rentcontract_by_contrnumber
 
 
 class PydtcBillingCard(pydantic.BaseModel):

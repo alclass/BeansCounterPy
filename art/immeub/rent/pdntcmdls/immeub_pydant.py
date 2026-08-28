@@ -32,6 +32,20 @@ def remove_none_values(data):
   return data
 
 
+def get_immeubles_by_nicknames(nicknames: list[str]) -> "list[PydtcImmeuble]":
+  locations = []
+  dbfetcher = mngfetch.GenMongoDBFetcher()
+  querydict = {'imm_nickname': nicknames}
+  collname = 'immeubles'
+  docs = dbfetcher.find_by_querydict_n_collname_as_dctlst(
+    querydict=querydict, collname=collname,
+  )
+  for doc in docs:
+    location = PydtcImmeuble.instantiate_fr_jsondict(**doc)
+    locations.append(location)
+  return locations
+
+
 def get_immeuble_by_nickname(imm_nickname: str) -> "PydtcImmeuble":
   dbname, collname = 'immeub_db', 'immeubles'
   mngfetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
@@ -67,7 +81,7 @@ class PydtcImmeuble(BaseModel):
       if 'owners_cpfs' in data and not data.get('owners'):
         cpfs = data.pop('owners_cpfs')  # Extract CPFs
         # Fetch full objects using your existing DB lookup function
-        owners = pers.fetch_persons_by_cpfs(cpfs)
+        owners = pers.dbfetch_pydtcpersons_by_cpfs(cpfs)
         data['owners'] = owners
     return data
 
@@ -105,13 +119,15 @@ class PydtcImmeuble(BaseModel):
   @computed_field
   @property
   def owners_cpfs(self) -> list[str]:
+    if self.owners is None or len(self.owners) == 0:
+      return []
     return [p.cpf for p in self.owners]
 
-  class Settings:
-    name = "immeubles"
-
-  class MongoImmeubRepr:
-    pass
+  @property
+  def main_owner(self) -> pers.PydtcPerson | None:
+    if self.owners is not None and len(self.owners) > 0:
+      return self.owners[0]
+    return None
 
   def comma_sep_owner_names(self):
     ostr = ""
@@ -243,10 +259,15 @@ class PydtcImmeuble(BaseModel):
 
 
 def get_immeuble_ex():
-  persons = pers.fetch_persons_by_cpfs([])
-  print(persons)
-  if persons is None or len(persons) == 0:
-    return None
+  owner_cpf = '12345678143'
+  owner = pers.dbfetch_pydtcperson_by_cpf(owner_cpf)
+  print('owner', owner)
+  tenants_cpfs = ['12345678224', '12345678496']
+  tenants = pers.dbfetch_pydtcpersons_by_cpfs(tenants_cpfs)
+  print('tenants', tenants)
+  guarantor_cpf = '12345678305'
+  guarantor = pers.dbfetch_pydtcperson_by_cpf(guarantor_cpf)
+  print('guarantor', guarantor)
   address = addr.PydtcAddress(
     street='Rua Carmo Douto',
     number="67",
@@ -260,7 +281,7 @@ def get_immeuble_ex():
     inscr_txincend="1234",
     inscr_munic="12345",
     address=address,
-    owners=persons,
+    owners=[owner],
   )
   # print(immeuble)
   return immeuble

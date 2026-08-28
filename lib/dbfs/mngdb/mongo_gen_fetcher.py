@@ -180,25 +180,39 @@ class GenMongoDBFetcher:
     docdict = self.mongodb_coll.find_one(querydict)
     return docdict
 
-  def find_by_querydict_n_collname_as_dictlst(
-      self, query: dict, collname: str | None = None
+  def find_by_querydict_n_collname_as_dctlst(
+      self, querydict: dict, collname: str | None = None
     ) -> list[str]:
     cursordocs = self.find_as_cursor_by_querydict_n_collname(
-      querydict=query, collname=collname
+      querydict=querydict, collname=collname
     )
     # Convert cursor to a list of dicts, then serialize to JSON string
     json_dictlst = list(map(lambda j: dict(j), cursordocs))
     return json_dictlst
 
   def find_by_querydict_n_collname_as_strlst(
-      self, query: dict, collname: str | None = None
-    ) -> list[str]:
+      self, querydict: dict, collname: str | None = None
+  ) -> list[str]:
     cursordocs = self.find_as_cursor_by_querydict_n_collname(
-      querydict=query, collname=collname
+      querydict=querydict, collname=collname
     )
     # Convert cursor to a list of dicts, then serialize to JSON string
     json_strlist = list(map(lambda j: dumps(j), cursordocs))
     return json_strlist
+
+  def find_w_1coll_2fieldname_3list_as_dictlst(
+      self, fieldname: str, valuelist: list, collname: str | None = None
+  ) -> list[dict]:
+    if collname is not None:
+      self.set_or_change_collname(collname)
+    if valuelist is None or len(valuelist) == 0:
+      docs = self.fetch_all_as_dctlst(collname=collname)
+    else:
+      query = {fieldname: {"$in": valuelist}}
+      docs = self.find_by_querydict_n_collname_as_dctlst(
+        querydict=query, collname=collname
+      )
+    return docs
 
   def find_w_1coll_2fieldname_3list_as_strlst(
       self, fieldname: str, valuelist: list, collname: str | None = None
@@ -214,16 +228,24 @@ class GenMongoDBFetcher:
       docs = self.fetch_all_as_strlst(collname=collname)
     else:
       docs = self.find_by_querydict_n_collname_as_strlst(
-        query=query, collname=collname
+        querydict=query, collname=collname
       )
     return docs
+
+  def fetch_all_as_dctlst(self, collname: str | None = None) -> list[str]:
+    """
+    Encapsulates find_by_coll_n_query() sending an empty {}.
+    """
+    return self.find_by_querydict_n_collname_as_dctlst(
+      querydict={}, collname=collname
+    )
 
   def fetch_all_as_strlst(self, collname: str | None = None) -> list[str]:
     """
     Encapsulates find_by_coll_n_query() sending an empty {}.
     """
     return self.find_by_querydict_n_collname_as_strlst(
-      query={}, collname=collname
+      querydict={}, collname=collname
     )
 
   def rename_fieldname_fr_to(
@@ -250,6 +272,21 @@ class GenMongoDBFetcher:
       self.mng_cli_con.close()
 
 
+def get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_dictlst(
+    fieldname: str, valuelist: list[str], collname: str, dbname: str | None = None
+  ) -> list[dict]:
+  # dbname, collname = 'immeub_db', 'persons'
+  retriever = GenMongoDBFetcher(
+    dbname=dbname,
+    collname=collname,
+  )
+  jsondocs = retriever.find_w_1coll_2fieldname_3list_as_strlst(
+    fieldname=fieldname, valuelist=valuelist
+  )
+  retriever.close_conn()
+  return jsondocs
+
+
 def get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_strlst(
     fieldname: str, valuelist: list[str], collname: str, dbname: str | None = None
   ) -> list[str]:
@@ -267,9 +304,20 @@ def get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_strlst(
 
 def get_all_persons_strlst(dbname: str, collname:str) -> list[str]:
   retriever = GenMongoDBFetcher()
-  jsondocs = retriever.find_by_querydict_n_collname_as_strlst(query={}, collname='persons')
+  jsondocs = retriever.find_by_querydict_n_collname_as_strlst(querydict={}, collname='persons')
   if jsondocs is None:
     return []
+  return jsondocs
+
+
+def get_persons_by_cpfs_as_jsondictlst(cpfs: list[str]) -> list:
+  dbname, collname = 'immeub_db', 'persons'
+  if cpfs is None or len(cpfs) == 0:
+    return []
+  fieldname, valuelist = 'cpf', cpfs
+  jsondocs = get_jdocs_by_1fieldname_2valuelist_3collname_4dbname_as_dictlst(
+    fieldname=fieldname, valuelist=valuelist, collname=collname, dbname=dbname
+  )
   return jsondocs
 
 

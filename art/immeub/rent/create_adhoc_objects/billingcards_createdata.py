@@ -16,6 +16,7 @@ import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInte
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
+from art.immeub.rent.pdntcmdls.rentcontract_pydant import PydtcRentContract
 from lib.dbfs.mngdb.mongo_gen_fetcher import mngfetch_rentcontract_by_contrnumber
 import art.immeub.rent.htmltemplates.jinja2_adhoctest1 as jj2  # jj2.render_html()
 
@@ -54,6 +55,46 @@ def print_billingcard_w_dict(dictdoc):
   print(dictdoc)
 
 
+def make_billingcard_1() -> bcard.PydtcBillingCard:
+  mkdt = dtfs.make_date_or_raise
+  rentcontract = dataex.make_rentcontract_1()
+  billingcard = PydtcBillingCard(
+    rentcontract=rentcontract,
+    refmonth=mkdt('2026-5-1'),
+  )
+  # billingcard.print_str_table_billingitems()
+  print('total', billingcard.str_billingcard())
+  mng_dict = billingcard.as_mongo_json_dict()
+  print(mng_dict)
+  mng_json = billingcard.as_mongo_json_repr()
+  print("mng_json = billingcard.as_mongo_json_repr()")
+  print(mng_json)
+  paydate, payvalue = mkdt('2026-06-11'), Decimal(3000)
+  payment = bipydtc.PydtcPayment(
+    date=paydate,
+    value=Decimal(3000),
+  )
+  payvalue = payment.value
+  paydate = payment.date
+  billingcard.add_payment_lst(payment)
+  billingcard.process_payments_in_month()
+  ostr = """billingcard.process_payment()
+  cre = billingcard.credito_no_fecho
+  deb = billingcard.debito_no_fecho
+  """
+  print(ostr)
+  cre = billingcard.credito_no_fecho
+  deb = billingcard.debito_no_fecho
+  moraquinhoes = billingcard.quinhoes_days_vals
+  ipca = billingcard.var_ir_as_ipca_dec
+  scrmsg = f"""cre={cre:.2f}; deb={deb:.2f} | billsvalue = {billingcard.mesreftotal} | duedate={billingcard.duedate} | ipca = {ipca}
+   | payvalue={payvalue:.2f} | paydate={paydate} | quinhoes={moraquinhoes}"""
+  print(scrmsg)
+  report = billingcard.report_quinhoes_days_vals()
+  print(report)
+  return billingcard
+
+
 def fetch_mongo_dictdoc_for_lingcard_w_refmonth_n_contrnumber(
     refmonth: datetime.date, contrnumber: str
   ) -> dict:
@@ -62,6 +103,7 @@ def fetch_mongo_dictdoc_for_lingcard_w_refmonth_n_contrnumber(
   querydict = {"contrnumber": contrnumber, "refmonth": refmonth.strftime("%Y-%m-%d")}
   dictdoc = dbfetcher.find_one_w_querydict_n_collname_as_dict(querydict)
   return dictdoc
+
 
 def print_billingcard_w_refmonth_n_contrnumber(
     refmonth: datetime.date, contrnumber: str
@@ -78,20 +120,32 @@ def adhoctest1():
   print('as_json_str =>', json_str)
 
 
-def adhoctest2():
+def make_a_billingcard_fr_a_rencontract_in_db():
   """
   reading it from db
   """
-  dbname, collname = 'immeub_db', 'billingcards'
+  # build a billingcard from a rentcontract in DB
+  dbname, collname = 'immeub_db', 'rentcontracts'
   dbfetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
   querydict = {"contrnumber": "CDouto202401"}
   docdict = dbfetcher.find_one_w_querydict_n_collname_as_dict(querydict)
-  print('type(docdict)', type(docdict), 'docdict', docdict)
-  if docdict is not None:
-    del docdict['_id']
-  obj = bcard.PydtcBillingCard.instantiate_fr_json_dict(docdict)
-  obj.rentcontract.payee = pers.make_example_person_123456781()
-  print('instantiate_fr_json_dict =>', obj)
+  rentcontract = PydtcRentContract.instantiate_fr_jsondict(docdict)
+  refmonth = rmfs.make_refmonth_or_raise('202404')
+  billingitems = rentcontract.make_n_get_standard_billingitems(p_refmonth=refmonth)
+  # print(rentcontract)
+  # print('type(docdict)', type(docdict), 'docdict', docdict)
+  billingcard = bcard.PydtcBillingCard(
+    refmonth=refmonth,
+    rentcontract=rentcontract,
+    billingitems=billingitems,
+  )
+  json_str = billingcard.to_json(is_for_db=True)
+  print('billingcard', json_str)
+
+  # print('instantiate_fr_json_dict =>', obj)
+
+def adhoctest2():
+  make_a_billingcard_fr_a_rencontract_in_db()
 
 
 def adhoctest3():

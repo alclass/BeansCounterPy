@@ -5,9 +5,9 @@
     <title>Title</title>
 </head>
 <body>
-Person: {{ person.nomecompleto }}
-CPF: {{ person.cpf }}
-Email: {{ person.main_email }}
-Phone: {{ person.main_phone }}
+  <h1>Nome: {{ person.nomecompleto }}</h1>
+  <h3>CPF: {{ person.cpf_fmt_w_dots }}</h3>
+  <h3>email: {{ person.main_email }}</h3>
+  <h3>phone: {{ person.main_phone or "n/a" }} </h3>
 </body>
 </html>

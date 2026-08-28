@@ -7,12 +7,12 @@ import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 
 
 def make_immeuble_ex1():
-  owner = pers.fetch_person_by_cpf('12345678143')
+  owner = pers.fetch_pydtcperson_by_cpf('12345678143')
   if owner is None:
     errmsg = 'Error: owner not found.'
     raise ValueError(errmsg)
-  tenant1 = pers.fetch_person_by_cpf('12345678224')
-  tenant2 = pers.fetch_person_by_cpf('12345678496')
+  tenant1 = pers.fetch_pydtcperson_by_cpf('12345678224')
+  tenant2 = pers.fetch_pydtcperson_by_cpf('12345678496')
   if tenant1 is None or tenant2 is None:
     errmsg = 'Error: tenant(s) not found.'
     raise ValueError(errmsg)
@@ -20,7 +20,7 @@ def make_immeuble_ex1():
   if None in tenants:
     errmsg = 'Error: tenants not found.'
     raise ValueError(errmsg)
-  guarantor = pers.fetch_person_by_cpf('12345678305')
+  guarantor = pers.fetch_pydtcperson_by_cpf('12345678305')
   if guarantor is None:
     errmsg = 'Error: guarantor not found.'
     raise ValueError(errmsg)

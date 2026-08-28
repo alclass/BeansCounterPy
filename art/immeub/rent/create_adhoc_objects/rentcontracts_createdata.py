@@ -3,7 +3,6 @@ art/immeub/rent/testdata/rentcontracts_createdata.py
   Contains instantiation examples for the 'rent app'.
 """
 from decimal import Decimal
-import art.immeub.rent.billmodels.billingcard_pydantic as bcard
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeub  # immueb.Immeuble
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.Person
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc
@@ -17,8 +16,8 @@ def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
   art.immeub.rent.bill.data_example_contract.make_example_contract
   import art.immeub.rent.bill.data_example_contract as dataex  # dataex.make_example_contract
   """
-  tenant1 = pers.fetch_person_by_cpf('12345678224')
-  tenant2 = pers.fetch_person_by_cpf('12345678496')
+  tenant1 = pers.dbfetch_pydtcperson_by_cpf('12345678224')
+  tenant2 = pers.dbfetch_pydtcperson_by_cpf('12345678496')
   if tenant1 is None or tenant2 is None:
     errmsg = 'Error: tenant(s) not found.'
     raise ValueError(errmsg)
@@ -26,13 +25,16 @@ def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
   if None in tenants:
     errmsg = 'Error: tenants not found.'
     raise ValueError(errmsg)
-  guarantor = pers.fetch_person_by_cpf('12345678305')
+  guarantor = pers.dbfetch_pydtcperson_by_cpf('12345678305')
   if guarantor is None:
     errmsg = 'Error: guarantor not found.'
     raise ValueError(errmsg)
   location = immeub.get_immeuble_ex()
+  if location is None:
+    errmsg = f"Error: could not instantiate immeble from get_immeuble_ex()."
+    raise ValueError(errmsg)
   monthlyrentvalue = Decimal(2000)
-  contr_inidate = dtfs.make_date_or_raise("2024-2-1")
+  contr_inidate = dtfs.make_date_or_raise("2024-1-1")
   contrnumber = location.get_contrnumber_w_inirefmonth(contr_inidate)
   rentcontract = rentpydtc.PydtcRentContract(
     contrnumber=contrnumber,
@@ -53,46 +55,6 @@ def make_rentcontract_1() -> rentpydtc.PydtcRentContract:
   jsonstr = rentcontract.to_json_str(is_for_db=True)
   print(jsonstr)
   return rentcontract
-
-
-def make_billingcard_1() -> bcard.PydtcBillingCard:
-  mkdt = dtfs.make_date_or_raise
-  rentcontract = dataex.make_rentcontract_1()
-  billingcard = PydtcBillingCard(
-    rentcontract=rentcontract,
-    refmonth=mkdt('2026-5-1'),
-  )
-  # billingcard.print_str_table_billingitems()
-  print('total', billingcard.str_billingcard())
-  mng_dict = billingcard.as_mongo_json_dict()
-  print(mng_dict)
-  mng_json = billingcard.as_mongo_json_repr()
-  print("mng_json = billingcard.as_mongo_json_repr()")
-  print(mng_json)
-  paydate, payvalue = mkdt('2026-06-11'), Decimal(3000)
-  payment = bipydtc.PydtcPayment(
-    date=paydate,
-    value=Decimal(3000),
-  )
-  payvalue = payment.value
-  paydate = payment.date
-  billingcard.add_payment_lst(payment)
-  billingcard.process_payments_in_month()
-  ostr = """billingcard.process_payment()
-  cre = billingcard.credito_no_fecho
-  deb = billingcard.debito_no_fecho
-  """
-  print(ostr)
-  cre = billingcard.credito_no_fecho
-  deb = billingcard.debito_no_fecho
-  moraquinhoes = billingcard.quinhoes_days_vals
-  ipca = billingcard.var_ir_as_ipca_dec
-  scrmsg = f"""cre={cre:.2f}; deb={deb:.2f} | billsvalue = {billingcard.mesreftotal} | duedate={billingcard.duedate} | ipca = {ipca}
-   | payvalue={payvalue:.2f} | paydate={paydate} | quinhoes={moraquinhoes}"""
-  print(scrmsg)
-  report = billingcard.report_quinhoes_days_vals()
-  print(report)
-  return billingcard
 
 
 def make_example_person():
