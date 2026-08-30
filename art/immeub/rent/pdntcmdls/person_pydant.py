@@ -124,6 +124,10 @@ class PydtcPerson(BaseModel):
       pass
     return _lastname
 
+  @property
+  def first_n_last_names(self):
+    return self.get_first_n_last_names()
+
   def get_first_n_last_names(self):
     lastname = self.nomecompleto.split()[-1]
     firstname_lastname = f"{self.firstname} {self.lastname}"

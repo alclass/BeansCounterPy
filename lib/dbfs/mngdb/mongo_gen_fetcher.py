@@ -332,7 +332,7 @@ def get_persons_by_cpfs_as_jsonstrlst(cpfs: list[str]) -> list:
   return jsondocs
 
 
-def get_rentcontract_by_number(contrnumber: str) -> str:
+def get_rentcontract_by_number(contrnumber: str) -> dict:
   collname = 'rentcontracts'
   mngfetcher = GenMongoDBFetcher(
     dbname='immeub_db',

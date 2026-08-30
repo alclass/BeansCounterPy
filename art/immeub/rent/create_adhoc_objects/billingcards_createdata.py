@@ -11,6 +11,7 @@ from sympy import pretty_print
 
 import art.immeub.rent.create_adhoc_objects.rentcontracts_createdata as rc_create  # rc_create.make_rentcontract_1
 import art.immeub.rent.billmodels.billingcard_pydantic as bcard  # bcard.PydtcBillingCard
+import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bcard.PydtcBillingCard
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # bcard.PydtcBillingCard
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.datesetc.datefs as dtfs
@@ -144,6 +145,34 @@ def make_a_billingcard_fr_a_rencontract_in_db():
 
   # print('instantiate_fr_json_dict =>', obj)
 
+
+def make_billingcard2():
+  """
+
+  """
+  contrnumber = 'CDouto202401'
+  print('contrnumber =>', contrnumber)
+  refmonth = rmfs.make_refmonth_or_raise('2026-4')
+  billingitems = bitems.make_4_billingitems(refmonth)
+  billingcard = bcard.PydtcBillingCard(
+    refmonth=refmonth,
+    contrnumber='CDouto202401',
+    billingitems=billingitems
+  )
+  payments = []
+  payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
+  payments.append(payment)
+  paydate = billingcard.duedate + relativedelta(days=11)
+  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
+  payments.append(payment)
+  billingcard.add_payment_lst(payments)
+  billingcard.process()
+  # print('billingcard =>', billingcard)
+  json_str = billingcard.to_json(indent=2, is_for_db=True)
+  print('json_str for Jinja2 =>', json_str)
+  return billingcard
+
+
 def adhoctest2():
   make_a_billingcard_fr_a_rencontract_in_db()
 
@@ -173,4 +202,4 @@ if __name__ == "__main__":
   adhoctest1()
   """
   # adhoctest1()
-  adhoctest2()
+  make_billingcard2()

@@ -67,20 +67,22 @@ class PydtcBillingCard(pydantic.BaseModel):
   @property
   def contrnumber(self) -> str:
     # Convenient access to the inner attribute without data duplication
-    if self.rentcontract is None:
-      return "n/a"
-    return self.rentcontract.contrnumber
+    try:
+      return self.rentcontract.contrnumber
+    except AttributeError:
+      pass
+    return "n/a"
 
   @pydantic.computed_field
   @property
-  def billing_id(self) -> str:
-    if self.rentcontract is None:
-      return "n/a"
-      if self.rentcontract.location is None:
-        return "n/a"
-    rmstr = self.rm_as_yyyymm
-    _billing_id = f"{self.rentcontract.location.imm_nickname}MR{rmstr}"
-    return _billing_id
+  def bc_id(self) -> str:
+    try:
+      imm_nn = self.rentcontract.location.imm_nickname
+      _billing_id = f"{imm_nn}MR{self.rm_as_yyyymm}"
+      return _billing_id
+    except AttributeError:
+      pass
+    return "n/a"
 
   @property
   def rm_as_yyyymm(self) -> str:
@@ -110,7 +112,6 @@ class PydtcBillingCard(pydantic.BaseModel):
       symbol = self.rentcontract.get_currency_symbol()
     return currency3letter, symbol
 
-
   @property
   def charging_month(self) -> datetime.date | None:
     """
@@ -119,6 +120,29 @@ class PydtcBillingCard(pydantic.BaseModel):
     if self.refmonth is None:
       return None
     return rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
+
+  @property
+  def duedate(self) -> datetime.date | None:
+    """
+    Gets due date from refmonth
+    The rule is one month later (the next month) on (up to) day 10
+      (at this version, day number may be configured via constant PAYMENT_DUE_DAY_IN_MONTH)
+    """
+    try:
+      if self.refmonth is not None:
+        return self.rentcontract.get_duedate_fr_refmonth(self.refmonth)
+    except AttributeError:
+      pass
+    return None
+
+  @property
+  def payopendate(self) -> datetime.date | None:
+    try:
+      if self.refmonth is not None:
+        return self.rentcontract.get_pay_windowpayopendate_fr_refmonth(self.refmonth)
+    except AttributeError:
+      pass
+    return None
 
   @property
   def credito_no_fecho(self) -> Decimal | None:
@@ -176,10 +200,13 @@ class PydtcBillingCard(pydantic.BaseModel):
     return _rentvalue
 
   def make_n_set_standard_billingitems(self):
-    self.billingitems = self.rentcontract.make_n_get_standard_billingitems(self.refmonth) or []
+    if self.refmonth is None:
+      errmsg = "Error: refmonth is None"
+      raise ValueError(errmsg)
+    self.billingitems = self.rentcontract.make_n_get_standard_billingitems(self.refmonth)
 
   def get_standard_billingitems(self) -> list[bitems.PydtcBillingItem]:
-    if self.billingitems is None:
+    if self.billingitems is None or len(self.billingitems) == 0:
       self.make_n_set_standard_billingitems()
     return self.billingitems
 
@@ -242,6 +269,8 @@ class PydtcBillingCard(pydantic.BaseModel):
     # sort payments date-asc
     # 'credito' é troco, devolução ou adiantamento; 'debito' é item de mora para o próximo mês
     # if one has value, the other must be zeroed: critic (or exception-raising) happens in function process_payments()
+    if self.billingitems is None or len(self.billingitems) == 0:
+      self.make_n_set_standard_billingitems()
     self.instantiate_fech_pagts_n_mora()
     self.fech_pagts_n_mora.payments.sort(key=lambda obj: obj.date)
     self.fech_pagts_n_mora.process()
@@ -329,7 +358,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     table = PrettyTable()
     headers = ["seq",  "descrição", "testdata-ref",  "valor-item", "mora-item", "total-item"]
     table.field_names = headers
-    for bi in self.get_standard_billingitems():
+    for bi in self.billingitems:
       values = bi.get_the_4_billingitem_values_as_lst()
       table.add_row(values)
     str_table = str(table)
@@ -498,23 +527,22 @@ def adhoctest1():
   print('rentcontract =>', billingcard)
   contrnumber = 'CDouto202401'
   print('contrnumber =>', contrnumber)
-  billingitems = bitems.make_4_billingitems()
   refmonth = rmfs.make_refmonth_or_raise('2026-4')
+  billingitems = bitems.make_4_billingitems(refmonth)
   billingcard = PydtcBillingCard(
     refmonth=refmonth,
     contrnumber='CDouto202401',
     billingitems=billingitems
   )
   payments = []
-  paydate = billingcard.rentcontract.get_duedate_fr_refmonth(refmonth)
-  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
+  payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
   payments.append(payment)
-  paydate = paydate + relativedelta(days=11)
+  paydate = billingcard.duedate + relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
   payments.append(payment)
   billingcard.add_payment_lst(payments)
   billingcard.process()
-  print('billingcard =>', billingcard)
+  # print('billingcard =>', billingcard)
   json_str = billingcard.to_json(indent=2, is_for_db=True)
   print('json_str =>', json_str)
 

@@ -20,11 +20,11 @@ locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 
 
-def make_4_billingitems():
+def make_4_billingitems(p_refmonth: datetime.date | None = None) -> "List[PydtcBillingItem]":
   """
   Instantiates 4 billing items example.
   """
-  refmonth = rmfs.make_current_refmonth()
+  refmonth = rmfs.make_refmonth_or_current(p_refmonth)
   strprice = '2000'
   ptable = ppbitems.PrettyTableForBI()
   billingitems = []
@@ -145,3 +145,6 @@ if __name__ == "__main__":
   """
   adhoctest1()
   make_4_billingitems()
+  refmonth = rmfs.make_refmonth_or_raise('2026-4')
+  make_4_billingitems(p_refmonth=refmonth)
+

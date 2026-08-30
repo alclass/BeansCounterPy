@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="css/customjs.css" rel="Stylesheet" type="text/css"/>
+  <title>Invoice</title>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <img class="logo" src="imgs/js_within_curlybraces.png" alt="Logo">
+      <div class="company-info"><strong>Locação Residencial</strong><br>
+        Mês referência: Abr/2026</div>
+      </div>
+    <div class="invoice-meta">
+      <div class="invoice-title">Cobrança Mensal</div>
+        <strong>Fatura nº:</strong> CDoutoMR202604 <br>
+        <strong>Data-início janela de pagamento:</strong> 2026-05-01 <br>
+        <strong>Data-fim janela de pagamento:</strong> 2026-05-10 <br>
+
+    </div>
+  </div>
+
+  <div class="recipient">
+    <strong>Locatário:</strong>
+    John Doe |
+    CPF: 123.456.789-09<br>
+    Rua Carmo Douto, 67 , apt 101    <br>
+    22.333-111 Barra Central<br>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:5%">#</th>
+        <th style="text-align: center;">descrição-item</th>
+        <th style="width:10%; text-align: center;">mês ref.</th>
+        <th style="width:15%; text-align: center;">valor em R$</th>
+        <th style="width:15%; text-align: center;">----</th>
+      </tr>
+    </thead>
+    <tbody>
+    
+      <tr>
+        <td> 1 </td>
+        <td style="text-align: center;"> aluguel mensal </td>
+        <td style="text-align: center;"> 2026-04-01 </td>
+        <td style="text-align: center;"> 2000 </td>
+        <td style="text-align: center;"> ------ </td>
+      </tr>
+    
+      <tr>
+        <td> 2 </td>
+        <td style="text-align: center;"> tarifa mensal condomínio </td>
+        <td style="text-align: center;"> 2026-04-01 </td>
+        <td style="text-align: center;"> 1258 </td>
+        <td style="text-align: center;"> ------ </td>
+      </tr>
+    
+      <tr>
+        <td> 3 </td>
+        <td style="text-align: center;"> IPTU prefeitura p/ 2 de 10 </td>
+        <td style="text-align: center;"> 2026-04-01 </td>
+        <td style="text-align: center;"> 550 </td>
+        <td style="text-align: center;"> ------ </td>
+      </tr>
+    
+      <tr>
+        <td> 4 </td>
+        <td style="text-align: center;"> mora aluguel/encargos </td>
+        <td style="text-align: center;"> 2026-03-01 </td>
+        <td style="text-align: center;"> 450 </td>
+        <td style="text-align: center;"> ------ </td>
+      </tr>
+    
+    </tbody>
+  </table>
+  <div class="totals">
+    <table>
+      <tr>
+        <td>Subtotal:</td>
+        <td style="text-align:right;"> ---- </td>
+      </tr>
+      <tr>
+        <td>VAT (19%):</td>
+        <td style="text-align:right;"> ---- </td>
+      </tr>
+      <tr>
+        <td><strong>Total:</strong></td>
+        <td style="text-align:right;"><strong>4258</strong></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="notes">
+    Lembrando que o pagamento em data posterior à janela enseja mora de 2% a.m. mais IPCA.<br>
+    Em havendo divergência de dados: textos ou valores, por favor, entre em contato.
+  </div>
+  
+
+  <div class="bottom-container">
+    <div class="sender-details">
+      <strong>Locador</strong> John Doe <br>
+      CPF: <br>
+      Pix-chave: None
+    </div>
+
+    
+  </div>
+</body>
+</html>

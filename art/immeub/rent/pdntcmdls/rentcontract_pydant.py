@@ -31,22 +31,23 @@ import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 from tabulate import tabulate
 from lib.fncfs.credeb_pkg.credit_debt_fs import ONE_THOUSANDTH_AS_STR
 DEFAULT_3LETTER_CURRENCY = init.DEFAULT_3LETTER_CURRENCY
-PAYMENT_DUE_DAY_IN_MONTH = 10
 DECIMAL_ZERO = Decimal(0)
 DEFAULT_MONTHLY_FIX_IR_DEC = Decimal(init.DEFAULT_MONTHLY_FIX_IR_DEC)
 MORA_M_MINUS_N_STR = init.MORA_M_MINUS_N
 MORA_BEGINS_ON_DAY = 1
+PAY_OPENWINDOW_MONTHSDAY = 1
+PAYMENT_DUE_DAY_IN_MONTH = 10
 CONTRNUMBERTYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=12)]
 
 
 def mk_contrnumber_w_immnickname_n_refmstr(
     imm_nickname: str, refmonth: datetime.datetime | str
   ) -> str:
+  """
   if imm_nickname is None:
-    errmsg = f"Error: location imm_nickname cannot be None."
+    errmsg = f "Error: location imm_nickname cannot be None."
     raise ValueError(errmsg)
-  if refmonth is None:
-    refmonth = rmfs.make_current_refmonth()
+  """
   if not isinstance(refmonth, datetime.datetime):
     refmonth = rmfs.make_refmonth_or_raise(refmonth)
   refmstr = refmonth.strftime('%Y%m')
@@ -59,7 +60,7 @@ def find_immeuble_by_nickname(imm_nickname):
   return location
 
 
-def fetch_rentcontract_by_contrnumber(contrnumber) -> "PydtcRentContract":
+def fetch_rentcontract_by_contrnumber(contrnumber: str) -> "PydtcRentContract":
   rentcontractdoc = mngfetch.get_rentcontract_by_number(contrnumber)
   rentcontract = PydtcRentContract.instantiate_fr_jsondict(rentcontractdoc)
   return rentcontract
@@ -150,7 +151,7 @@ class PydtcRentContract(pydantic.BaseModel):
 
   # imm_nickname: str = 'CDouto'
   contrnumber: str = pydantic.PrivateAttr(default_factory=lambda: None)
-  CPFTYPE = Annotated[str, StringConstraints(pattern=r"counterbar d{11}")]
+  CPFTYPE = Annotated[str, StringConstraints(pattern=r "counterbar d{11}")]
 
   """
   contrnumber: CONTRNUMBERTYPE
@@ -192,15 +193,6 @@ class PydtcRentContract(pydantic.BaseModel):
       payor_ifother_cpf = values.pop("payor_ifother_cpf")
       values["payor_ifother"] = pers.dbfetch_pydtcperson_by_cpf(payor_ifother_cpf)
     return values
-
-  def get_pay_duedate_fr_refmonth(self, refmonth):
-    if refmonth is None:
-      paymonth = datetime.date.today()
-    else:
-      paymonth = refmonth + relativedelta(months=1)
-    year, month = paymonth.year, paymonth.month
-    duedate = datetime.date(year=year, month=month, day=self.get_payment_dueday_in_month())
-    return duedate
 
   @staticmethod
   def get_monthsday_when_moracount_begins():
@@ -269,7 +261,7 @@ class PydtcRentContract(pydantic.BaseModel):
     return lastdate_inmonth
 
   def make_n_get_standard_billingitems(
-      self, p_refmonth: datetime.date | str | None = None
+      self, p_refmonth: datetime.date | str
     ) -> list[bitem.PydtcBillingItem]:
     """
     Creates the monthly BillingCard 'main mold'.
@@ -281,9 +273,7 @@ class PydtcRentContract(pydantic.BaseModel):
       4 funesbom (which is an annual fire dept charge)
     If other items apply, they must be included at the end of the billing card 'making' process.
     """
-    refmonth = rmfs.make_current_refmonth() \
-        if p_refmonth is None \
-        else rmfs.make_refmonth_or_raise(p_refmonth)
+    refmonth = rmfs.make_refmonth_or_current(p_refmonth)
     billingitems = []
     bi_seq = 1
     bi = bitem.PydtcBillingItem(
@@ -408,11 +398,14 @@ class PydtcRentContract(pydantic.BaseModel):
 
   @property
   def cur_rentvalue(self) -> Decimal:
-    if self._cur_rentvalue is not None:
-      return self._cur_rentvalue
-    # the next line is not necessary but helped avoid the IDE type-complaining
-    self._cur_rentvalue = self.ori_rentvalue
-    self.calc_n_set_cur_rentvalue()
+    # noinspection unreachable-code
+    if self._cur_rentvalue is None:
+      # the next line is not necessary but helped avoid the IDE type-complaining
+      # self._cur_rentvalue = self.ori_rentvalue
+      self.calc_n_set_cur_rentvalue()
+      if self._cur_rentvalue is None:
+        errmsg = "Error: cur_rentvalue is None at this point."
+        raise AttributeError(errmsg)
     return self._cur_rentvalue
 
   @property
@@ -467,6 +460,9 @@ class PydtcRentContract(pydantic.BaseModel):
       return _payee
     except (AttributeError, NameError):
       pass
+    if self.payee_ifother is not None:
+      _payee = self.payee_ifother
+      return _payee
     return None
 
   @pydantic.computed_field
@@ -500,8 +496,10 @@ class PydtcRentContract(pydantic.BaseModel):
   @pydantic.computed_field
   @property
   def imm_nickname(self) -> immeub.IMMNICKNAMETYPE:
-    if self.location is not None:
+    try:
       return self.location.imm_nickname
+    except (AttributeError, NameError):
+      pass
     # in case location is None, finding falls to
     # imm_nickname which is a prefix to contrnumber
     if self.contrnumber is not None:
@@ -513,16 +511,14 @@ class PydtcRentContract(pydantic.BaseModel):
     return "n/a"
 
   @classmethod
-  def instantiate_fr_jsondict(cls, jsondict) -> "PydtcRentContract":
+  def instantiate_fr_jsondict(cls, jsondict: dict) -> "PydtcRentContract":
     """
     The updated version with cls.model_validate(cleaned_data)
     The previous one had cls(**pdict)
-    """
     if jsondict is None:
       return None
+    """
     jsondict = mngfs.remove_none_values_fr_dict_recurs(jsondict)
-    # if 'location' in cleaned_data:
-    # pass
     obj = cls.model_validate(jsondict)
     return obj
 
@@ -539,9 +535,11 @@ class PydtcRentContract(pydantic.BaseModel):
 
   def commasep_tenants(self):
     ostr = ""
+    if self.tenants is None:
+      return "n/a"
     if len(self.tenants) > 0:
       for tenant in self.tenants:
-        ostr += tenant.nomecompleto + ", "
+        ostr += tenant.get_first_n_last_names() + ", "
       ostr = ostr.rstrip(", ")
       return ostr
     return 'n/a'
@@ -560,16 +558,16 @@ class PydtcRentContract(pydantic.BaseModel):
     dincurrencydict = getattr(dinero.currencies, self.currency3letter)
     return dincurrencydict
 
-  def make_din_fr_dec(self, dec) -> Decimal:
+  def make_din_fr_dec(self, dec) -> dinero.Dinero:
     din = make_dinero_fr_decimal(dec, self.din_currency_dictlike)
     return din
 
   @property
-  def din_cur_rentvalue(self) -> Decimal:
+  def din_cur_rentvalue(self) -> dinero.Dinero:
     return self.make_din_fr_dec(self.cur_rentvalue)
 
   @property
-  def din_ori_rentvalue(self) -> Decimal:
+  def din_ori_rentvalue(self) -> dinero.Dinero:
     return self.make_din_fr_dec(self.ori_rentvalue)
 
   @staticmethod
@@ -598,6 +596,10 @@ class PydtcRentContract(pydantic.BaseModel):
   def get_payment_dueday_in_month() -> int:
     return PAYMENT_DUE_DAY_IN_MONTH
 
+  @staticmethod
+  def get_pay_openwindow_monthsday() -> int:
+    return PAY_OPENWINDOW_MONTHSDAY
+
   def get_duedate_fr_refmonth(self, p_refmonth: datetime.date) -> datetime.date:
     """
     Gets due date from refmonth
@@ -605,10 +607,16 @@ class PydtcRentContract(pydantic.BaseModel):
       (at this version, day number may be configured via constant PAYMENT_DUE_DAY_IN_MONTH)
     """
     refmonth = rmfs.make_refmonth_or_raise(p_refmonth)
-    nextmonth = refmonth + relativedelta(months=1)
+    paymonth = refmonth + relativedelta(months=1)
     dueday = self.get_payment_dueday_in_month()
-    duedate =  nextmonth.replace(day=dueday)
+    duedate =  paymonth.replace(day=dueday)
     return duedate
+
+  def get_pay_windowpayopendate_fr_refmonth(self, p_refmonth: datetime.date) -> datetime.date:
+    refmonth = rmfs.make_refmonth_or_raise(p_refmonth)
+    paymonth = refmonth + relativedelta(months=1)
+    windowpayopendate = paymonth.replace(day=self.get_pay_openwindow_monthsday())
+    return windowpayopendate
 
   def get_currency_symbol(self):
     din = self.make_din_fr_dec(self.ori_rentvalue)
@@ -667,7 +675,8 @@ def adhoctest1():
   """
   persons = mngfetch.get_persons_by_cpfs_as_jsonstrlst([])
   if persons is None or len(persons) == 0:
-    print('No persons found. Returning.')
+    scrmsg = 'No persons found. Returning.'
+    print(scrmsg)
     return
   person = persons[0]
   print('person =', person)

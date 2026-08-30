@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="css/customjs.css" rel="Stylesheet" type="text/css"/>
+  <title>Invoice</title>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <img class="logo" src="imgs/js_within_curlybraces.png" alt="Logo">
+      <div class="company-info"><strong>Locação Residencial</strong><br>
+        Mês referência: {{ bc.rm_as_3letrasbaryyyy }}</div>
+      </div>
+    <div class="invoice-meta">
+      <div class="invoice-title">Cobrança Mensal</div>
+        <strong>Fatura nº:</strong> {{ bc.bc_id }} <br>
+        <strong>Data-início janela de pagamento:</strong> {{ bc.payopendate }} <br>
+        <strong>Data-fim janela de pagamento:</strong> {{ bc.duedate }} <br>
+
+    </div>
+  </div>
+
+  <div class="recipient">
+    <strong>Locatário:</strong>
+    {{ bc.rentcontract.main_tenant.first_n_last_names }} |
+    CPF: {{ bc.rentcontract.main_tenant.cpf_fmt_w_dots }}<br>
+    {{ bc.rentcontract.location.address.line1 }}<br>
+    {{ bc.rentcontract.location.address.line2 }}<br>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:5%">#</th>
+        <th style="text-align: center;">descrição-item</th>
+        <th style="width:10%; text-align: center;">mês ref.</th>
+        <th style="width:15%; text-align: center;">valor em R$</th>
+        <th style="width:15%; text-align: center;">----</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for bi in bc.billingitems %}
+      <tr>
+        <td> {{ bi.seq }} </td>
+        <td style="text-align: center;"> {{ bi.descr }} </td>
+        <td style="text-align: center;"> {{ bi.refmonth }} </td>
+        <td style="text-align: center;"> {{ bi.value }} </td>
+        <td style="text-align: center;"> ------ </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="totals">
+    <table>
+      <tr>
+        <td>Subtotal:</td>
+        <td style="text-align:right;"> ---- </td>
+      </tr>
+      <tr>
+        <td>VAT (19%):</td>
+        <td style="text-align:right;"> ---- </td>
+      </tr>
+      <tr>
+        <td><strong>Total:</strong></td>
+        <td style="text-align:right;"><strong>{{ bc.mesreftotal }}</strong></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="notes">
+    Lembrando que o pagamento em data posterior à janela enseja mora de 2% a.m. mais IPCA.<br>
+    Em havendo divergência de dados: textos ou valores, por favor, entre em contato.
+  </div>
+  
+
+  <div class="bottom-container">
+    <div class="sender-details">
+      <strong>Locador</strong> {{ bc.rentcontract.payee.first_n_last_names }} <br>
+      CPF: {{ bc.rentcontract.payee.cpf_fmt }}<br>
+      Pix-chave: {{ bc.rentcontract.payee.chavepix }}
+    </div>
+
+    
+  </div>
+</body>
+</html>

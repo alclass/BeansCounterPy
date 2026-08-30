@@ -7,10 +7,7 @@ To import PydtcAddress elsewhere:
 import json
 from decimal import Decimal
 from typing import Annotated, Optional
-import datetime
-import lib.numberfs.cpf_verifica as cpfv  # cpfv.calcula_cpf_via_reduce
-from beanie import Document, Link
-from pydantic import field_validator, EmailStr, BaseModel, StringConstraints  # Field
+from pydantic import StringConstraints  # Field, field_validator, EmailStr,
 import pydantic
 CPFTYPE = Annotated[str, StringConstraints(pattern=r"\d{11}")]
 STREETNAMETYPE = Annotated[str, StringConstraints(max_length=80)]
@@ -18,7 +15,7 @@ ZIPCODETYPE = Annotated[str, StringConstraints(max_length=8)]
 STREETNUMBERTYPE = ZIPCODETYPE
 
 
-class PydtcAddress(BaseModel):
+class PydtcAddress(pydantic.BaseModel):
   """
   import art.immeub.rent.pdntcmdls.address_pydantic as addr  # addr.PydtcAddress
   """
@@ -78,29 +75,40 @@ class PydtcAddress(BaseModel):
     obj = cls.model_validate(pdict)
     return obj
 
-  def __str__(self):
-    """
-    Address is composed of 3 lines
-    A line has a 70-char size
-    """
-    lines = []
+  @property
+  def line1(self) -> str:
     complement = f", {self.complement:11}" if self.complement else ""
-    line = f"{self.street}, {self.number:04}{complement}"
-    lines.append(line)
+    line = f"{self.street}, {self.number} {complement}"
+    return line
+
+  @property
+  def line2(self) -> str:
     zipcode = ""
     if self.zipcode is not None:
       zipcode = f"{self.fmt_zipcode}"
     line = zipcode
     if self.neighborhood is not None:
       line += f" {self.neighborhood}"
-    lines.append(line)
+    return line
+
+  @property
+  def line3(self) -> str:
     line = ""
     if self.city is not None:
       line = f"{self.city}"
       if self.state is not None:
         line += f" {self.state}"
-    if len(line) > 0:
-      lines.append(line)
+    return line
+
+
+  def __str__(self) -> str:
+    """
+    Address is composed of 3 lines
+    A line has a 70-char size
+    """
+    lines = [self.line1, self.line2]
+    if len(self.line3) > 0:
+      lines.append(self.line3)
     trunktext = '\n'.join(lines)
     return trunktext
 
