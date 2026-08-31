@@ -10,7 +10,6 @@ from typing import Optional
 import pydantic
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
-import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fncfs
 DECIMAL_ZERO = Decimal('0')
 DECIMAL_ONE = Decimal('1')
@@ -22,8 +21,8 @@ class SameMonthMora(pydantic.BaseModel):
   todate: datetime.date  # find out, in Pydantic, how to criticize todate so that is not smaller than fromdate
   prevalue: Decimal  # the client-caller has to control whether prevalue is positive (credit) or negative (debt)
   fix_ir_dec: Decimal
-  has_ipca: bool = True
-  _var_ir: Optional[Decimal] = None  # TODO to make this flexible for any kind of financial index (beyond IPCA)
+  var_ir_dec: Decimal
+  var_ir_sigla: str = "IPCA"
   _postvalue: Optional[Decimal] = None
   _increase: Optional[Decimal] = None
 
@@ -34,7 +33,6 @@ class SameMonthMora(pydantic.BaseModel):
       errmsg = f'todate {self.todate} cannot be earlier than fromdate {self.fromdate}'
       raise ValueError(errmsg)
     return self
-
 
   def explains(self) -> str:
     ir_pct = self.ir_idx * 100
@@ -67,43 +65,9 @@ class SameMonthMora(pydantic.BaseModel):
     return self._increase
 
   @property
-  def ipca_dec(self) -> Decimal:
-    """
-    Fetches the month's IPCA for M-2 from payment refmonth (M-1 from billing refmonth).
-
-    Design issue:
-     There is I/O-fetching in here: an alternative is to input ipca_dec via the constructor
-     and avoid I/O-fetching in this class.
-     Whatever the case, as it is, if ipca-fetching fails, it's set as zero, instead of raising an exception.
-    """
-    if not self.has_ipca:
-      return DECIMAL_ZERO
-    if self._var_ir is not None:
-      return self._var_ir
-    cacher = fncach.IpcaAPICacherRetriever()
-    ipca_refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, M_MINUS_N_POSTPAYCASE)
-    ipca_dec = cacher.fetch_ipca_dec_for_refmonth(ipca_refmonth)
-    self._var_ir = ipca_dec if ipca_dec is not None else DECIMAL_ZERO
-    # noinspection bad-return
-    return self._var_ir
-
-  @property
-  def var_ir(self) -> Decimal:
-    """
-    Looks up boolean has_ipca:
-      a) if False, returns DECIMAL_ZERO;
-      b) if True, returns ipca_dec (that is in turn I/O-fetchable).
-    """
-    if not self.has_ipca:
-      # that's correct in the fix+var point of view
-      # on another theme, a reformulation may bring an index selection scheme instead of only 'ipca'
-      return DECIMAL_ZERO
-    return self.ipca_dec
-
-  @property
   def ir_idx(self) -> Decimal:
     """The sum of the fix part and the variable part of the return rate (or ir = interest rate)."""
-    return self.fix_ir_dec + self.var_ir
+    return self.fix_ir_dec + self.var_ir_dec
 
   @property
   def postvalue(self) -> Decimal:
@@ -153,7 +117,7 @@ class SameMonthMora(pydantic.BaseModel):
 
   def __str__(self) -> str:
     fr, to = self.fromdate, self.todate
-    ostr = f"SameMonthMora: fr={fr} to={to} ndays={self.moradays} ipca={self.ipca_dec:.4f} fix={self.fix_ir_dec:.2f}"
+    ostr = f"SameMonthMora: fr={fr} to={to} ndays={self.moradays} fix={self.fix_ir_dec:.2f} var={self.var_ir_dec:.4f}"
     preval, posval = self.prevalue, self.postvalue
     ostr += f"\n\t preval={preval:.2f} | posval={posval:.2f} | incr={self.increase:.2f} | ir={self.ir_idx:.4f} modays={self.moradays}"
     return ostr
@@ -259,6 +223,7 @@ def adhoctest2():
     fromdate=fromdate,
     todate=todate,
     fix_ir_dec=Decimal(0.02),
+    var_ir_dec=Decimal(0.0033),
     prevalue= 100 * d1,
   )
   print(mora)

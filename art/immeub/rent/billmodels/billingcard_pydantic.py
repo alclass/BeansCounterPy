@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 """
 art/immeub/rent/billmodels/billingcard_pydantic.py
+  Contains the Billing Card (pydantic) model class.
+
+  This class is, so to say, the center of the location rent monthly pay processing.
+  It gathers the payments, looks up the previous refmonth for either credit or debt (mora),
+    it calculates credit/debt and mora, if any,
+    and then closes the month's billing on the last day of paymonth.
+
+  Characteristics of the 'closing':
+    a) it depends on manual input of the payor's payment(s) within the (open) paymonth;
+    b) the closing date is logical to the last day of paymonth, from which starts the (new) open paymonth.
 
 # from art.immeub.rent.pdntcmdls.schema_bizmodels import BillingCard
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"
@@ -18,6 +28,8 @@ import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bipydtc.Pydt
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
+# fndr.dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber
+import art.immeub.rent.mdb.objs_finder_from_mongocollections as fndr
 import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
@@ -32,6 +44,12 @@ MONTHLY_FIX_IR_DEC = Decimal(MONTHLY_FIX_IR_DEC_STR)
 DECIMAL_ZERO = Decimal('0')
 contrnumber_type = Annotated[str, pydantic.StringConstraints(max_length=12)]
 find_rentcontract_by_contrnumber = rentpydtc.fetch_rentcontract_by_contrnumber
+
+
+def dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber(contrnumber: str, refmonth: datetime.date) -> "PydtcBillingItem":
+  dictdoc = fndr.dbfetch_billingcard_docdict_w_refmonth_n_contrnumber_asdict(contrnumber=contrnumber, refmonth=refmonth)
+  billingcard = PydtcBillingCard.instantiate_fr_json_dict(dictdoc)
+  return billingcard
 
 
 class PydtcBillingCard(pydantic.BaseModel):
@@ -50,7 +68,10 @@ class PydtcBillingCard(pydantic.BaseModel):
   rentcontract: rentpydtc.PydtcRentContract = pydantic.Field(default_factory=lambda: None)
   refmonth: Optional[datetime.date]  # = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
   billingitems: list[bitems.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
-  fech_pagts_n_mora: pproc.PaymentProcessor = pydantic.Field(default_factory=lambda: None)
+  fech_pagts_n_mora: Optional[pproc.PaymentProcessor] = None
+  prev_monthmoras: list[moram.SameMonthMora] = pydantic.Field(exclude=True, default_factory=lambda: None)
+  prev_debt: Decimal = pydantic.Field(exclude=True, default_factory=lambda: None)
+  prev_credit: Decimal = pydantic.Field(exclude=True, default_factory=lambda: None)
 
   @pydantic.model_validator(mode='before')
   @classmethod
@@ -96,13 +117,15 @@ class PydtcBillingCard(pydantic.BaseModel):
     return rmstr
 
   @property
-  def paym_as_3letrasbaryyyy(self) -> str:
-    if self.rentcontract is None:
-      return "n/a"
-    paymonth = self.rentcontract.get_pay_duedate_fr_refmonth(self.refmonth)
-    mes3letras = rmfs.get_pt_3lettermonth_fr_nmonth(paymonth.month)
-    rmstr = f"{mes3letras}/{paymonth.year}"
-    return rmstr
+  def paymo_as_3letrasbaryyyy(self) -> str:
+    try:
+      paymonth = self.rentcontract.get_pay_duedate_fr_refmonth(self.refmonth)
+      mes3letras = rmfs.get_pt_3lettermonth_fr_nmonth(paymonth.month)
+      rmstr = f"{mes3letras}/{paymonth.year}"
+      return rmstr
+    except AttributeError:
+      pass
+    return "n/a"
 
   @property
   def currency3letter_n_symbol(self) -> tuple[str, str]:
@@ -205,6 +228,44 @@ class PydtcBillingCard(pydantic.BaseModel):
       raise ValueError(errmsg)
     self.billingitems = self.rentcontract.make_n_get_standard_billingitems(self.refmonth)
 
+  def make_n_append_ifany_prev_bc_credit_billingitem(self) -> None:
+    """
+    IMPORTANT (positive/negative number consideration):
+      Notice that for the 'billing card' (this), the convention positive/negative is inverted for credit/debt.
+      Here, credit is negative, because the total items in debt is considered positive.
+
+    Notice that in process_payment() the positive/negative is conventioned normally
+      for debts as negative numbers and credits as positive numbers.
+    """
+    seq = len(self.billingitems) + 1
+    if self.prev_credit <= DECIMAL_ZERO:
+      return
+    # noinspection bad-argument-type
+    prev_rm = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
+    billingitem = bitems.PydtcBillingItem(
+      seq=seq,
+      refmonth=prev_rm,
+      descr="crédito na apuração do mês ant.",
+      value=-self.prev_credit,
+    )
+    self.billingitems.append(billingitem)
+
+  def make_n_append_ifany_prev_bc_mora_billingitem(self) -> None:
+    if self.prev_debt >= DECIMAL_ZERO:
+      return
+    if self.prev_bc_totalmora_ifany == DECIMAL_ZERO:
+      return
+    seq = len(self.billingitems) + 1
+    # noinspection bad-argument-type
+    prev_rm = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
+    billingitem = bitems.PydtcBillingItem(
+      seq=seq,
+      refmonth=prev_rm,
+      descr="mora acum. aluguel/encargos mês ant.",
+      value=prev_bc_total_mora,
+    )
+    self.billingitems.append(billingitem)
+
   def get_standard_billingitems(self) -> list[bitems.PydtcBillingItem]:
     if self.billingitems is None or len(self.billingitems) == 0:
       self.make_n_set_standard_billingitems()
@@ -232,48 +293,87 @@ class PydtcBillingCard(pydantic.BaseModel):
       _fatura_total = Decimal(_fatura_total)
     return _fatura_total
 
-  def instantiate_fech_pagts_n_mora(self):
-    if self.fech_pagts_n_mora is not None:
-      return
-    if self.billingitems is None:
-      errmsg = "Error: billingitems is None when attempting to instantiate fech_pagts_n_mora."
-      raise ValueError(errmsg)
-    ongoing_debt = -self.mesreftotal
-    self.fech_pagts_n_mora = pay.PaymentProcessor(
-      ongoing_debt=ongoing_debt,
-      duedate=self.duedate,
-      fix_ir_dec=self.monthly_fix_ir_dec,
-      has_ipca=True,
-    )
+  def instantiate_fech_pagts_n_mora(self) -> None:
+    if self.fech_pagts_n_mora is None:
+      if self.billingitems is None:
+        errmsg = "Error: billingitems is None when attempting to instantiate fech_pagts_n_mora."
+        raise ValueError(errmsg)
+      ongoing_debt = -self.mesreftotal
+      # noinspection bad-argument-type
+      self.fech_pagts_n_mora = pay.PaymentProcessor(
+        ongoing_debt=ongoing_debt,
+        duedate=self.duedate,
+        fix_ir_dec=self.monthly_fix_ir_dec,
+        has_ipca=True,
+      )
 
+
+  def lookup_n_set_mora_in_previous_refmonth_ifany(self) -> None:
+    if self.prev_monthmoras is not None:
+      return
+    self.prev_monthmoras = []
+    self.prev_debt = DECIMAL_ZERO
+    self.prev_credit = DECIMAL_ZERO
+    previous_rm = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
+    previous_bc = None
+    try:
+      previous_bc = dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber(
+        contrnumber=self.contrnumber, refmonth=previous_rm
+      )
+      self.prev_monthmoras = previous_bc.fech_pagts_n_mora.monthmoras
+      self.prev_debt = previous_bc.fech_pagts_n_mora.ongoing_debt
+      self.prev_credit = previous_bc.fech_pagts_n_mora.ongoing_credit
+    except AttributeError:
+      pass
+
+  def verify_previous_credit_or_debt_ifso_mk_bitem(self) -> None:
+    self.lookup_n_set_mora_in_previous_refmonth_ifany()
+    if self.prev_credit > DECIMAL_ZERO:
+      self.make_n_append_ifany_prev_bc_credit_billingitem()
+      return
+    if self.prev_debt < DECIMAL_ZERO:
+        self.make_n_append_ifany_prev_bc_mora_billingitem()
 
   def process_payments_in_month(self) -> None:
     """
     Processes payments in month.
-    Dispatches processing to quinhoes.process_payments() in library.
-    This process may be run once all payments are known. It may run at each pay,
-      but it always reruns from the beginning.
 
-    Receives back three variables:
-      a) credito_no_fecho
-      b) debito_no_fecho
-      c) quinhoes_days_vals
+    The process flow is the following:
+      1) run, or check its presence, the standard billing items formation;
+         the standard billing items recur monthly;
+      2) look up whether there is mora in the previous refmonth;
+         verify, in the previous billing card, whether there is a mora record;
+         the mora only exists if it's verified in the previous refmonth;
+      3) (this one is not implemented yet) verify an 'adhoc' extra billing item in database;
+      4) verify that payments were entered or no payments were done;
+      5) after all items above, run self.fech_pagts_n_mora.process_payments() [or process() which is the same]
 
-    Let's see each one of them:
+    From 'fech_pagts_n_mora', it receives back three variables:
+      a) credito_no_fecho (or ongoing_credit): if payment superseded bill's value;
+         'credito' é troco, devolução ou adiantamento;
+      b) debito_no_fecho (or ongoing_debt): if payment was below bill's value. This also generates mora;
+         this will also be 'mora' for the next refmonth;
+         'debito' é item de mora para o próximo mês;
+        Obs:
+          credit and debt cannot both have values: either one has and the other is zero or viceversa;
+          credit must be positive; debt, negative;
 
-      a) credito_no_fecho: if payment superseded bill's value.
-      b) debito_no_fecho: if payment was below bill's value. This also generates mora.
-      c) monthmoras
+      c) monthmoras: which contains piecewise mora objects according to dates;
 
+    Notice also there is a (boolean/flag) variable in self.fech_pagts_n_mora
+      which becomes True after processing making 'process' is run-only-once action.
+    (For a reprocess, the client will need to reinstantiate the object (this).)
     """
-    # sort payments date-asc
-    # 'credito' é troco, devolução ou adiantamento; 'debito' é item de mora para o próximo mês
-    # if one has value, the other must be zeroed: critic (or exception-raising) happens in function process_payments()
     if self.billingitems is None or len(self.billingitems) == 0:
+      # Step 1: run, or check its presence, the standard billing items formation;
       self.make_n_set_standard_billingitems()
+    # Step 2: look up whether there is mora in the previous refmonth;
+    self.verify_previous_credit_or_debt_ifso_mk_bitem()
+    self.lookup_n_set_mora_in_previous_refmonth_ifany()
     self.instantiate_fech_pagts_n_mora()
-    self.fech_pagts_n_mora.payments.sort(key=lambda obj: obj.date)
-    self.fech_pagts_n_mora.process()
+    if not self.fech_pagts_n_mora.payment_process_finished:
+      self.fech_pagts_n_mora.payments.sort(key=lambda obj: obj.date)
+      self.fech_pagts_n_mora.process()
 
   @property
   def fix_plus_var_ir_dec(self) -> Decimal:
@@ -284,6 +384,7 @@ class PydtcBillingCard(pydantic.BaseModel):
   @property
   def var_ir_as_ipca_dec(self) -> Decimal:
     ipcacacher = ipcafs.IpcaAPICacherRetriever()
+    # noinspection bad-argument-type
     ipcadec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(self.refmonth, self.mora_m_minus_n)
     if ipcadec is None:
       ipcadec = Decimal('0')
@@ -304,7 +405,7 @@ class PydtcBillingCard(pydantic.BaseModel):
           retrodate_ifinmora = '2026-6-1'
           -> postdate_ifinmora =  '2026-6-30'
     """
-    paymonth = self.refmonth + relativedelta(months=1)
+    paymonth = self.refmonth + relativedelta.relativedelta(months=1)
     return self.rentcontract.get_mora_endingdate_w_refmonth(paymonth)
 
   @property
@@ -332,6 +433,8 @@ class PydtcBillingCard(pydantic.BaseModel):
     if payments is None or len(payments) == 0:
       return
     if self.billingitems is None:
+      # notice: the payments list does not belong to this class, but to self.fech_pagts_n_mora.payments
+      # because of that, 'billingitems' must be initiated before 'payments'
       errmsg = f"Error: attempt to input payments at a point when billingitems is still None."
       raise ValueError(errmsg)
     for payment in payments:
@@ -403,13 +506,6 @@ class PydtcBillingCard(pydantic.BaseModel):
 
   def print_str_table_billingitems(self):
     print(self.str_table_billingitems())
-
-  @property
-  def duedate(self) -> datetime.date:
-    if self.rentcontract is not None:
-      _duedate = self.rentcontract.get_duedate_fr_refmonth(self.refmonth)
-      return _duedate
-    return "n/a"
 
   @property
   def refmmmyyyy(self) -> str:
@@ -517,34 +613,52 @@ class PydtcBillingCard(pydantic.BaseModel):
     return ostr
 
 
+def make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth):
+  print('Creating billing card for contrnumber =>', contrnumber, 'refmonth =>', refmonth)
+  billingcard = PydtcBillingCard(
+    contrnumber=contrnumber,
+    refmonth=refmonth,
+  )
+  return billingcard
+
+def process_billingcard_w_payments(billingcard, payments):
+  billingcard.make_n_set_standard_billingitems()
+  billingcard.add_payment_lst(payments)
+  billingcard.process()
+  # print('billingcard =>', billingcard)
+  json_str = billingcard.to_json(indent=2, is_for_db=True)
+  print('json_str =>', json_str)
+
+
 def adhoctest1():
   """
 
   """
   contrnumber = 'CDouto202401'
-  print('contrnumber =>', contrnumber)
-  billingcard = find_rentcontract_by_contrnumber('CDouto202401')
-  print('rentcontract =>', billingcard)
-  contrnumber = 'CDouto202401'
-  print('contrnumber =>', contrnumber)
+  # refmonth 2026-4
   refmonth = rmfs.make_refmonth_or_raise('2026-4')
-  billingitems = bitems.make_4_billingitems(refmonth)
-  billingcard = PydtcBillingCard(
-    refmonth=refmonth,
-    contrnumber='CDouto202401',
-    billingitems=billingitems
-  )
+  billingcard = make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth)
   payments = []
   payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
   payments.append(payment)
   paydate = billingcard.duedate + relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
   payments.append(payment)
-  billingcard.add_payment_lst(payments)
-  billingcard.process()
-  # print('billingcard =>', billingcard)
-  json_str = billingcard.to_json(indent=2, is_for_db=True)
-  print('json_str =>', json_str)
+  process_billingcard_w_payments(billingcard, payments)
+
+
+def adhoctest2():
+  contrnumber = 'CDouto202401'
+  # refmonth 2026-5
+  refmonth = rmfs.make_refmonth_or_raise('2026-5')
+  billingcard = make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth)
+  payments = []
+  payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(2500))
+  payments.append(payment)
+  paydate = billingcard.duedate.replace(day=27)
+  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
+  payments.append(payment)
+  process_billingcard_w_payments(billingcard, payments)
 
 
 def process():

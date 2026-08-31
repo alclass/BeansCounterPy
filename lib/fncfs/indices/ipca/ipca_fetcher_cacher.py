@@ -17,12 +17,12 @@ INT_IPCA_YEARS_IN_CACHE = 10
 NUMBER_OF_FETCH_TRIES = 3
 
 
-def fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
-    refmonth: datetime.date, p_fix_ir_dec: Decimal | None = None,
+def fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix(
+    refmonth: datetime.date, p_fix_ir_dec: Decimal | None = None, i: int = 1,
   ) -> tuple[Decimal, Decimal]:
   fix_ir_dec = p_fix_ir_dec or DEFAULT_FIX_IR_DEC
   ipcacacher = IpcaAPICacherRetriever()
-  ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(refmonth, 1)
+  ipca_dec = ipcacacher.fetch_ipca_dec_for_refmonth_minus_n(refmonth, i)
   if ipca_dec is None:
     ipca_dec = DECIMAL_ZERO
   ir_idx = fix_ir_dec + ipca_dec

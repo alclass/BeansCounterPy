@@ -3,23 +3,24 @@
 art/immeub/rent/testdata/billingcards_createdata.py
 
 import datetime
+from sympy import pretty_print
+from pprint import PrettyPrinter
+from lib.dbfs.mngdb.mongo_gen_fetcher import mngfetch_rentcontract_by_contrnumber
+import art.immeub.rent.pdntcmdls.person_pydant as pers  # bcard.PydtcBillingCard
+import art.immeub.rent.htmltemplates.jinja2_adhoctest1 as jj2  # jj2.render_html()
 """
 import datetime
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-from sympy import pretty_print
-
 import art.immeub.rent.create_adhoc_objects.rentcontracts_createdata as rc_create  # rc_create.make_rentcontract_1
 import art.immeub.rent.billmodels.billingcard_pydantic as bcard  # bcard.PydtcBillingCard
 import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bcard.PydtcBillingCard
-import art.immeub.rent.pdntcmdls.person_pydant as pers  # bcard.PydtcBillingCard
+import art.immeub.rent.mdb.objs_finder_from_mongocollections as fndr  # fndr.dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch
 from art.immeub.rent.pdntcmdls.rentcontract_pydant import PydtcRentContract
-from lib.dbfs.mngdb.mongo_gen_fetcher import mngfetch_rentcontract_by_contrnumber
-import art.immeub.rent.htmltemplates.jinja2_adhoctest1 as jj2  # jj2.render_html()
 
 
 def pickup_recontract_via_make():
@@ -28,6 +29,7 @@ def pickup_recontract_via_make():
   return rentcontract
 
 
+# noinspection argument-list
 def make_billingcard1():
   refmonth = rmfs.make_refmonth_or_raise('2026-04')
   contrnumber = 'CDouto202401'
@@ -42,9 +44,10 @@ def make_billingcard1():
     descr="Mora acumulada aluguel/encargos", value=Decimal(1250), refmonth=previousrefmonth,
   )
   paydate1 = billingcard.duedate
+  # noinspection bad-argument-type
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate1, value=Decimal(2500))
   payments = [payment]
-  paydate2 = billingcard.duedate + relativedelta(days=11)
+  paydate2 = billingcard.duedate + relativedelta.relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate2, value=Decimal(1500))
   payments.append(payment)
   billingcard.add_payment_lst(payments)
@@ -96,20 +99,10 @@ def make_billingcard_1() -> bcard.PydtcBillingCard:
   return billingcard
 
 
-def fetch_mongo_dictdoc_for_lingcard_w_refmonth_n_contrnumber(
-    refmonth: datetime.date, contrnumber: str
-  ) -> dict:
-  dbname, collname = 'immeub_db', 'billingcards'
-  dbfetcher = mngfetch.GenMongoDBFetcher(dbname=dbname, collname=collname)
-  querydict = {"contrnumber": contrnumber, "refmonth": refmonth.strftime("%Y-%m-%d")}
-  dictdoc = dbfetcher.find_one_w_querydict_n_collname_as_dict(querydict)
-  return dictdoc
-
-
 def print_billingcard_w_refmonth_n_contrnumber(
     refmonth: datetime.date, contrnumber: str
   ) -> None:
-  dictdoc = fetch_mongo_dictdoc_for_lingcard_w_refmonth_n_contrnumber(
+  dictdoc = fndr.fetch_billingcard_dictdoc_w_refmonth_n_contrnumber(
     refmonth=refmonth, contrnumber=contrnumber
   )
   print_billingcard_w_dict(dictdoc)
@@ -154,15 +147,17 @@ def make_billingcard2():
   print('contrnumber =>', contrnumber)
   refmonth = rmfs.make_refmonth_or_raise('2026-4')
   billingitems = bitems.make_4_billingitems(refmonth)
+  # noinspection argument-list
   billingcard = bcard.PydtcBillingCard(
     refmonth=refmonth,
     contrnumber='CDouto202401',
     billingitems=billingitems
   )
   payments = []
+  # noinspection bad-argument-type
   payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
   payments.append(payment)
-  paydate = billingcard.duedate + relativedelta(days=11)
+  paydate = billingcard.duedate + relativedelta.relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
   payments.append(payment)
   billingcard.add_payment_lst(payments)
@@ -180,13 +175,10 @@ def adhoctest2():
 def adhoctest3():
   contrnumber, refmonth = 'CDouto202401', rmfs.make_refmonth_or_raise('2026-04')
   print_billingcard_w_refmonth_n_contrnumber(contrnumber=contrnumber, refmonth=refmonth)
-  dictdoc = fetch_mongo_dictdoc_for_lingcard_w_refmonth_n_contrnumber(contrnumber=contrnumber, refmonth=refmonth)
+  dictdoc = dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber(contrnumber=contrnumber, refmonth=refmonth)
   pretty_print(dictdoc)
   billingcard = bcard.PydtcBillingCard.instantiate_fr_json_dict(dictdoc)
-  return
-  payee = pers.make_example_person_123456781()
-  billingcard.payee = payee
-  jj2.render_html(billingcard=billingcard)
+  print(billingcard)
 
 
 def process():

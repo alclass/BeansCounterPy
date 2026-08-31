@@ -53,6 +53,7 @@ def compensate_cre_deb_accounts_one_against_the_other(
         new_deb_account = 0
   """
   if cred_account is None or deb_account is None:
+    # noinspection unreachable-code
     errmsg = f"Error: either cred_account [{cred_account}] or deb_account [{deb_account}] is None"
     raise ValueError(errmsg)
   if cred_account < DECIMAL_ZERO:
@@ -80,6 +81,7 @@ def credit_value_to_cred_account(value: Decimal, account: Decimal) -> Decimal:
   """
   Crediting a cred account is just a sum, and it doesn't produce a remaining.
   """
+  # noinspection unreachable-code
   if value is None or account is None:
     errmsg = f"Error: either value [{value}] or account [{account}] is None"
     raise ValueError(errmsg)
@@ -98,6 +100,7 @@ def credit_value_to_deb_account(cre_value: Decimal, deb_account: Decimal) -> tup
   Credits a debt account. It may produce a remaining.
   Returns (remaining, deb_acc)
   """
+  # noinspection unreachable-code
   if cre_value is None or deb_account is None:
     errmsg = f"Error: either value [{cre_value}] or account [{deb_account}] is None"
     raise ValueError(errmsg)
@@ -119,6 +122,7 @@ def debt_value_to_deb_account(value: Decimal, account: Decimal) -> Decimal:
   """
   Debting a debt account is just a sum, and it doesn't produce a remaining.
   """
+  # noinspection unreachable-code
   if value is None or account is None:
     errmsg = f"Error: either value [{value}] or account [{account}] is None"
     raise ValueError(errmsg)
@@ -136,6 +140,7 @@ def debt_value_to_cre_account(value: Decimal, account: Decimal) -> tuple[Decimal
   """
   Debting a cred account may produce a remaining
   """
+  # noinspection unreachable-code
   if value is None or account is None:
     errmsg = f"Error: either value [{value}] or account [{account}] is None"
     raise ValueError(errmsg)
@@ -157,6 +162,7 @@ def debt_value_to_cre_account(value: Decimal, account: Decimal) -> tuple[Decimal
 def credit_value_to_accounts(
     value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple:
+  # noinspection unreachable-code
   if value is None:
     errmsg = f"Error: debt ({value}) is None"
     raise ValueError(errmsg)
@@ -179,12 +185,14 @@ def debt_value_to_accounts(
     value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple[Decimal, Decimal]:
   """
-  Receives tripe value, credit account, debt account
+  Receives triple (value, credit_account, debt_account)
   Calculates resultant cred_account, deb_account
   """
+  # noinspection unreachable-code
   if value is None:
     errmsg = f"Error: debt ({value}) is None"
     raise ValueError(errmsg)
+  # noinspection unreachable-code
   if cre_account is None and deb_account is None:
     errmsg = "Error: credit account and debt account cannot be both None."
     raise ValueError(errmsg)
@@ -223,6 +231,7 @@ def debt_or_credit_value_to_accounts(
       b) otherwise, if it's greater than the abs(account_value),
          zero account_value and return the 'remainings'
   """
+  # noinspection unreachable-code
   if value is None:
     errmsg = f"Error: value [{value}] (cred or deb) is None"
     raise ValueError(errmsg)
@@ -261,10 +270,11 @@ def get_brl_dinero(value):
 def adhoctests():
   scrmsg = f"""{__name__} | {__file__}:
   The adhoctests were moved to a module of their own.
-  At the time of writing, this module:
+  At the time of writing, it is at:
     lib/fncfs/dinerofs/adhoctests/ahdoctest_credit_debt_fs.py
-  (it cannot be executed from here due to circular imports)
-  (execute it from its module [ahdoctest_credit_debt_fs.py] 'there'.)
+
+  The reason for reallocating them was due to circular imports.
+  Execute [ahdoctest_credit_debt_fs.py] for its corresponding adhoctests.
   """
   print(scrmsg)
 

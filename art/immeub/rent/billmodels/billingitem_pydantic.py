@@ -13,6 +13,7 @@ import lib.datesetc.refmonth_fs as rmfs
 from decimal import Decimal
 import art.immeub.rent.pdntcmdls.person_pydant as pers  # pers.PydtcPerson
 import art.immeub.rent.create_adhoc_objects.prettytable_bitems as ppbitems  # ppbitems.PrettyTableForBI
+import art.immeub.rent.mdb.objs_finder_from_mongocollections as fndr  # fndr.dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber
 DECIMAL_ZERO = Decimal("0")
 # from art.immeub.rent.pdntcmdls.schema_bizmodels import BillingCard
 # locale.setlocale(locale.LC_NUMERIC, "pt_BR")  # "pt_BR.UTF-8"

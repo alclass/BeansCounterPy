@@ -18,9 +18,10 @@ import datetime
 from typing import Optional
 import pydantic
 from dateutil.relativedelta import relativedelta
+import lib.datesetc.refmonth_fs as rmfs  # cdfs.debt_value_to_accounts
 import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debt_value_to_accounts
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
-import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
 DECIMAL_ZERO = Decimal('0')
 DEFAULT_FIX_IR_DEC = Decimal('0.02')
@@ -112,6 +113,14 @@ class PaymentProcessor(pydantic.BaseModel):
     return self._postdate_ifinmora
 
   @property
+  def refmonth(self) -> datetime.date:
+    """
+    Notice that refmonth is, in general, the previous month to paymonth.
+    """
+    _refmonth = rmfs.make_refmonth_it_minus_n_or_raise(self.duedate, 1)
+    return _refmonth
+
+  @property
   def cre_deb_moras_after_process(self) -> tuple[Decimal | None, Decimal | None, list[moram.SameMonthMora] | None]:
     if not self.payment_process_finished:
       return None, None, None
@@ -167,7 +176,9 @@ class PaymentProcessor(pydantic.BaseModel):
     lines = []
     line = "history_backtrack"
     lines.append(line)
-    line = f"valor mensal: {self.orig_monthsdebt:.2f} | total pagt no prazo: {self.total_paid_uptoduedate}"
+    # noinspection string-format,string-format
+    origdebt = f"{self.orig_monthsdebt: .2f}"
+    line = f"valor mensal: {origdebt} | total pagt no prazo: {self.total_paid_uptoduedate}"
     lines.append(line)
     line = self.mkstr_payments_uptoduedate_as_date_n_value_lines()
     line += f' | total mora = {self.tot_mor_val:.2f}'
@@ -209,13 +220,17 @@ class PaymentProcessor(pydantic.BaseModel):
       self.ongoing_date = self.retrodate_ifinmora
     if self.ongoing_date == todate:
       return None
+    ipca_cacher = fncach.IpcaAPICacherRetriever()
+    rm_minus_2 = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 2)
+    ipca_dec = ipca_cacher.fetch_ipca_dec_for_refmonth(rm_minus_2)
     # noinspection bad-argument-type
     monthmora = moram.SameMonthMora(
       fromdate=self.ongoing_date,
       todate=todate,
       prevalue=self.ongoing_debt,  # this is negative
       fix_ir_dec=self.fix_ir_dec,
-      has_ipca=self.has_ipca,
+      var_ir_dec=ipca_dec,
+      var_ir_sigla="IPCA",
     )
     self.ongoing_date = todate + relativedelta(days=1)
     return monthmora
@@ -262,6 +277,7 @@ class PaymentProcessor(pydantic.BaseModel):
     """
     Debts a debt_value (generally a 'mora') to ongoing debt.
     """
+    # noinspection bad-argument-type
     self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts(
       value=debt_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
     )
@@ -299,8 +315,9 @@ class PaymentProcessor(pydantic.BaseModel):
       value=credit_value, cre_account=DECIMAL_ZERO, deb_account=self.ongoing_debt
     )
     # 2nd step: in case a credit coexists with debt, compensate the first to the latter
+    # noinspection bad-argument-type
     self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_deb_account(
-      self.ongoing_credit, self.ongoing_debt
+      cre_value=self.ongoing_credit, deb_account=self.ongoing_debt
     )
 
   @property

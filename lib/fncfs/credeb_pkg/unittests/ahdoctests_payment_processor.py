@@ -17,7 +17,7 @@ import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcam  # ipcam.IpcaAPICache
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fnmts
 from lib.fncfs.indices.ipca.ipca_fetcher_cacher import IpcaAPICacherRetriever
 mkdt = dtfs.make_date_or_raise
-fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix = ipcam.fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix
+fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix = ipcam.fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix
 
 
 

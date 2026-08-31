@@ -17,7 +17,6 @@ mkdt = dtfs.make_date_or_raise
 mkrm = rmfs.make_refmonth_or_raise
 DECIMAL_ZERO = Decimal(0)
 DEFAULT_FIX_IR_DEC = Decimal('0.02')
-fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix = ipcam.fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix
 
 
 class TestCase1(unittest.TestCase):
@@ -85,8 +84,9 @@ class TestCase1(unittest.TestCase):
     inidate = mkdt('2026-04-01')
     findate = mkdt('2026-04-30')
     refmonth = mkrm('2026-03')
-    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
-      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    m_minus_n = 2
+    ir_idx, ipca_dec = ipcam.fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec, i=m_minus_n,
     )
     moravalue = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=Decimal(-1000),
@@ -99,7 +99,8 @@ class TestCase1(unittest.TestCase):
     cre, deb, monthmoras = pprocessor.cre_deb_moras_after_process
     self.assertEqual(cre, DECIMAL_ZERO)
     monthmora = monthmoras[0]
-    self.assertEqual(ipca_dec, monthmora.ipca_dec)
+    objs_ipca_dec = monthmora.var_ir_dec
+    self.assertEqual(ipca_dec, objs_ipca_dec)
     self.assertEqual(deb, missing_avec_mora)
     self.assertEqual(cre, DECIMAL_ZERO)
     # noinspection bad-argument-type
@@ -143,10 +144,11 @@ class TestCase1(unittest.TestCase):
     findate = mkdt('2026-04-30')
     fix_ir_dec = Decimal(0.02)
     refmonth = rmfs.make_refmonth_or_raise('2026-03')
-    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
-      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    m_minus_n = 2
+    ir_idx, ipca_dec = ipcam.fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec, i=m_minus_n,
     )
-    exp_inimontant_1 = monthdebtvalue
+    # exp_inimontant_1 = monthdebtvalue
     exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
       inimontant=Decimal(-2000),
       ir_idx=ir_idx,
@@ -167,7 +169,8 @@ class TestCase1(unittest.TestCase):
     self.assertEqual(credito_debito_no_fecho, DECIMAL_ZERO)
     ret_monthmora_1 = monthmoras[0]
     ret_monthmora_2 = monthmoras[1]
-    self.assertEqual(ipca_dec, ret_monthmora_1.ipca_dec)
+    objs_ipca_dec = ret_monthmora_1.var_ir_dec
+    self.assertEqual(ipca_dec, objs_ipca_dec)
     self.assertEqual(ret_monthmora_1.ir_idx, ir_idx)
     # noinspection bad-argument-type
     self.assertEqual(len(monthmoras), 2)
@@ -207,8 +210,9 @@ class TestCase1(unittest.TestCase):
     pprocessor.process()
     fix_ir_dec = Decimal(0.02)
     refmonth = rmfs.make_refmonth_or_raise('2026-03')
-    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
-      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    m_minus_n = 2
+    ir_idx, ipca_dec = ipcam.fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec, i=m_minus_n,
     )
     exp_inimontant_1 = monthdebtvalue
     exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
@@ -276,8 +280,9 @@ class TestCase1(unittest.TestCase):
     fix_ir_dec = Decimal(0.02)
     # refmonth is the previous (penultimate, one but last) month from paymonth
     refmonth = rmfs.make_refmonth_it_minus_n_or_raise(paymonth, 1)
-    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
-      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    m_minus_n = 2
+    ir_idx, ipca_dec = ipcam.fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec, i=m_minus_n,
     )
     exp_inimontant_1 = monthdebtvalue + payvalue1
     exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
@@ -327,8 +332,9 @@ class TestCase1(unittest.TestCase):
     fix_ir_dec = Decimal(0.02)
     # refmonth is the previous (penultimate, one but last) month from paymonth
     refmonth = rmfs.make_refmonth_it_minus_n_or_raise(paymonth, 1)
-    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
-      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    m_minus_n = 2
+    ir_idx, ipca_dec = ipcam.fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec, i=m_minus_n,
     )
     exp_inimontant_1 = monthdebtvalue
     exp_moravalue1 = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
@@ -377,8 +383,9 @@ class TestCase1(unittest.TestCase):
     fix_ir_dec = Decimal(0.02)
     # refmonth is the previous (penultimate, one but last) month from paymonth
     refmonth = rmfs.make_refmonth_it_minus_n_or_raise(paymonth, 1)
-    ir_idx, ipca_dec = fetch_iridx_n_ipca_m_plus_1_w_refmonth_n_fix(
-      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec
+    m_minus_n = 2
+    ir_idx, ipca_dec = ipcam.fetch_iridx_n_ipca_m_plus_i_w_refmonth_n_fix(
+      refmonth=refmonth, p_fix_ir_dec=fix_ir_dec, i=m_minus_n,
     )
     exp_inimontant = monthdebtvalue
     exp_moravalue = fnmts.calc_increase_amount_w_1inimontant_2iridx_3inidate_4findate_samemonth(
@@ -402,7 +409,7 @@ class TestCase1(unittest.TestCase):
       b) paying more than duepayment, then leaving credit;
     """
     paymonthstr = '2025-4'
-    inidate, findate = mkdt(f'{paymonthstr}-1'), mkdt(f'{paymonthstr}-30')
+    # inidate, findate = mkdt(f'{paymonthstr}-1'), mkdt(f'{paymonthstr}-30')
     duedate, paydate1 = mkdt(f'{paymonthstr}-10'), mkdt(f'{paymonthstr}-5')
     monthdebtvalue = Decimal(-2000)
     pprocessor = pay.PaymentProcessor(
