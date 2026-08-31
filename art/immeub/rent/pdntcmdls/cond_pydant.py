@@ -14,8 +14,7 @@ import datetime
 from decimal import Decimal
 import typing
 import pydantic
-from pydantic import BaseModel, computed_field, model_validator
-import art.immeub.tribs.onproperties.embedded_taxes_on_immeuble_pydant as embed  # embed.EmbeddedImmeubleTax
+from pydantic import BaseModel  # , computed_field, model_validator
 DECIMAL_ZERO = Decimal("0")
 IMMNICKNAMETYPE = typing.Annotated[str, pydantic.StringConstraints(max_length=6)]
 
@@ -28,12 +27,18 @@ class PydtcCondominium(BaseModel):
   imm_nickname: IMMNICKNAMETYPE
   refmonth: datetime.date
   value: Decimal
+  condname: typing.Optional[str] = None
+  administradora: typing.Optional[str] = None
 
   def to_json_str(self, indent: int = 2, is_for_db: bool = False):
     """
     """
-
-    jsondump = self.model_dump_json(indent=indent)
+    excludeset = {}
+    if is_for_db:
+      # for the time being, excludeset = {'administradora'} is not needed
+      # because exclude_none=True removes the None-value fields
+      pass
+    jsondump = self.model_dump_json(exclude=excludeset, exclude_none=True, indent=indent)
     return jsondump
 
 
@@ -55,4 +60,4 @@ if __name__ == "__main__":
   adhoctest1()
   process()
   """
-  adhoctest2()
+  adhoctest1()

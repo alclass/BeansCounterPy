@@ -228,7 +228,7 @@ class PydtcBillingCard(pydantic.BaseModel):
       raise ValueError(errmsg)
     self.billingitems = self.rentcontract.make_n_get_standard_billingitems(self.refmonth)
 
-  def make_n_append_ifany_prev_bc_credit_billingitem(self) -> None:
+  def make_n_append_ifany_previous_credit_to_billingitem(self) -> None:
     """
     IMPORTANT (positive/negative number consideration):
       Notice that for the 'billing card' (this), the convention positive/negative is inverted for credit/debt.
@@ -237,9 +237,9 @@ class PydtcBillingCard(pydantic.BaseModel):
     Notice that in process_payment() the positive/negative is conventioned normally
       for debts as negative numbers and credits as positive numbers.
     """
-    seq = len(self.billingitems) + 1
     if self.prev_credit <= DECIMAL_ZERO:
       return
+    seq = len(self.billingitems) + 1
     # noinspection bad-argument-type
     prev_rm = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
     billingitem = bitems.PydtcBillingItem(
@@ -250,10 +250,10 @@ class PydtcBillingCard(pydantic.BaseModel):
     )
     self.billingitems.append(billingitem)
 
-  def make_n_append_ifany_prev_bc_mora_billingitem(self) -> None:
-    if self.prev_debt >= DECIMAL_ZERO:
+  def make_n_append_ifany_previous_debt_to_billingitem(self) -> None:
+    if self.prev_debt == DECIMAL_ZERO:
       return
-    if self.prev_bc_totalmora_ifany == DECIMAL_ZERO:
+    if self.prev_credit > DECIMAL_ZERO:
       return
     seq = len(self.billingitems) + 1
     # noinspection bad-argument-type
@@ -262,7 +262,7 @@ class PydtcBillingCard(pydantic.BaseModel):
       seq=seq,
       refmonth=prev_rm,
       descr="mora acum. aluguel/encargos mês ant.",
-      value=prev_bc_total_mora,
+      value=self.prev_debt,
     )
     self.billingitems.append(billingitem)
 
@@ -329,10 +329,10 @@ class PydtcBillingCard(pydantic.BaseModel):
   def verify_previous_credit_or_debt_ifso_mk_bitem(self) -> None:
     self.lookup_n_set_mora_in_previous_refmonth_ifany()
     if self.prev_credit > DECIMAL_ZERO:
-      self.make_n_append_ifany_prev_bc_credit_billingitem()
+      self.make_n_append_ifany_previous_credit_to_billingitem()
       return
     if self.prev_debt < DECIMAL_ZERO:
-        self.make_n_append_ifany_prev_bc_mora_billingitem()
+        self.make_n_append_ifany_previous_debt_to_billingitem()
 
   def process_payments_in_month(self) -> None:
     """
@@ -669,4 +669,4 @@ if __name__ == "__main__":
   """
   process()
   """
-  adhoctest1()
+  adhoctest2()

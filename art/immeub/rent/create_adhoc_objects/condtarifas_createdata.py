@@ -35,7 +35,7 @@ def create_json_for_condtarifas(year, imm_nickname):
     cond_o = cond.PydtcCondominium(
       imm_nickname=imm_nickname, refmonth=refmonth, value=value
     )
-    json_str = cond_o.to_json_str()
+    json_str = cond_o.to_json_str(is_for_db=True)
     json_lst.append(json_str)
   # for json_str in json_lst:
   #   print(json_str)
@@ -74,4 +74,5 @@ if __name__ == "__main__":
   adhoctest1()
   process()
   """
+  adhoctest1()
   adhoctest2()

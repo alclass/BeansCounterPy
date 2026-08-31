@@ -47,7 +47,7 @@ def make_billingcard1():
   # noinspection bad-argument-type
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate1, value=Decimal(2500))
   payments = [payment]
-  paydate2 = billingcard.duedate + relativedelta.relativedelta(days=11)
+  paydate2 = billingcard.duedate + relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate2, value=Decimal(1500))
   payments.append(payment)
   billingcard.add_payment_lst(payments)
@@ -57,46 +57,6 @@ def make_billingcard1():
 
 def print_billingcard_w_dict(dictdoc):
   print(dictdoc)
-
-
-def make_billingcard_1() -> bcard.PydtcBillingCard:
-  mkdt = dtfs.make_date_or_raise
-  rentcontract = dataex.make_rentcontract_1()
-  billingcard = PydtcBillingCard(
-    rentcontract=rentcontract,
-    refmonth=mkdt('2026-5-1'),
-  )
-  # billingcard.print_str_table_billingitems()
-  print('total', billingcard.str_billingcard())
-  mng_dict = billingcard.as_mongo_json_dict()
-  print(mng_dict)
-  mng_json = billingcard.as_mongo_json_repr()
-  print("mng_json = billingcard.as_mongo_json_repr()")
-  print(mng_json)
-  paydate, payvalue = mkdt('2026-06-11'), Decimal(3000)
-  payment = bipydtc.PydtcPayment(
-    date=paydate,
-    value=Decimal(3000),
-  )
-  payvalue = payment.value
-  paydate = payment.date
-  billingcard.add_payment_lst(payment)
-  billingcard.process_payments_in_month()
-  ostr = """billingcard.process_payment()
-  cre = billingcard.credito_no_fecho
-  deb = billingcard.debito_no_fecho
-  """
-  print(ostr)
-  cre = billingcard.credito_no_fecho
-  deb = billingcard.debito_no_fecho
-  moraquinhoes = billingcard.quinhoes_days_vals
-  ipca = billingcard.var_ir_as_ipca_dec
-  scrmsg = f"""cre={cre:.2f}; deb={deb:.2f} | billsvalue = {billingcard.mesreftotal} | duedate={billingcard.duedate} | ipca = {ipca}
-   | payvalue={payvalue:.2f} | paydate={paydate} | quinhoes={moraquinhoes}"""
-  print(scrmsg)
-  report = billingcard.report_quinhoes_days_vals()
-  print(report)
-  return billingcard
 
 
 def print_billingcard_w_refmonth_n_contrnumber(
@@ -157,7 +117,7 @@ def make_billingcard2():
   # noinspection bad-argument-type
   payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
   payments.append(payment)
-  paydate = billingcard.duedate + relativedelta.relativedelta(days=11)
+  paydate = billingcard.duedate + relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
   payments.append(payment)
   billingcard.add_payment_lst(payments)
@@ -192,6 +152,7 @@ if __name__ == "__main__":
   """
   process()
   adhoctest1()
-  """
-  # adhoctest1()
   make_billingcard2()
+  """
+  adhoctest1()
+  # adhoctest1()
