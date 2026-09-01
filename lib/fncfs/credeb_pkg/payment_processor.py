@@ -316,7 +316,7 @@ class PaymentProcessor(pydantic.BaseModel):
     )
     # 2nd step: in case a credit coexists with debt, compensate the first to the latter
     # noinspection bad-argument-type
-    self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_deb_account(
+    self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_debt_account(
       cre_value=self.ongoing_credit, deb_account=self.ongoing_debt
     )
 

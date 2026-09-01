@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-lib/fncfs/dinerofs/credit_debt_fs.py
+lib/fncfs/credeb_pkg/credit_debt_fs.py
+  Contains functions for crediting or debting credit and/or debt accounts.
 
 """
 from dinero import Dinero
@@ -20,8 +21,8 @@ def make_decimal_w_appcontext(val: str | int | float | Decimal, n_decimal_places
   return Decimal(val, DECIMAL_CTX).quantize(Decimal(str_decimal_places))
 
 
-def compensate_cre_deb_accounts_one_against_the_other(
-    cred_account: Decimal, deb_account: Decimal,
+def compensate_cred_debt_accounts_one_against_the_other(
+    cre_account: Decimal, deb_account: Decimal,
   ):
   """
   Compensates credit account with debt account (or viceversa)
@@ -32,84 +33,82 @@ def compensate_cre_deb_accounts_one_against_the_other(
   Example:
     ex1:
       input:
-        cred_account = 100
+        cre_account = 100
         deb_account = -200
       output:
-        new_cred_account = 0
+        new_cre_account = 0
         new_deb_account = -100
     ex2:
       input:
-        cred_account = 200
+        cre_account = 200
         deb_account = -100
       output:
-        new_cred_account = 100
+        new_cre_account = 100
         new_deb_account = 0
     ex3:
       input:
-        cred_account = 100
+        cre_account = 100
         deb_account = -100
       output:
-        new_cred_account = 0
+        new_cre_account = 0
         new_deb_account = 0
   """
-  if cred_account is None or deb_account is None:
-    # noinspection unreachable-code
-    errmsg = f"Error: either cred_account [{cred_account}] or deb_account [{deb_account}] is None"
+  # noinspection unreachable-code
+  if cre_account is None or deb_account is None:
+    errmsg = f"Error: credit account [{cre_account}] or deb_account [{deb_account}] is None. Neither can be None."
     raise ValueError(errmsg)
-  if cred_account < DECIMAL_ZERO:
-    errmsg = f"credit_account ({cred_account}) cannot be negative"
+  if cre_account < DECIMAL_ZERO:
+    errmsg = f"Error: credit account ({cre_account}) cannot be negative."
     raise ValueError(errmsg)
   if deb_account > DECIMAL_ZERO:
-    errmsg = f"deb_account ({cred_account}) cannot be positive"
+    errmsg = f"Error: debt account ({deb_account}) cannot be positive."
     raise ValueError(errmsg)
   # ========================
-  # if hypothesis is not met, return their same values
-  new_cred_account, new_deb_account = cred_account, deb_account
-  if cred_account > DECIMAL_ZERO:
-    if deb_account < DECIMAL_ZERO:
-      remaining = cred_account + deb_account
-      if remaining > DECIMAL_ZERO:
-        new_cred_account = remaining
-        new_deb_account = DECIMAL_ZERO
-      else:
-        new_deb_account = remaining
-        new_cred_account = DECIMAL_ZERO
-  return new_cred_account, new_deb_account
+  # remembering that cred >= 0 and deb <= 0 (otherwise, ValueError would be raised above)
+  # ========================
+  remaining = cre_account + deb_account
+  if remaining > DECIMAL_ZERO:
+    new_cre_account = remaining
+    new_deb_account = DECIMAL_ZERO
+  else:
+    new_deb_account = remaining
+    new_cre_account = DECIMAL_ZERO
+  return new_cre_account, new_deb_account
 
 
-def credit_value_to_cred_account(value: Decimal, account: Decimal) -> Decimal:
+def credit_value_to_cred_account(cre_value: Decimal, cre_account: Decimal) -> Decimal:
   """
   Crediting a cred account is just a sum, and it doesn't produce a remaining.
   """
   # noinspection unreachable-code
-  if value is None or account is None:
-    errmsg = f"Error: either value [{value}] or account [{account}] is None"
+  if cre_value is None or cre_account is None:
+    errmsg = f"Error: either (credit) value [{cre_value}] (credit) or account [{cre_account}] is None. Neither can be None."
     raise ValueError(errmsg)
-  if value < DECIMAL_ZERO:
-    errmsg = f"credit_value ({value}) cannot be negative"
+  if cre_value < DECIMAL_ZERO:
+    errmsg = f"Error: credit_value ({cre_value}) cannot be negative"
     raise ValueError(errmsg)
-  if account < DECIMAL_ZERO:
-    errmsg = f"cred account ({value}) cannot be negative"
+  if cre_account < DECIMAL_ZERO:
+    errmsg = f"Error: cred account ({cre_account}) cannot be negative"
     raise ValueError(errmsg)
-  account = account + value
-  return account
+  cre_account = cre_account + cre_value
+  return cre_account
 
 
-def credit_value_to_deb_account(cre_value: Decimal, deb_account: Decimal) -> tuple[Decimal, Decimal]:
+def credit_value_to_debt_account(cre_value: Decimal, deb_account: Decimal) -> tuple[Decimal, Decimal]:
   """
   Credits a debt account. It may produce a remaining.
   Returns (remaining, deb_acc)
   """
   # noinspection unreachable-code
   if cre_value is None or deb_account is None:
-    errmsg = f"Error: either value [{cre_value}] or account [{deb_account}] is None"
+    errmsg = f"Error: either (credit) value [{cre_value}] or (debt) account [{deb_account}] is None. Neither can be None."
     raise ValueError(errmsg)
   if cre_value < DECIMAL_ZERO:
-    errmsg = f"credit_value ({cre_value}) cannot be negative"
+    errmsg = f"Error: credit value ({cre_value}) cannot be negative"
     raise ValueError(errmsg)
   # =========================
   if deb_account > DECIMAL_ZERO:
-    errmsg = f"deb account ({cre_value}) cannot be positive"
+    errmsg = f"Error: debt account ({deb_account}) cannot be positive"
     raise ValueError(errmsg)
   if abs(deb_account) > cre_value:
     deb_account = deb_account + cre_value
@@ -118,128 +117,133 @@ def credit_value_to_deb_account(cre_value: Decimal, deb_account: Decimal) -> tup
   return remaining, DECIMAL_ZERO
 
 
-def debt_value_to_deb_account(value: Decimal, account: Decimal) -> Decimal:
+def debt_value_to_debt_account(deb_value: Decimal, deb_account: Decimal) -> Decimal:
   """
+  Debts a debt account.
   Debting a debt account is just a sum, and it doesn't produce a remaining.
   """
   # noinspection unreachable-code
-  if value is None or account is None:
-    errmsg = f"Error: either value [{value}] or account [{account}] is None"
+  if deb_value is None or deb_account is None:
+    errmsg = f"Error: either (debt) value [{deb_value}] or (debt) account [{deb_account}] is None. Neither can be None."
     raise ValueError(errmsg)
-  if value > DECIMAL_ZERO:
-    errmsg = f"debt value ({value}) cannot be positive"
+  if deb_value > DECIMAL_ZERO:
+    errmsg = f"Error: debt value ({deb_value}) cannot be positive"
     raise ValueError(errmsg)
-  if account > DECIMAL_ZERO:
-    errmsg = f"deb account ({value}) cannot be positive"
+  if deb_account > DECIMAL_ZERO:
+    errmsg = f"Error: debt account ({deb_account}) cannot be positive"
     raise ValueError(errmsg)
-  account = account + value  # both are negative
-  return account
+  deb_account = deb_account + deb_value  # both are negative
+  return deb_account
 
 
-def debt_value_to_cre_account(value: Decimal, account: Decimal) -> tuple[Decimal, Decimal]:
+def debt_value_to_cred_account(deb_value: Decimal, cre_account: Decimal) -> tuple[Decimal, Decimal]:
   """
-  Debting a cred account may produce a remaining
+  Debts a credit account. It may produce a remaining.
   """
   # noinspection unreachable-code
-  if value is None or account is None:
-    errmsg = f"Error: either value [{value}] or account [{account}] is None"
+  if deb_value is None or cre_account is None:
+    errmsg = f"Error: either value [{deb_value}] or account [{cre_account}] is None. Neither can be None."
     raise ValueError(errmsg)
-  if value > DECIMAL_ZERO:
-    errmsg = f"debt value ({value}) cannot be positive"
+  if deb_value > DECIMAL_ZERO:
+    errmsg = f"debt value ({deb_value}) cannot be positive."
     raise ValueError(errmsg)
-  if account < DECIMAL_ZERO:
-    errmsg = f"cred account ({value}) cannot be negative"
-    raise ValueError(errmsg)
-  # ========================
-  if abs(value) < account:
-    account = account + value  # account is positive, value is negative
-    return DECIMAL_ZERO, account
-  remaining = account + value
-  return remaining, DECIMAL_ZERO
-
-
-# noinspection PyTypeChecker
-def credit_value_to_accounts(
-    value: Decimal, cre_account: Decimal, deb_account: Decimal
-  ) -> tuple:
-  # noinspection unreachable-code
-  if value is None:
-    errmsg = f"Error: debt ({value}) is None"
-    raise ValueError(errmsg)
-  if value < DECIMAL_ZERO:
-    errmsg = f"credit_value ({value}) cannot be negative"
-    raise ValueError(errmsg)
-  if cre_account is None and deb_account is None:
-    errmsg = "both cred account and deb account cannot be None."
+  if cre_account < DECIMAL_ZERO:
+    errmsg = f"credit account ({cre_account}) cannot be negative."
     raise ValueError(errmsg)
   # ========================
-  if deb_account is None:
-    cre_account = credit_value_to_cred_account(value, cre_account)
-    return cre_account, None
-  remaining, deb_account = credit_value_to_deb_account(value, deb_account)
-  cre_account += remaining
+  if abs(deb_value) < cre_account:
+    cre_account = cre_account + deb_value  # cre_account is positive, deb_value is negative
+    return cre_account, DECIMAL_ZERO
+  remaining = cre_account + deb_value
+  return DECIMAL_ZERO, remaining
+
+
+def raise_va_or_zero_or_return_credit_debt_accounts(
+    cre_account: Decimal, deb_account: Decimal
+  ) -> tuple[Decimal, Decimal]:
+  # Here, if any one of the accounts comes in as None, it becomes zero.
+  cre_account = DECIMAL_ZERO if cre_account is None else cre_account
+  deb_account = DECIMAL_ZERO if deb_account is None else deb_account
+  if cre_account < DECIMAL_ZERO:
+    errmsg = f"Error: credit account [{cre_account}] cannot be negative."
+    raise ValueError(errmsg)
+  if deb_account > DECIMAL_ZERO:
+    errmsg = f"Error: debt account ({deb_account}) cannot be positive."
+    raise ValueError(errmsg)
   return cre_account, deb_account
 
 
-def debt_value_to_accounts(
-    value: Decimal, cre_account: Decimal, deb_account: Decimal
+def credit_value_to_accounts(
+    cre_value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple[Decimal, Decimal]:
   """
+  Credits value to debt account and then, if remaining, to credit account.
+  Here, if any of the accounts comes in as None, it becomes zero.
+
   Receives triple (value, credit_account, debt_account)
   Calculates resultant cred_account, deb_account
   """
   # noinspection unreachable-code
-  if value is None:
-    errmsg = f"Error: debt ({value}) is None"
+  if cre_value is None:
+    errmsg = f"Error: credit value ({cre_value}) is None."
     raise ValueError(errmsg)
-  # noinspection unreachable-code
-  if cre_account is None and deb_account is None:
-    errmsg = "Error: credit account and debt account cannot be both None."
-    raise ValueError(errmsg)
-  if value > DECIMAL_ZERO:
-    errmsg = f"Error: debt ({value}) cannot be positive"
-    raise ValueError(errmsg)
-  if cre_account and cre_account < DECIMAL_ZERO:
-    errmsg = f"Error: credit account [{cre_account}] cannot be negative."
-    raise ValueError(errmsg)
-  if deb_account and deb_account > DECIMAL_ZERO:
-    errmsg = f"Error: debt account [{deb_account}] cannot be positive."
-    raise ValueError(errmsg)
+  cre_account, deb_account = raise_va_or_zero_or_return_credit_debt_accounts(cre_account, deb_account)
   # ========================
-  if cre_account is None:
-    deb_account = debt_value_to_deb_account(value, deb_account)
-    return DECIMAL_ZERO, deb_account
-  remaining, cre_account = debt_value_to_cre_account(value, cre_account)
-  deb_account = deb_account + remaining
-  return cre_account, deb_account
+  intermediate_cre_value = credit_value_to_cred_account(cre_value, cre_account)
+  new_cre_account, new_deb_account = credit_value_to_debt_account(intermediate_cre_value, deb_account)
+  return new_cre_account, new_deb_account
 
 
-def debt_or_credit_value_to_accounts(
-    value: Decimal, cred_account: Decimal, deb_account: Decimal
+def debt_value_to_accounts(
+    deb_value: Decimal, cre_account: Decimal, deb_account: Decimal
+  ) -> tuple[Decimal, Decimal]:
+  """
+  Debts value to credit account and then, if remaining, to debt account.
+  Here, if any of the accounts comes in as None, it becomes zero.
+
+  Receives triple (value, credit_account, debt_account)
+  Calculates resultant cred_account, deb_account
+  """
+  # noinspection unreachable-code
+  if deb_value is None:
+    errmsg = f"Error: debt value ({deb_value}) is None"
+    raise ValueError(errmsg)
+  cre_account, deb_account = raise_va_or_zero_or_return_credit_debt_accounts(cre_account, deb_account)
+  # ========================
+  intermediate_deb_value = debt_value_to_debt_account(deb_value, deb_account)
+  new_cre_account, new_deb_account = debt_value_to_cred_account(intermediate_deb_value, cre_account)
+  return new_cre_account, new_deb_account
+
+
+def credit_or_debt_value_to_accounts(
+    value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple:
   """
-    To credit, here, is conventioned as a 'plus' operation
-      and also credit_value must be a positive value
-      (otherwise it's a debt operation).
+  Credits or debts value to credit and/or debt accounts.
 
-    Observations:
-    =============
+  To credit, here, is conventioned as a 'plus' operation
+    and also credit_value must be a positive value
+    (otherwise it's a debt operation).
 
-    if account is positive, the whole credit goes into account
-    else, if account is negative, the crediting must check:
-      a) if it's less than the abs(account_value), credit it all
-      b) otherwise, if it's greater than the abs(account_value),
-         zero account_value and return the 'remainings'
+  Observations:
+  =============
+
+  if account is positive, the whole credit goes into account
+  else, if account is negative, the crediting must check:
+    a) if it's less than the abs(account_value), credit it all
+    b) otherwise, if it's greater than the abs(account_value),
+       zero account_value and return the 'remainings'
   """
   # noinspection unreachable-code
   if value is None:
-    errmsg = f"Error: value [{value}] (cred or deb) is None"
+    errmsg = f"Error: value [{value}] (credit or debt) is None."
     raise ValueError(errmsg)
+  cre_account, deb_account = raise_va_or_zero_or_return_credit_debt_accounts(cre_account, deb_account)
   if value == DECIMAL_ZERO:
-    return cred_account, deb_account
+    return cre_account, deb_account
   if value > DECIMAL_ZERO:
-    return credit_value_to_accounts(value, cred_account, deb_account)
-  return debt_value_to_accounts(value, cred_account, deb_account)
+    return credit_value_to_accounts(value, cre_account, deb_account)
+  return debt_value_to_accounts(value, cre_account, deb_account)
 
 
 def get_brl_dinero(value):
@@ -268,13 +272,12 @@ def get_brl_dinero(value):
 
 
 def adhoctests():
-  scrmsg = f"""{__name__} | {__file__}:
-  The adhoctests were moved to a module of their own.
-  At the time of writing, it is at:
-    lib/fncfs/dinerofs/adhoctests/ahdoctest_credit_debt_fs.py
+  scrmsg = f"""  The adhoctests were moved to a module of their own.
 
-  The reason for reallocating them was due to circular imports.
-  Execute [ahdoctest_credit_debt_fs.py] for its corresponding adhoctests.
+  At the time of writing, they are in module:
+    lib/fncfs/dinerofs/adhoctests/ahdoctest_credit_debt_fs.py
+  
+  This module's full path is: [{__file__}]
   """
   print(scrmsg)
 

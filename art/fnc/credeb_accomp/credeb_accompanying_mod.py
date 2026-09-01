@@ -396,7 +396,7 @@ class DebCredAccompanier:
         input = (reserve=50, D2=-50)
         output then should be (reserve=0, D2=0)
     """
-    self.finvalue_res, self.finvalue_d2 = cdfs.compensate_cre_deb_accounts_one_against_the_other(
+    self.finvalue_res, self.finvalue_d2 = cdfs.compensate_cred_debt_accounts_one_against_the_other(
       self.finvalue_res, self.finvalue_d2
     )
 
@@ -411,7 +411,7 @@ class DebCredAccompanier:
     self.bool_updt_saldos_has_run = True
     exced_or_faltante = self.surplus_or_deficit_to_monthlymeta
     # the function called below 'distributes' exced_or_faltante into 'reserve' or D2 as it's a credit or a debt
-    self.finvalue_res, self.finvalue_d2 = cdfs.debt_or_credit_value_to_accounts(
+    self.finvalue_res, self.finvalue_d2 = cdfs.credit_or_debt_value_to_accounts(
       exced_or_faltante,
       self.finvalue_res,
       self.finvalue_d2
