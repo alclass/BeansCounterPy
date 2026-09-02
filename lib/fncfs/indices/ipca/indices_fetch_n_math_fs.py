@@ -1,9 +1,8 @@
 """
-lib/fncfs/indices/indices_fetch_n_fs.py
+lib/fncfs/indices/indices_fetch_n_math_fs.py
+  Contains monetary correction functions.
+  At this time, particularly functions for fetching (db-cached or via web-API) monthly IPCA's.
 
-import lib.fncfs.indices.indices_fetch_n_fs as ipfs  # ipfs.ipca_for_refmonth
-import lib.fncfs.indices.ipca.ipca_api_fetcher_n_updater as fet  # fet.read_n_get_json_ipca_monthlyindices_via_file_for_year()
-import lib.fncfs.indices.ipca.ipca_data as ipca
 """
 from decimal import Decimal
 import datetime
@@ -28,7 +27,7 @@ def fetch_ipcadec_v_cacher_f_refmonth(refmonth: datetime.date) -> Decimal | None
   return ipca_dec
 
 
-def calc_morafact_u_ipca_f_1refm_2ir_3timeelapsed(
+def calc_morafact_n_ipca_w_1refm_2ir_3monthduration(
     refmonth: datetime.date | str, ir_dec: float | None = None, mduration: float | None = None
   ) -> tuple[Decimal | None, Decimal | None]:
   """
@@ -64,7 +63,7 @@ def adhoctest1():
   """
   """
   refmonth = '2025-07'
-  multiplier, ipca_dec = calc_morafact_u_ipca_f_1refm_2ir_3timeelapsed(refmonth)
+  multiplier, ipca_dec = calc_morafact_n_ipca_w_1refm_2ir_3monthduration(refmonth)
   scrmsg = f"refmonth={refmonth} | duration default to 1 month"
   print(scrmsg)
   scrmsg = f"Calc IPCA multiplier for refmonth={refmonth} | ipca mult = {multiplier}, ipca_dec = {ipca_dec}"

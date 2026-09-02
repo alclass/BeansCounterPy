@@ -15,8 +15,8 @@
     <div class="invoice-meta">
       <div class="invoice-title">Cobrança Mensal</div>
         <strong>Fatura nº:</strong> {{ bc.bc_id }} <br>
-        <strong>Data-início janela de pagamento:</strong> {{ bc.payopendate }} <br>
-        <strong>Data-fim janela de pagamento:</strong> {{ bc.duedate }} <br>
+        <strong>Data-início janela de pagamento:</strong> {{ bc.payopendate.strftime("%d/%m/%Y") }} <br>
+        <strong>Data-fim janela de pagamento:</strong> {{ bc.duedate.strftime("%d/%m/%Y") }} <br>
 
     </div>
   </div>
@@ -44,8 +44,8 @@
       <tr>
         <td> {{ bi.seq }} </td>
         <td style="text-align: center;"> {{ bi.descr }} </td>
-        <td style="text-align: center;"> {{ bi.refmonth }} </td>
-        <td style="text-align: center;"> {{ bi.value }} </td>
+        <td style="text-align: center;"> {{ bi.refmonth.strftime("%b%Y") }} </td>
+        <td style="text-align: center;"> {{ "%.2f" | format(bi.value | float) }} </td>
         <td style="text-align: center;"> ------ </td>
       </tr>
     {% endfor %}
@@ -63,7 +63,7 @@
       </tr>
       <tr>
         <td><strong>Total:</strong></td>
-        <td style="text-align:right;"><strong>{{ bc.mesreftotal }}</strong></td>
+        <td style="text-align:right;"><strong>{{ "%.2f" | format(bc.mesreftotal | float) }}</strong></td>
       </tr>
     </table>
   </div>
@@ -77,7 +77,7 @@
   <div class="bottom-container">
     <div class="sender-details">
       <strong>Locador</strong> {{ bc.rentcontract.payee.first_n_last_names }} <br>
-      CPF: {{ bc.rentcontract.payee.cpf_fmt }}<br>
+      CPF: {{ bc.rentcontract.payee.cpf_fmt_w_dots }}<br>
       Pix-chave: {{ bc.rentcontract.payee.chavepix }}
     </div>
 

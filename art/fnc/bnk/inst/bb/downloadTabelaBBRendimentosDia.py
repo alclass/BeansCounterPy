@@ -178,11 +178,11 @@ def download_n_gen_csv(pdate=None):
   print("Step 2 pandasfs the comma decimal-place HTML above to a point separated one")
   input_filepath, output_filepath = commapoint.get_input_output_filepaths(idate)
   dec_to_point_er = commapoint.SingleFileConverter(input_filepath, output_filepath)
-  dec_to_point_er.process()
+  dec_to_point_er.process_close()
   print("Step 3 convert the HTML with point decimal-place numberfs to 3 csv's (for there are 3 testdata tables in it)")
   print('transf.WithPandasHtmlToCsvConverter.dispatch', idate)
   converter = transf.WithPandasHtmlToCsvConverter(idate)
-  converter.process()
+  converter.process_close()
 
 
 def download_n_gen_csv_thru_dates(datelist=()):

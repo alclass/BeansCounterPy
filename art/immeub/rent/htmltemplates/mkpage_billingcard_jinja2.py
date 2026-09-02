@@ -52,7 +52,7 @@ def render_html(billingcard) -> None:
 
 def jinjarender_example_rentcontract() -> None:
   contrnumber = 'CDouto202401'
-  billingcard = creatbc.make_billingcard2()
+  billingcard = creatbc.make_billingcard2_w_monthclosing()
   if billingcard is None:
     scrmsg = f"billingcard {billingcard} not found!"
     print(scrmsg)

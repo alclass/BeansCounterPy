@@ -19,7 +19,7 @@ import calendar
 import datetime
 from decimal import Decimal
 import locale
-from typing import Annotated, Optional
+from typing import Any, Annotated, Optional
 import lib.fncfs.credeb_pkg.payment_processor as pproc
 from prettytable import PrettyTable
 import pydantic
@@ -28,8 +28,9 @@ import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bipydtc.Pydt
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
-# fndr.dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber
+import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import art.immeub.rent.mdb.objs_finder_from_mongocollections as fndr
+import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
@@ -52,6 +53,27 @@ def dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber(contrnumber: str, refmo
   return billingcard
 
 
+def transpose_payments_via_interface(p_payments: Any) -> list[bipydtc.PydtcPayment]:
+  typeadjusted_payments = []
+  for p in p_payments:
+    try:
+      datahora = dtfs.make_datetime_or_raise(p.datahora)
+    except AttributeError:
+      # try fallback to 'date'
+      datahora = dtfs.make_datetime_or_raise(p.date)
+    value = Decimal(p.value)
+    payor = getattr(p, 'payor', None)
+    payor_cpf = getattr(p, 'payor_cpf', None)
+    refdoc = getattr(p, 'refdoc', None)
+    comment = getattr(p, 'comment', None)
+    payment = bipydtc.PydtcPayment(
+      datahora=datahora, value=value, refdoc=refdoc, comment=comment,
+      payor=payor, payor_cpf=payor_cpf,
+    )
+    typeadjusted_payments.append(payment)
+  return typeadjusted_payments
+
+
 class PydtcBillingCard(pydantic.BaseModel):
   """
   Class that models a 'billing card' which contains:
@@ -70,8 +92,10 @@ class PydtcBillingCard(pydantic.BaseModel):
   billingitems: list[bitems.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
   fech_pagts_n_mora: Optional[pproc.PaymentProcessor] = None
   prev_monthmoras: list[moram.SameMonthMora] = pydantic.Field(exclude=True, default_factory=lambda: None)
+  _payment_lst: list[bipydtc.PydtcPayment] = pydantic.PrivateAttr(default_factory=lambda: None)
   prev_debt: Decimal = pydantic.Field(exclude=True, default_factory=lambda: None)
   prev_credit: Decimal = pydantic.Field(exclude=True, default_factory=lambda: None)
+  ready_for_closing: bool = pydantic.Field(exclude=True, default_factory=lambda: False)
 
   @pydantic.model_validator(mode='before')
   @classmethod
@@ -226,7 +250,8 @@ class PydtcBillingCard(pydantic.BaseModel):
     if self.refmonth is None:
       errmsg = "Error: refmonth is None"
       raise ValueError(errmsg)
-    self.billingitems = self.rentcontract.make_n_get_standard_billingitems(self.refmonth)
+    if self.billingitems is None or len(self.billingitems) == 0:
+      self.billingitems = self.rentcontract.make_n_get_standard_billingitems(self.refmonth)
 
   def make_n_append_ifany_previous_credit_to_billingitem(self) -> None:
     """
@@ -294,10 +319,16 @@ class PydtcBillingCard(pydantic.BaseModel):
     return _fatura_total
 
   def instantiate_fech_pagts_n_mora(self) -> None:
+    if not self.ready_for_closing:
+      errmsg = ("Error: flag 'ready_for_closing' needs to be set for the closing process.\n"
+                "\t  This flag also means that the month's payment(s) input are available to this system\n "
+                "\t  and/or the month's end has come.")
+      raise ValueError(errmsg)
+    if self.billingitems is None or len(self.billingitems) == 0:
+      errmsg = ("Error: billingitems is None or empty in the closing process."
+                " At least one item should have been prepared before.")
+      raise ValueError(errmsg)
     if self.fech_pagts_n_mora is None:
-      if self.billingitems is None:
-        errmsg = "Error: billingitems is None when attempting to instantiate fech_pagts_n_mora."
-        raise ValueError(errmsg)
       ongoing_debt = -self.mesreftotal
       # noinspection bad-argument-type
       self.fech_pagts_n_mora = pay.PaymentProcessor(
@@ -306,7 +337,7 @@ class PydtcBillingCard(pydantic.BaseModel):
         fix_ir_dec=self.monthly_fix_ir_dec,
         has_ipca=True,
       )
-
+    # payments will be added later on along the closing process
 
   def lookup_n_set_mora_in_previous_refmonth_ifany(self) -> None:
     if self.prev_monthmoras is not None:
@@ -334,7 +365,15 @@ class PydtcBillingCard(pydantic.BaseModel):
     if self.prev_debt < DECIMAL_ZERO:
         self.make_n_append_ifany_previous_debt_to_billingitem()
 
-  def process_payments_in_month(self) -> None:
+  def prepare_for_monthlycharging(self):
+    if self.billingitems is None or len(self.billingitems) == 0:
+      # Step 1: run, or check its presence, the standard billing items formation;
+      self.make_n_set_standard_billingitems()
+    # Step 2: look up whether there is mora in the previous refmonth;
+    self.verify_previous_credit_or_debt_ifso_mk_bitem()
+    self.lookup_n_set_mora_in_previous_refmonth_ifany()
+
+  def process_payments_in_month_n_close(self) -> None:
     """
     Processes payments in month.
 
@@ -364,13 +403,11 @@ class PydtcBillingCard(pydantic.BaseModel):
       which becomes True after processing making 'process' is run-only-once action.
     (For a reprocess, the client will need to reinstantiate the object (this).)
     """
-    if self.billingitems is None or len(self.billingitems) == 0:
-      # Step 1: run, or check its presence, the standard billing items formation;
-      self.make_n_set_standard_billingitems()
-    # Step 2: look up whether there is mora in the previous refmonth;
-    self.verify_previous_credit_or_debt_ifso_mk_bitem()
-    self.lookup_n_set_mora_in_previous_refmonth_ifany()
     self.instantiate_fech_pagts_n_mora()
+    if self._payment_lst is None:
+      errmsg = f"payment_lst has not been entered to processing. Program cannot continue. Please, retry entering it."
+      raise RuntimeError(errmsg)
+    self.fech_pagts_n_mora.payments = self.payment_lst
     if not self.fech_pagts_n_mora.payment_process_finished:
       self.fech_pagts_n_mora.payments.sort(key=lambda obj: obj.date)
       self.fech_pagts_n_mora.process()
@@ -422,25 +459,19 @@ class PydtcBillingCard(pydantic.BaseModel):
     paymonth = self.refmonth + relativedelta(months=1)
     return self.rentcontract.get_date_when_mora_begins_w_refmonth(paymonth)
 
-  def add_payment_lst(self, payments: list[intrfc.PaymentInterfaceDateNValue]) -> None:
+  @property
+  def payment_lst(self) -> list[intrfc.PaymentInterfaceDateNValue]:
+    if self._payment_lst is None:
+      return []
+    return self._payment_lst
+
+  @payment_lst.setter
+  def payment_lst(self, p_payments: list[bipydtc.PydtcPayment]) -> None:
     """
-    TODO update, when possible, payment type to bipydtc.PydtcPayment
-    At this version, two payments with the same value and date are not allowed.
-    TODO this may be allowed by a
-     datetime field instead of only date
+    pydantic emits a UserWarning: Pydantic serializer warnings if incoming parameter is not of type-hint.
+    @see function transpose_payment_via_interface() that the client caller may call to adjust type to the type-hint.
     """
-    bills_payment = []
-    if payments is None or len(payments) == 0:
-      return
-    if self.billingitems is None:
-      # notice: the payments list does not belong to this class, but to self.fech_pagts_n_mora.payments
-      # because of that, 'billingitems' must be initiated before 'payments'
-      errmsg = f"Error: attempt to input payments at a point when billingitems is still None."
-      raise ValueError(errmsg)
-    for payment in payments:
-      bills_payment.append(payment)
-    self.instantiate_fech_pagts_n_mora()
-    self.fech_pagts_n_mora.payments = bills_payment
+    self._payment_lst = p_payments
 
   def lastpaydate(self):
     # sort it asc and return lastpaydate
@@ -529,38 +560,6 @@ class PydtcBillingCard(pydantic.BaseModel):
     ostr += strtotal
     return ostr
 
-  def as_mongo_json_dict(self):
-    billingitems_dictlist = [bitem.instantiate_as_mongojsonrepr_class() for bitem in self.billingitems]
-    pdict = {
-      'contrnumber': self.rentcontract.contrnumber,
-      'refmonth': self.refmonth,
-      'duedate': self.duedate,
-      'payor': self.rentcontract.main_tenant.get_first_n_last_names(),
-      'cpf':  self.rentcontract.main_tenant.cpf_fmt_w_dots,
-      'address': self.rentcontract.location.address,
-      'billingitems': billingitems_dictlist,
-      'fatura_total': self.mesreftotal,
-    }
-    return pdict
-
-  class MongoJsonRepr(pydantic.BaseModel):
-    contrnumber: str
-    refmonth: datetime.date
-    duedate: datetime.date
-    payor: str
-    cpf: str
-    address: list[str]
-    billingitems: list[bitems.PydtcBillingItem]  # .MongoJsonRepr]
-    fatura_total: Decimal
-
-  def as_pydantic_to_mongo(self):
-    """
-    return json.dumps(self.as_mongo_json_dict())
-    return self.model_dump_json(indent=2)
-    """
-    pydantic_to_mongo = self.MongoJsonRepr(**self.as_mongo_json_dict())
-    return pydantic_to_mongo
-
   def to_json(self, indent: int = 2, is_for_db=False) -> str:
     """
     Transforms the object into a JSON str for sending (e.g. to MongoDB).
@@ -597,8 +596,17 @@ class PydtcBillingCard(pydantic.BaseModel):
     obj = cls.model_validate_json(json_str)
     return obj
 
-  def process(self):
-    self.process_payments_in_month()
+  def process_open(self):
+    """
+    Opens the monthly billing card.
+    """
+    self.prepare_for_monthlycharging()
+
+  def process_close(self):
+    """
+    Closes, after payments in month, the monthly billing card.,
+    """
+    self.process_payments_in_month_n_close()
 
   def __repr__(self):
     duedate = 'n/a' if self.duedate is None else self.duedate
@@ -623,8 +631,8 @@ def make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth):
 
 def process_billingcard_w_payments(billingcard, payments):
   billingcard.make_n_set_standard_billingitems()
-  billingcard.add_payment_lst(payments)
-  billingcard.process()
+  billingcard.payment_lst = payments
+  billingcard.process_close()
   # print('billingcard =>', billingcard)
   json_str = billingcard.to_json(indent=2, is_for_db=True)
   print('json_str =>', json_str)

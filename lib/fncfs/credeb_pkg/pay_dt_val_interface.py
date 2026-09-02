@@ -16,7 +16,7 @@ DECIMAL_ONE = Decimal('1')
 M_MINUS_N = 2
 
 
-@dataclass
+# @dataclass
 class PaymentInterfaceDateNValue:
   """
   This class is just to contain payment's date and value.
@@ -25,8 +25,9 @@ class PaymentInterfaceDateNValue:
   It aims to simplify the two fields for objects
     coming from a Pydantic class with more attributes.
   """
-  date: datetime.date
-  value: Decimal
+  def __init__(self, date: datetime.date, value: Decimal):
+    self.date: datetime.date
+    self.value: Decimal
 
   def __str__(self):
     ostr = f"payvalue={self.value} on {self.date}"

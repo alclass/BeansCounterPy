@@ -22,15 +22,30 @@ stringify_date = dtfs.date_to_str_4y_dash_2m_dash_2d
 dinero_serializer = dinfs.dinero_serializer
 
 
-class Mounter(pydantic.BaseModel):
-  billingcard: bcard.PydtcBillingCard
+class Mounter:  # pydantic.BaseModel
 
+
+  def __init__(self, rentcontract_n):
+    self.rentcontract_n = rentcontract_n
+    cur_month = rmfs.make_current_refmonth()
+    # refmonth is, on the rent context, last month
+    self.refmonth = rmfs.make_refmonth_it_minus_n_or_raise(cur_month, 1)
+    self.billingcard: bcard.PydtcBillingCard | None = None
+
+  def mount_billingcard(self):
+    self.billingcard = bcard.PydtcBillingCard(
+      refmonth=self.refmonth,
+      contrnumber = self.rentcontract_n
+    )
+    self.billingcard.process_open()
+    print(self.billingcard.to_json(is_for_db=True))
 
 
 
 def adhoctest1():
-  pass
-
+  rentcontract_n = 'CDouto202401'
+  mounter = Mounter(rentcontract_n=rentcontract_n)
+  mounter.mount_billingcard()
 
 
 def process():

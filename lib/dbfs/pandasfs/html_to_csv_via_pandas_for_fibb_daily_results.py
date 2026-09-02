@@ -59,7 +59,7 @@ class ArgsDispatcher:
     for pdate in self.datelist:
       print('Dispatching for date', pdate)
       converter = transf.WithPandasHtmlToCsvConverter(pdate)
-      converter.process()
+      converter.process_close()
 
   def process(self):
     """

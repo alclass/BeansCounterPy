@@ -15,6 +15,7 @@ from dateutil.relativedelta import relativedelta
 import art.immeub.rent.create_adhoc_objects.rentcontracts_createdata as rc_create  # rc_create.make_rentcontract_1
 import art.immeub.rent.billmodels.billingcard_pydantic as bcard  # bcard.PydtcBillingCard
 import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bcard.PydtcBillingCard
+import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import art.immeub.rent.mdb.objs_finder_from_mongocollections as fndr  # fndr.dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber
 import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import lib.datesetc.datefs as dtfs
@@ -30,7 +31,7 @@ def pickup_recontract_via_make():
 
 
 # noinspection argument-list
-def make_billingcard1():
+def make_n_get_billingcard1():
   refmonth = rmfs.make_refmonth_or_raise('2026-04')
   contrnumber = 'CDouto202401'
   billingcard = bcard.PydtcBillingCard(
@@ -43,15 +44,19 @@ def make_billingcard1():
   billingcard.add_billingitem_w_fields(
     descr="Mora acumulada aluguel/encargos", value=Decimal(1250), refmonth=previousrefmonth,
   )
+  # print(billingcard.to_json(is_for_db=True))
+  return billingcard
+
+
+def make_billingcard_from_db():
   paydate1 = billingcard.duedate
-  # noinspection bad-argument-type
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate1, value=Decimal(2500))
   payments = [payment]
   paydate2 = billingcard.duedate + relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate2, value=Decimal(1500))
   payments.append(payment)
-  billingcard.add_payment_lst(payments)
-  billingcard.process()
+  billingcard.payment_lst = payments
+  billingcard.process_close()
   return billingcard
 
 
@@ -69,7 +74,7 @@ def print_billingcard_w_refmonth_n_contrnumber(
 
 
 def adhoctest1():
-  billingcard = make_billingcard1()
+  billingcard = make_n_get_billingcard1()
   json_str = billingcard.to_json(is_for_db=True)
   print('as_json_str =>', json_str)
 
@@ -99,7 +104,7 @@ def make_a_billingcard_fr_a_rencontract_in_db():
   # print('instantiate_fr_json_dict =>', obj)
 
 
-def make_billingcard2():
+def make_billingcard2_w_monthclosing():
   """
 
   """
@@ -115,13 +120,17 @@ def make_billingcard2():
   )
   payments = []
   # noinspection bad-argument-type
-  payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
+  # payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
+  datahora = dtfs.make_datetime_w_horazero_or_raise(billingcard.duedate)
+  payment = bipydtc.PydtcPayment(datahora=datahora, value=Decimal(1500))
   payments.append(payment)
-  paydate = billingcard.duedate + relativedelta(days=11)
-  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
+  datahora = datahora + datetime.timedelta(days=11)  # relativedelta(days=11)
+  payment = bipydtc.PydtcPayment(datahora=datahora, value=Decimal(1500))
   payments.append(payment)
-  billingcard.add_payment_lst(payments)
-  billingcard.process()
+  # payments = bcard.transpose_payments_via_interface(payments)
+  billingcard.payment_lst = payments
+  billingcard.ready_for_closing = True
+  billingcard.process_close()
   # print('billingcard =>', billingcard)
   json_str = billingcard.to_json(indent=2, is_for_db=True)
   print('json_str for Jinja2 =>', json_str)
@@ -129,7 +138,10 @@ def make_billingcard2():
 
 
 def adhoctest2():
+  """
   make_a_billingcard_fr_a_rencontract_in_db()
+  """
+  make_billingcard2_w_monthclosing()
 
 
 def adhoctest3():
@@ -154,5 +166,5 @@ if __name__ == "__main__":
   adhoctest1()
   make_billingcard2()
   """
-  adhoctest1()
   # adhoctest1()
+  adhoctest2()

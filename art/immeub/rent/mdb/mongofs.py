@@ -148,7 +148,7 @@ def adhoc_test1():
 
 def process():
   reader = MongoDBCollectionRetriever()
-  reader.process()
+  reader.process_close()
 
 
 if __name__ == '__main__':

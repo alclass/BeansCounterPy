@@ -260,6 +260,40 @@ def make_date_or_today(pdate: Any | None) -> datetime.date:
   return odate
 
 
+def make_datetime_or_none(pdatetime: Any | None) -> datetime.datetime | None:
+  if pdatetime is None:
+    return None
+  if isinstance(pdatetime, datetime.datetime):
+    return pdatetime
+  if isinstance(pdatetime, datetime.date):
+    return make_datetime_w_horazero_or_none(pdatetime)
+  try:
+    pdt = datetime.datetime.fromisoformat(str(pdatetime))
+    return pdt
+  except ValueError:
+    pass
+  pdate = make_date_or_none(pdatetime)
+  if pdate is not None:
+    return make_datetime_w_horazero_or_none(pdate)
+  return None
+
+
+def make_datetime_or_now(pdatetime: Any | None) -> datetime.datetime:
+  pdt = make_datetime_or_none(pdatetime)
+  if pdt is None:
+    now = datetime.datetime.now()
+    return now
+  return pdt
+
+
+def make_datetime_or_raise(pdatetime: Any | None) -> datetime.datetime:
+  pdt = make_datetime_or_none(pdatetime)
+  if pdt is None:
+    errmsg = f"{pdatetime} is not transformable to Python-datetime."
+    raise ValueError(errmsg)
+  return pdt
+
+
 def make_datetime_w_horazero_or_none(pdate: Any | None) -> datetime.datetime | None:
   pdate = make_date_or_none(pdate)
   if pdate is None:
@@ -586,6 +620,28 @@ def adhoctest1():
   print(scrmsg)
 
 
+def adhoctest2():
+  pdate = datetime.date(2020, 1, 1)
+  pdt = make_datetime_or_none(pdate)
+  print('pdate',pdate, 'pdt', pdt)
+  pdate = "20210203"
+  pdt = make_datetime_or_none(pdate)
+  print('pdate',pdate, 'pdt', pdt)
+  pdate = '2021-02-03 01:02:03'
+  pdt = make_datetime_or_none(pdate)
+  print('pdate',pdate, 'pdt', pdt)
+  class Tst:
+    a = 'test a'
+    b = 'test b'
+  v = Tst()
+  a = getattr(v, 'a', 'foo bar')
+  print(a)
+  c = getattr(v, 'c', None)
+  print(c)
+
+
+
+
 def process():
   pass
 
@@ -595,4 +651,4 @@ if __name__ == '__main__':
   adhoctest1()
   process()
   """
-  adhoctest1()
+  adhoctest2()

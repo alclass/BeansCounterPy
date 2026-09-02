@@ -1,3 +1,6 @@
+"""
+art/immeub/rent/billmodels/payment_pydant.py
+"""
 from typing import Optional
 import pydantic
 import datetime
@@ -29,9 +32,9 @@ class PydtcPayment(pydantic.BaseModel):
   """
   datahora: datetime.datetime
   value: Decimal
-  payor: Optional[pers.PydtcPerson] = None
   refdoc: Optional[str] = None
   comment: Optional[str] = None
+  payor: Optional[pers.PydtcPerson] = None
 
   @pydantic.model_validator(mode='before')
   @classmethod
@@ -120,6 +123,10 @@ class PydtcPayment(pydantic.BaseModel):
 
 
 def adhoctest1():
+  """
+  pdate = datetime.date.today()
+  pdate.strftime("%d/%m/%Y %H:%M:%S")
+  """
   dt1 = dtfs.make_current_datetime_w_horazero()
   payment = PydtcPayment(
     datahora=dt1,

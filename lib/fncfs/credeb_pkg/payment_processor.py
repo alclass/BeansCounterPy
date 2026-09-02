@@ -20,21 +20,12 @@ import pydantic
 from dateutil.relativedelta import relativedelta
 import lib.datesetc.refmonth_fs as rmfs  # cdfs.debt_value_to_accounts
 import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debt_value_to_accounts
-import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+# import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
 DECIMAL_ZERO = Decimal('0')
 DEFAULT_FIX_IR_DEC = Decimal('0.02')
-
-
-class StepByStepMonthValuesKeeper:
-  date: datetime.date
-  inivalue: Decimal
-  finvalue: Decimal
-  credit_values: list[Decimal]
-  debtvalue: list[Decimal]
-  ndays: int
-  debts: list[intrfc.PaymentInterfaceDateNValue]
 
 
 class PaymentProcessor(pydantic.BaseModel):
@@ -57,7 +48,7 @@ class PaymentProcessor(pydantic.BaseModel):
   ongoing_debt: Decimal
   duedate: datetime.date
   fix_ir_dec: Decimal = pydantic.Field(default_factory=lambda: DEFAULT_FIX_IR_DEC)
-  payments: list[intrfc.PaymentInterfaceDateNValue] = pydantic.Field(default_factory=lambda: [])  # bipydtc.PydtcPayment
+  payments: list[bipydtc.PydtcPayment] = pydantic.Field(default_factory=lambda: [])  # bipydtc.PydtcPayment
   monthmoras: list[moram.SameMonthMora] = pydantic.Field(default_factory=lambda: [])
   _total_paid_ondate: Optional[Decimal] = None
   _retrodate_ifinmora: Optional[datetime.date] = None
@@ -145,15 +136,15 @@ class PaymentProcessor(pydantic.BaseModel):
     optext = '\n'.join(lines)
     return optext
 
-  def getcp_duedate_payments(self) -> list[intrfc.PaymentInterfaceDateNValue]:
+  def getcp_duedate_payments(self) -> list[bipydtc.PydtcPayment]:
     payments = [p for p in self.payments if p.date <= self.duedate]
     return payments
 
-  def getcp_tardy_payments(self) -> list[intrfc.PaymentInterfaceDateNValue]:
+  def getcp_tardy_payments(self) -> list[bipydtc.PydtcPayment]:
     payments = [p for p in self.payments if p.date > self.duedate]
     return payments
 
-  def get_payments_on_daydate(self, pdate) -> list[intrfc.PaymentInterfaceDateNValue]:
+  def get_payments_on_daydate(self, pdate) -> list[bipydtc.PydtcPayment]:
     payments = [p for p in self.payments if p.date == pdate]
     return payments
 
@@ -279,7 +270,7 @@ class PaymentProcessor(pydantic.BaseModel):
     """
     # noinspection bad-argument-type
     self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts(
-      value=debt_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
+      deb_value=debt_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
     )
 
   def treat_no_payments_happened(self) -> None:
@@ -312,7 +303,7 @@ class PaymentProcessor(pydantic.BaseModel):
     """
     # 1st step: credit value to deb_acc (with month's debt) and, if any remains, to cre_acc
     self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts(
-      value=credit_value, cre_account=DECIMAL_ZERO, deb_account=self.ongoing_debt
+      cre_value=credit_value, cre_account=DECIMAL_ZERO, deb_account=self.ongoing_debt
     )
     # 2nd step: in case a credit coexists with debt, compensate the first to the latter
     # noinspection bad-argument-type

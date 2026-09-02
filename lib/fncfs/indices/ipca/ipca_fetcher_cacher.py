@@ -218,7 +218,10 @@ class IpcaAPICacherRetriever:
     year_ipcas_pct = self.fetch_ipcas_pct_fr_jsonfile_for_year(year)
     if year_ipcas_pct is None:
       return None
-    return year_ipcas_pct[refmonth]
+    if refmonth in year_ipcas_pct:
+      return year_ipcas_pct[refmonth]
+    else:
+      return None
 
   def fetch_ipca_dec_fr_jsonfile_for_refmonth(self, p_refmonth: datetime.date | str) -> decimal.Decimal | None:
     """
