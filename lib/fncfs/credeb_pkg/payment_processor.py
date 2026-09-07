@@ -20,10 +20,11 @@ import pydantic
 from dateutil.relativedelta import relativedelta
 import lib.datesetc.refmonth_fs as rmfs  # cdfs.debt_value_to_accounts
 import lib.fncfs.credeb_pkg.credit_debt_fs as cdfs  # cdfs.debt_value_to_accounts
-# import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
 import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as fncach  # fncach.IpcaAPICacherRetriever
 import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
+from art.immeub.rent.pdntcmdls.rentcontract_pydant import MORA_M_MINUS_N_STR
+MORA_M_MINUS_N = int(MORA_M_MINUS_N_STR)
 DECIMAL_ZERO = Decimal('0')
 DEFAULT_FIX_IR_DEC = Decimal('0.02')
 
@@ -192,27 +193,27 @@ class PaymentProcessor(pydantic.BaseModel):
       return False
     return True
 
-  def process_tardy_payments_if_any(self) -> None:
-    """
-    Processes payment(s) that were made later (or tardier)
-      than duedate.
-    @see <same_module>_doc.md for more information/explanation.
-    """
-    # safeguard condition
-    tardypayments = self.getcp_tardy_payments()
-    if len(tardypayments) == 0:
-      return
-    # tardypayments is not supposed to be a 'huge' list
-    # so it's not an efficiency issue to recopy it 'downstream'
-    self.credit_tardy_payments()
-
   def mk_n_get_monthmora_w_findate(self, todate) -> moram.SameMonthMora | None:
     if self.ongoing_date is None:
+      # retrodate_ifinmora, if contract does not say differently, is the first day of the month
       self.ongoing_date = self.retrodate_ifinmora
-    if self.ongoing_date == todate:
+    if self.ongoing_date >= todate:
+      # the '=' means mora has already been counted
+      # the '>' means mora has been counted and also that a payment happened on the last day of month
+      # because at the method's end: self.ongoing_date = todate + relativedelta(days=1)
+      # and if a payment happened on month's last dat, self.ongoing_date will be position on next month's first day
+      # out of the 2 callers to this method, the second, add_closing_mora(), considers this
+      # the first one throws an exception upon receiving None
+      return None
+    if self.ongoing_debt >= DECIMAL_ZERO:
+      # case which an ongoing_credit might have occurred
+      # notice this method is called by '2 clients'
+      # one of them will throw an exception if it gets None
+      # because this method should not be called under that condition
+      # the second caller, add_closing_mora(), considers this
       return None
     ipca_cacher = fncach.IpcaAPICacherRetriever()
-    rm_minus_2 = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 2)
+    rm_minus_2 = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, MORA_M_MINUS_N)
     ipca_dec = ipca_cacher.fetch_ipca_dec_for_refmonth(rm_minus_2)
     # noinspection bad-argument-type
     monthmora = moram.SameMonthMora(
@@ -226,22 +227,32 @@ class PaymentProcessor(pydantic.BaseModel):
     self.ongoing_date = todate + relativedelta(days=1)
     return monthmora
 
-  def credit_tardy_payments(self) -> None:
+  def process_tardy_payments_ifany(self) -> None:
     """
-    Credits tardy payments.
-    @see <same_module>_doc.md for more information/explanation.
+    Processes tardy payments (i.e., those in month after duedate) if any.
+
+    @see also <same_module>_doc.md in the same folder as this for more information/explanation.
     """
     tardy_payments = self.getcp_tardy_payments()
     while len(tardy_payments) > 0:
       payment = tardy_payments.pop(0)
       payvalue = payment.value
       paydate = payment.date
-      monthmora = self.mk_n_get_monthmora_w_findate(paydate)
-      if monthmora is None:
-        continue
-      self.monthmoras.append(monthmora)
-      self.debt_to_ongoingdebt(monthmora.increase)
-      self.credit_to_debt(payvalue)
+      if self.ongoing_debt < DECIMAL_ZERO:
+        monthmora = self.mk_n_get_monthmora_w_findate(paydate)
+        if monthmora is None:
+          errmsg = f"Error: monthmora for payment {payvalue} on {paydate} returned None."
+          raise ValueError(errmsg)
+        self.monthmoras.append(monthmora)
+        # noinspection bad-argument-type
+        self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts_n_compensate(
+          deb_value=monthmora.increase, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
+        )
+      # at this point, payment is credited whether mora happened (debt occuring case) or not (credit occurring case)
+      # noinspection bad-argument-type
+      self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts_n_compensate(
+        cre_value=payvalue, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
+      )
 
   def add_closing_mora_ifany(self) -> None:
     """
@@ -262,15 +273,9 @@ class PaymentProcessor(pydantic.BaseModel):
     if monthmora is None:
       return
     self.monthmoras.append(monthmora)
-    self.debt_to_ongoingdebt(monthmora.increase)
-
-  def debt_to_ongoingdebt(self, debt_value) -> None:
-    """
-    Debts a debt_value (generally a 'mora') to ongoing debt.
-    """
     # noinspection bad-argument-type
-    self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts(
-      deb_value=debt_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
+    self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts_n_compensate(
+      deb_value=monthmora.increase, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
     )
 
   def treat_no_payments_happened(self) -> None:
@@ -282,7 +287,7 @@ class PaymentProcessor(pydantic.BaseModel):
     if monthmora is None:
       return
     self.monthmoras.append(monthmora)
-    self.ongoing_credit, self.ongoing_debt = cdfs.debt_value_to_accounts(
+    self.ongoing_credit, self.ongoing_debt = cdfs.credit_or_debt_value_to_accounts_n_compensate(
       value=monthmora.increase, cre_account=DECIMAL_ZERO, deb_account=self.ongoing_debt
     )
     self.add_closing_mora_ifany()
@@ -293,22 +298,9 @@ class PaymentProcessor(pydantic.BaseModel):
     @see <same_module>_doc.md for more information/explanation.
     """
     credit_value = self.total_paid_uptoduedate
-    self.credit_to_debt(credit_value)
-
-  def credit_to_debt(self, credit_value) -> None:
-    """
-    Credits a payment to both the debt and credit accounts,
-      and, as a second step, compensate, if needed, credit against debt.
-    @see <same_module>_doc.md for more information/explanation.
-    """
-    # 1st step: credit value to deb_acc (with month's debt) and, if any remains, to cre_acc
-    self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts(
-      cre_value=credit_value, cre_account=DECIMAL_ZERO, deb_account=self.ongoing_debt
-    )
-    # 2nd step: in case a credit coexists with debt, compensate the first to the latter
     # noinspection bad-argument-type
-    self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_debt_account(
-      cre_value=self.ongoing_credit, deb_account=self.ongoing_debt
+    self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts_n_compensate(
+      cre_value=credit_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
     )
 
   @property
@@ -333,6 +325,7 @@ class PaymentProcessor(pydantic.BaseModel):
       self.credit_payments_upto_duedate()
 
   def raise_va_if_some_paydate_are_not_in_paymonth(self) -> None:
+    pass
     paydates = [p.date for p in self.payments]
     firstdate = self.retrodate_ifinmora
     lastdate = self.postdate_ifinmora
@@ -367,7 +360,7 @@ class PaymentProcessor(pydantic.BaseModel):
     self.check_processors_data_consistency_or_raise_va()
     self.orig_monthsdebt = self.ongoing_debt
     self.process_payments_upto_duedate_ifany()
-    self.process_tardy_payments_if_any()
+    self.process_tardy_payments_ifany()
     self.add_closing_mora_ifany()
     self.payment_process_finished = True
 

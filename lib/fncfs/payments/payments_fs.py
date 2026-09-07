@@ -1,64 +1,58 @@
 """
 lib/fncfs/payments/payments_fs.py
+import lib.datesetc.datefs as dtfs
 
 To import this:
   import lib.fncfs.payments_fs as payfs  # payfs.fn...
 """
 import datetime
 from decimal import Decimal
-import pydantic
-import lib.datesetc.datefs as dtfs
 
 
-class InterfPayment(pydantic.BaseModel):
-  datetime: datetime.datetime
-  value: Decimal
-
-  @property
-  def date(self):
-    return self.datetime.date()
-
-  @property
-  def daytime(self):
-    """
-    Here we also call 'daytime' as 'hour'
-      (generically including minutes etc.)
-    """
-    return self.datetime.date()
-
-  def set_daytime(self, pdaytime):
-    pdate = self.datetime.date()
-    self.datetime = datetime.datetime.combine(pdate, pdaytime)
-
-  @property
-  def triple_y_m_d(self):
-    dt = self.datetime
-    year, month, day = dt.year, dt.month, dt.day
-    return year, month, day
-
-  @property
-  def triple_h_m_s(self):
-    dt = self.datetime
-    hour, minute, second = dt.hour, dt.minute, dt.second
-    return hour, minute, second
-
-  def __repr__(self):
-    hour = self.datetime.time()
-    ostr = f"d={self.date}|h={hour}|v={self.value}"
-    return ostr
-
-  def __str__(self):
-    dt = self.datetime
-    dt_str = dt.strftime("%Y-%m-%d")  # e.g., "2026-08-27"
-    ho_str = dt.strftime("%H:%M:%S")  # e.g., "10:48:00"
-    value = f"{self.value:.02f}"
-    ostr = "Payment: {"
-    ostr += f"value={value} on dt={dt_str} @ ho={ho_str}"
-    ostr += "}"
-    return ostr
+def verify_paydatahora_n_value_donotrepeat_in_payments_or_raise_va(p_payments):
+  payments = p_payments[:]
+  while len(payments) > 0:
+    payment = payments.pop(0)
+    for p in payments:
+      if (p.datahora, p.value) == (payment.datahora, payment.value):
+        errmsg = f"Error: there is a repeat in pair (datahora, value) in the payment list ({p_payments})."
+        raise ValueError(errmsg)
 
 
-def split_nonrepeats_n_repeats_date_value_sameday_fr_payments(p_payments):
+def verify_paymentlist_contains_datahora_n_value_or_raise_va(p_payments):
+  for p in p_payments:
+    try:
+      datahora, value = p.datahora, p.value
+      if not isinstance(datahora, datetime.datetime):
+        errmsg = f'Error: one payment datahora ({datahora}) is not a valid datetime.'
+        raise ValueError(errmsg)
+    except AttributeError as e:
+      errmsg = str(e) + f'\nAttribute Error as VA: datahora is not a field in the object.'
+      raise ValueError(errmsg)
+    try:
+      _ = Decimal(value)
+    except (TypeError, ValueError) as e:
+      errmsg = str(e) + f'\nError: one payment value ({value}) is not a valid Decimal.'
+      raise ValueError(errmsg)
+
+
+def verify_paymentlist_consistency_or_raise_va(p_payments):
+  """
+  verify_paymentlist_consistency_or_raise_va
+    # 1st: verify date and value
+    # 2nd: verify a repeat (or coincidence) in both datahora and value
+  """
+  if p_payments is None:
+    errmsg = 'Error: payment list is None.'
+    raise ValueError(errmsg)
+  if len(p_payments) == 0:
+    return
+  verify_paymentlist_contains_datahora_n_value_or_raise_va(p_payments)
+  verify_paydatahora_n_value_donotrepeat_in_payments_or_raise_va(p_payments)
+  return
+
+
+def split_nonrepeats_n_repeats_those_w_equal_datetime_n_value_in_payments(p_payments):
   """
   This function treats case where the hour-time of payment is not recorded
     and a payment may have been repeated.
@@ -81,27 +75,28 @@ def split_nonrepeats_n_repeats_date_value_sameday_fr_payments(p_payments):
   return payments_wo_repeats, repeats
 
 
-def remove_if_sameday_repeat_date_n_value_fr_payments(p_payments):
-  payments_wo_repeats, _ = split_nonrepeats_n_repeats_date_value_sameday_fr_payments(p_payments)
+def remove_if_repeat_datetime_n_value_in_payments(p_payments):
+  payments_wo_repeats, _ = split_nonrepeats_n_repeats_those_w_equal_datetime_n_value_in_payments(p_payments)
   return payments_wo_repeats
 
 
-def verify_if_paydate_n_payvalue_repeat_sameday_in_payments(p_payments):
-  payments_wo_repeats = remove_if_sameday_repeat_date_n_value_fr_payments(p_payments)
+def do_datetime_n_value_repeat_in_payments(p_payments):
+  payments_wo_repeats = remove_if_repeat_datetime_n_value_in_payments(p_payments)
   if len(p_payments) != len(payments_wo_repeats):
     return True
   return False
 
 
-def raise_if_paydate_n_payvalue_repeat_sameday_in_payments(p_payments):
-  if verify_if_paydate_n_payvalue_repeat_sameday_in_payments(p_payments):
-    wo_repeats, w_repeats = split_nonrepeats_n_repeats_date_value_sameday_fr_payments(p_payments)
-    errmsg = f"Error: there is/are repeated date and value payment(s)."
-    errmsg += f"\n\t if two payments are equal on the same day, they should be consolidated."
-    errmsg += f"\n\t all payments are: {p_payments}."
-    errmsg += f"\n\t repeated payments are: {w_repeats}."
-    errmsg += f"\n\t non-repeated payments are: {wo_repeats}."
-    raise ValueError(errmsg)
+def raise_va_if_paydate_n_payvalue_repeat_in_payments(p_payments):
+  if do_datetime_n_value_repeat_in_payments(p_payments):
+    wo_repeats, w_repeats = split_nonrepeats_n_repeats_those_w_equal_datetime_n_value_in_payments(p_payments)
+    if len(w_repeats) > 0:
+      errmsg = f"Error: there is/are repeated date and value payment(s)."
+      errmsg += f"\n\t if two payments are equal on the same day, they should be consolidated."
+      errmsg += f"\n\t all payments are: {p_payments}."
+      errmsg += f"\n\t repeated payments are: {w_repeats}."
+      errmsg += f"\n\t non-repeated payments are: {wo_repeats}."
+      raise ValueError(errmsg)
 
 
 def split_daydate_n_hourtime_fr_datetime():
@@ -116,31 +111,7 @@ def split_daydate_n_hourtime_fr_datetime():
 
 
 def adhoctest1():
-  payments = []
-  paydate = dtfs.make_date_or_raise('2026-04-10')
-  payhour = datetime.time(hour=10, minute=10)
-  paydatetime = datetime.datetime.combine(paydate, payhour)
-  payvalue = Decimal('2000')
-  payment = InterfPayment(datetime=paydatetime, value=payvalue)
-  # 1
-  payments.append(payment)
-  # 2
-  payments.append(payment)
-  paydate = dtfs.make_date_or_raise('2026-04-21')
-  payhour = datetime.time(hour=10, minute=10)
-  paydatetime = datetime.datetime.combine(paydate, payhour)
-  payvalue = Decimal('1500')
-  payment = InterfPayment(datetime=paydatetime, value=payvalue)
-  # 3
-  payments.append(payment)
-  wo, w = split_nonrepeats_n_repeats_date_value_sameday_fr_payments(payments)
-  print('payments:')
-  for i, payment in enumerate(payments):
-    seq = i + 1
-    print(seq, payment)
-  print('without repeats:', wo)
-  print('with repeats:', w)
-
+  pass
 
 def adhoctest2():
   split_daydate_n_hourtime_fr_datetime()

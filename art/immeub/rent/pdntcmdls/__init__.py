@@ -11,7 +11,7 @@ load_dotenv(dotenv_path=env_path)
 DEFAULT_ENDR_PIX_P_PAGAR = os.getenv("DEFAULT_ENDR_PIX_P_PAGAR", "perguntar")
 DEFAULT_3LETTER_CURRENCY = os.getenv("DEFAULT_3LETTER_CURRENCY", "BRL")
 DEFAULT_MONTHLY_FIX_IR_DEC = os.getenv("DEFAULT_MONTHLY_FIX_IR_DEC", "0.02")
-MORA_M_MINUS_N = os.getenv("MORA_M_MINUS_N", 2)
+MORA_M_MINUS_N = os.getenv("MORA_M_MINUS_N", 2)  # if '2' it means paymonth minus 2 or refmonth minus 1
 
 
 def printout_defaults():

@@ -17,7 +17,7 @@ import art.immeub.rent.billmodels.billingcard_pydantic as bcard  # bcard.PydtcBi
 import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bcard.PydtcBillingCard
 import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import art.immeub.rent.mdb.objs_finder_from_mongocollections as fndr  # fndr.dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber
-import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
+import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.dbfs.mngdb.mongo_gen_fetcher as mngfetch

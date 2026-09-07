@@ -940,20 +940,20 @@ def make_refmonth_or_current_it_minus_n(p_refmonth: datetime.date | str | None, 
   return refmonth_m_minus_n
 
 
-def make_refmonth_it_minus_n_or_raise(p_refmonth: datetime.date | str, n: int = 2) -> datetime.date:
+def make_refmonth_it_minus_n_or_raise(p_refmonth: datetime.date | str, m_minus_n: int = 2) -> datetime.date:
   i_refmonth = make_refmonth_or_raise(p_refmonth)
-  refmonth = make_refmonth_it_minus_n_or_none(i_refmonth, n)
+  refmonth = make_refmonth_it_minus_n_or_none(i_refmonth, m_minus_n)
   if refmonth is None:
     scrmsg = f"Error: p_refmonth (={p_refmonth}) is not a refmonth"
     raise ValueError(scrmsg)
   return refmonth
 
 
-def make_refmonth_it_minus_n_or_none(p_refmonth: datetime.date | str, n: int = 2) -> datetime.date | None:
+def make_refmonth_it_minus_n_or_none(p_refmonth: datetime.date | str, m_minus_n: int = 2) -> datetime.date | None:
   """
   Calculates the M - n refmonth where:
    M is the refmonthdate itself (or the current one if not given)
-   n is an integer representing how many months before
+   m_minus_n is an integer representing how many months before
 
   Example: the M-2 case
   =====================
@@ -963,7 +963,7 @@ def make_refmonth_it_minus_n_or_none(p_refmonth: datetime.date | str, n: int = 2
   refmonth = make_refmonth_or_none(p_refmonth)
   if refmonth is None:
     return None
-  refmonth_m_minus_n = refmonth - relativedelta(months=n)
+  refmonth_m_minus_n = refmonth - relativedelta(months=m_minus_n)
   return refmonth_m_minus_n
 
 

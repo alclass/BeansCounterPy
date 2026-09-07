@@ -20,23 +20,22 @@ import datetime
 from decimal import Decimal
 import locale
 from typing import Any, Annotated, Optional
-import lib.fncfs.credeb_pkg.payment_processor as pproc
 from prettytable import PrettyTable
 import pydantic
 from dateutil.relativedelta import relativedelta
 import art.immeub.rent.billmodels.billingitem_pydantic as bitems  # bipydtc.PydtcBillingItem
+import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import art.immeub.rent.pdntcmdls.rentcontract_pydant as rentpydtc  # rentpydtc.PydtcRentContract
 import art.immeub.rent.pdntcmdls.immeub_pydant as immeubpydtc  # immeubpydtc.PydtcImmeuble
 import art.immeub.rent.pdntcmdls.person_pydant as perspydtc  # perspydtc.PydtcPerson
-import art.immeub.rent.billmodels.payment_pydant as bipydtc  # bipydtc.PydtcPayment
 import art.immeub.rent.mdb.objs_finder_from_mongocollections as fndr
+import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
 import lib.datesetc.datefs as dtfs
 import lib.datesetc.refmonth_fs as rmfs
 import lib.fncfs.indices.ipca.ipca_fetcher_cacher as ipcafs  # ipcafs.IpcaAPICacherRetriever
-import lib.fncfs.credeb_pkg.pay_dt_val_interface as intrfc  # intrfc.PaymentInterfaceDateNValue
-import lib.fncfs.credeb_pkg.payment_processor as pay  # pay.process_payments_in_month
 import lib.fncfs.credeb_pkg.samemonthmora as moram  # moram.SameMonthMora
-import art.immeub.rent.mdb.mongofs as mngfs  # .RentMongo
+import lib.fncfs.credeb_pkg.payment_processor as pproc
+import lib.fncfs.payments.payments_fs as payfs
 locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
 MONTHS = rmfs.PT_MESES
 DEFAULT_PAYMENT_MONTHS_DUEDAY = 10
@@ -66,12 +65,15 @@ def transpose_payments_via_interface(p_payments: Any) -> list[bipydtc.PydtcPayme
     payor_cpf = getattr(p, 'payor_cpf', None)
     refdoc = getattr(p, 'refdoc', None)
     comment = getattr(p, 'comment', None)
+    # noinspection argument-list
     payment = bipydtc.PydtcPayment(
       datahora=datahora, value=value, refdoc=refdoc, comment=comment,
       payor=payor, payor_cpf=payor_cpf,
     )
     typeadjusted_payments.append(payment)
   return typeadjusted_payments
+
+
 
 
 class PydtcBillingCard(pydantic.BaseModel):
@@ -91,8 +93,8 @@ class PydtcBillingCard(pydantic.BaseModel):
   refmonth: Optional[datetime.date]  # = pydantic.Field(default=lambda: rmfs.make_current_refmonth())
   billingitems: list[bitems.PydtcBillingItem] = pydantic.Field(default_factory=lambda: None)
   fech_pagts_n_mora: Optional[pproc.PaymentProcessor] = None
-  prev_monthmoras: list[moram.SameMonthMora] = pydantic.Field(exclude=True, default_factory=lambda: None)
-  _payment_lst: list[bipydtc.PydtcPayment] = pydantic.PrivateAttr(default_factory=lambda: None)
+  prev_monthmoras: Optional[list[moram.SameMonthMora]] = pydantic.Field(exclude=True, default_factory=lambda: None)
+  _payment_lst: Optional[list[bipydtc.PydtcPayment]] = pydantic.PrivateAttr(default_factory=lambda: None)
   prev_debt: Decimal = pydantic.Field(exclude=True, default_factory=lambda: None)
   prev_credit: Decimal = pydantic.Field(exclude=True, default_factory=lambda: None)
   ready_for_closing: bool = pydantic.Field(exclude=True, default_factory=lambda: False)
@@ -331,7 +333,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     if self.fech_pagts_n_mora is None:
       ongoing_debt = -self.mesreftotal
       # noinspection bad-argument-type
-      self.fech_pagts_n_mora = pay.PaymentProcessor(
+      self.fech_pagts_n_mora = pproc.PaymentProcessor(
         ongoing_debt=ongoing_debt,
         duedate=self.duedate,
         fix_ir_dec=self.monthly_fix_ir_dec,
@@ -345,8 +347,9 @@ class PydtcBillingCard(pydantic.BaseModel):
     self.prev_monthmoras = []
     self.prev_debt = DECIMAL_ZERO
     self.prev_credit = DECIMAL_ZERO
+    # noinspection bad-argument-type
     previous_rm = rmfs.make_refmonth_it_minus_n_or_raise(self.refmonth, 1)
-    previous_bc = None
+    # previous_bc = None
     try:
       previous_bc = dbfetch_billingcard_dictdoc_w_refmonth_n_contrnumber(
         contrnumber=self.contrnumber, refmonth=previous_rm
@@ -456,11 +459,12 @@ class PydtcBillingCard(pydantic.BaseModel):
           -> retrodate_ifinmora = '2026-6-1'
           postdate_ifinmora =  '2026-6-30'
     """
+    # noinspection unsupported-operator
     paymonth = self.refmonth + relativedelta(months=1)
     return self.rentcontract.get_date_when_mora_begins_w_refmonth(paymonth)
 
   @property
-  def payment_lst(self) -> list[intrfc.PaymentInterfaceDateNValue]:
+  def payment_lst(self) -> list[bipydtc.PydtcPayment]:
     if self._payment_lst is None:
       return []
     return self._payment_lst
@@ -472,6 +476,9 @@ class PydtcBillingCard(pydantic.BaseModel):
     @see function transpose_payment_via_interface() that the client caller may call to adjust type to the type-hint.
     """
     self._payment_lst = p_payments
+    payfs.verify_paymentlist_consistency_or_raise_va(p_payments)
+    # when payments are set, flag ready_for_closing becomes True (i.e., closing process may happen)
+    self.ready_for_closing = True
 
   def lastpaydate(self):
     # sort it asc and return lastpaydate
@@ -521,10 +528,10 @@ class PydtcBillingCard(pydantic.BaseModel):
     line = 'Report/report_quinhoes_days_vals():'
     lines.append(line)
     _, ndaysinmonth = calendar.monthrange(self.duedate.year, self.duedate.month)
-    report_tuple = None
+    # report_tuple = None
     for tupl in self.quinhoes_days_vals:
-      report_tuple = tupl
-      payment = None
+      # report_tuple = tupl
+      # payment = None
       try:
         ndays, moravalue = tupl
         payment = tardypaymentsdict[ndays]
@@ -540,6 +547,7 @@ class PydtcBillingCard(pydantic.BaseModel):
 
   @property
   def refmmmyyyy(self) -> str:
+    # noinspection bad-argument-type
     mmm_mes = rmfs.get_pt_3lettermonth_fr_date(self.refmonth)
     _refmmmyyyy = f"{mmm_mes}/{self.refmonth.year}"
     return _refmmmyyyy
@@ -580,8 +588,8 @@ class PydtcBillingCard(pydantic.BaseModel):
   def instantiate_fr_json_dict(cls, jsondict: dict) -> "PydtcBillingCard":
     """
     Instantiates (back) the object from JSON dict.
-
     """
+    # noinspection unreachable-code
     if jsondict is None:
       return None
     jsondict = mngfs.remove_none_values_fr_dict_recurs(jsondict)
@@ -623,6 +631,7 @@ class PydtcBillingCard(pydantic.BaseModel):
 
 def make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth):
   print('Creating billing card for contrnumber =>', contrnumber, 'refmonth =>', refmonth)
+  # noinspection argument-list
   billingcard = PydtcBillingCard(
     contrnumber=contrnumber,
     refmonth=refmonth,
@@ -632,6 +641,7 @@ def make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth):
 def process_billingcard_w_payments(billingcard, payments):
   billingcard.make_n_set_standard_billingitems()
   billingcard.payment_lst = payments
+  # billingcard.ready_for_closing
   billingcard.process_close()
   # print('billingcard =>', billingcard)
   json_str = billingcard.to_json(indent=2, is_for_db=True)
@@ -649,6 +659,7 @@ def adhoctest1():
   payments = []
   payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(1500))
   payments.append(payment)
+  # noinspection unsupported-operator
   paydate = billingcard.duedate + relativedelta(days=11)
   payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
   payments.append(payment)
@@ -661,10 +672,12 @@ def adhoctest2():
   refmonth = rmfs.make_refmonth_or_raise('2026-5')
   billingcard = make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth)
   payments = []
-  payment = intrfc.PaymentInterfaceDateNValue(date=billingcard.duedate, value=Decimal(2500))
+  # noinspection argument-list
+  payment = bipydtc.PydtcPayment(date=billingcard.duedate, value=Decimal(2500))
   payments.append(payment)
   paydate = billingcard.duedate.replace(day=27)
-  payment = intrfc.PaymentInterfaceDateNValue(date=paydate, value=Decimal(1500))
+  # noinspection argument-list
+  payment = bipydtc.PydtcPayment(date=paydate, value=Decimal(1500))
   payments.append(payment)
   process_billingcard_w_payments(billingcard, payments)
 

@@ -140,10 +140,45 @@ def adhoctest2():
     'credacc =', cre_account, 'debacc =', deb_account, 'newcredacc =', ret_cre_account, 'newdebacc =', ret_deb_account
   )
 
+def adhoctest3():
+  values = [30, -70, 200, 150, -77, 44, 72, -72, -33, 33, 15]
+  ini_cre_account1 = Decimal(500)
+  ini_deb_account1 = Decimal(-200)
+  cre_account = ini_cre_account1
+  deb_account = ini_deb_account1
+  for val in values:
+    value = Decimal(val)
+    cre_account, deb_account = cdfs.credit_or_debt_value_to_accounts_n_compensate(value, cre_account, deb_account)
+  # keep the first one for later
+  cre_account1, deb_account1 = cre_account, deb_account
+  total_vals = sum(values)
+  sum1 = total_vals
+  total =  total_vals + ini_cre_account1 + ini_deb_account1
+  total1 = total
+  # take simmetric numbers
+  values = [-v for v in values]
+  # 'invert' them
+  ini_cre_account2 = -ini_deb_account1
+  ini_deb_account2 = -ini_cre_account1
+  cre_account = ini_cre_account2
+  deb_account = ini_deb_account2
+  for val in values:
+    value = Decimal(val)
+    cre_account, deb_account = cdfs.credit_or_debt_value_to_accounts_n_compensate(value, cre_account, deb_account)
+  cre_account2, deb_account2 = cre_account, deb_account
+  total_vals = sum(values)
+  sum2 = total_vals
+  total =  total_vals + ini_cre_account2 + ini_deb_account2
+  pass  # looking up variable values with debugger
+
+
 
 def various_adhoctests():
+  """
   adhoctest1()
   adhoctest2()
+  """
+  adhoctest3()
 
 
 def process():

@@ -187,6 +187,16 @@ def credit_value_to_accounts(
   return new_cre_account, new_deb_account
 
 
+def credit_value_to_accounts_n_compensate(
+    cre_value: Decimal, cre_account: Decimal, deb_account: Decimal
+  ) -> tuple[Decimal, Decimal]:
+  interm_cre_account, interm_deb_account = credit_value_to_accounts(cre_value, cre_account, deb_account)
+  new_cre_account, new_account = compensate_cred_debt_accounts_one_against_the_other(
+    interm_cre_account, interm_deb_account
+  )
+  return new_cre_account, new_account
+
+
 def debt_value_to_accounts(
     deb_value: Decimal, cre_account: Decimal, deb_account: Decimal
   ) -> tuple[Decimal, Decimal]:
@@ -211,9 +221,19 @@ def debt_value_to_accounts(
   return new_cre_account, new_deb_account
 
 
+def debt_value_to_accounts_n_compensate(
+    deb_value: Decimal, cre_account: Decimal, deb_account: Decimal
+  ) -> tuple[Decimal, Decimal]:
+  interm_cre_account, interm_deb_account = debt_value_to_accounts(deb_value, cre_account, deb_account)
+  new_cre_account, new_account = compensate_cred_debt_accounts_one_against_the_other(
+    interm_cre_account, interm_deb_account
+  )
+  return new_cre_account, new_account
+
+
 def credit_or_debt_value_to_accounts(
     value: Decimal, cre_account: Decimal, deb_account: Decimal
-  ) -> tuple:
+  ) -> tuple[Decimal, Decimal]:
   """
   Credits or debts value to credit and/or debt accounts.
 
@@ -233,6 +253,16 @@ def credit_or_debt_value_to_accounts(
     return credit_value_to_accounts(value, cre_account, deb_account)
   else:
     return debt_value_to_accounts(value, cre_account, deb_account)
+
+
+def credit_or_debt_value_to_accounts_n_compensate(
+    value: Decimal, cre_account: Decimal, deb_account: Decimal
+  ) -> tuple[Decimal, Decimal]:
+  interm_cre_account, interm_deb_account = credit_or_debt_value_to_accounts(value, cre_account, deb_account)
+  new_cre_account, new_account = compensate_cred_debt_accounts_one_against_the_other(
+    interm_cre_account, interm_deb_account
+  )
+  return new_cre_account, new_account
 
 
 def adhoctests():

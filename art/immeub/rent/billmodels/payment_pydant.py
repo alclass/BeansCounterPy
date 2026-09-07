@@ -1,7 +1,7 @@
 """
 art/immeub/rent/billmodels/payment_pydant.py
 """
-from typing import Optional
+from typing import Annotated, Optional
 import pydantic
 import datetime
 from datetime import date, time
@@ -11,8 +11,9 @@ import lib.datesetc.datefs as dtfs
 import lib.fncfs.fncmathfs.fncmath_calc_finalmontants_etal as fm_mnts  # fm_mnts.sigfig()
 
 
-def split_nonrepeats_n_repeats_fr_payments(p_payments: "list[PydtcPayment]") -> "list[PydtcPayment]":
-
+def split_nonrepeats_n_repeats_fr_payments(
+    p_payments: "list[PydtcPayment]"
+  ) -> tuple["list[PydtcPayment]", "list[PydtcPayment]"]:
   payments = p_payments[:]
   nonrepeats, repeats = [], []
   while len(payments) > 0:
@@ -28,10 +29,10 @@ def split_nonrepeats_n_repeats_fr_payments(p_payments: "list[PydtcPayment]") -> 
 class PydtcPayment(pydantic.BaseModel):
   """
   Models the contract's monthly payment.
-
+  The payment, by convention, is a credit and must be a positive number.
   """
   datahora: datetime.datetime
-  value: Decimal
+  value: Annotated[Decimal, pydantic.Field(ge=0)]  # by convention
   refdoc: Optional[str] = None
   comment: Optional[str] = None
   payor: Optional[pers.PydtcPerson] = None
@@ -43,6 +44,14 @@ class PydtcPayment(pydantic.BaseModel):
     if "payor_cpf" in values and "payor" not in values:
       payor_cpf = values.pop("payor_cpf")
       values["payor"] = pers.fetch_pydtcperson_by_cpf(payor_cpf)
+    return values
+
+  @pydantic.model_validator(mode='before')
+  @classmethod
+  def allow_fetching_datahora_by_date(cls, values: dict) -> dict:
+    if "date" in values and "datahora" not in values:
+      pdate = values.pop("date")
+      values["datahora"] = dtfs.make_datetime_w_horazero_or_raise(pdate)
     return values
 
   @pydantic.computed_field
