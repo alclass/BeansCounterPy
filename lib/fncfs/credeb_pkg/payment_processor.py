@@ -292,17 +292,6 @@ class PaymentProcessor(pydantic.BaseModel):
     )
     self.add_closing_mora_ifany()
 
-  def credit_payments_upto_duedate(self) -> None:
-    """
-    Credits payments up to duedate.
-    @see <same_module>_doc.md for more information/explanation.
-    """
-    credit_value = self.total_paid_uptoduedate
-    # noinspection bad-argument-type
-    self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts_n_compensate(
-      cre_value=credit_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
-    )
-
   @property
   def credito_no_fecho(self) -> Decimal | None:
     if self.payment_process_finished:
@@ -315,23 +304,34 @@ class PaymentProcessor(pydantic.BaseModel):
       return self.ongoing_debt
     return None
 
-  def raise_va_if_debt_is_positive(self) -> None:
+  def raise_va_if_debt_is_positive_or_credit_negative(self) -> None:
     if self.ongoing_debt > DECIMAL_ZERO:
-      errmsg = f"Error: debt (={self.ongoing_debt}) cannot be greater than DECIMAL_ZERO"
+      errmsg = f"Error: debt (={self.ongoing_debt}) cannot be a positive number."
+      raise ValueError(errmsg)
+    if self.ongoing_credit and self.ongoing_credit < DECIMAL_ZERO:
+      errmsg = f"Error: credit (={self.ongoing_credit}) cannot be a negative number."
       raise ValueError(errmsg)
 
   def process_payments_upto_duedate_ifany(self) -> None:
-    if self.total_paid_uptoduedate > DECIMAL_ZERO:
-      self.credit_payments_upto_duedate()
+    """
 
-  def raise_va_if_some_paydate_are_not_in_paymonth(self) -> None:
-    pass
+    Processes payment(s) up to duedate, if any, crediting them.
+    @see <same_module>_doc.md for more information/explanation.
+    """
+    if self.total_paid_uptoduedate > DECIMAL_ZERO:
+      credit_value = self.total_paid_uptoduedate
+      # noinspection bad-argument-type
+      self.ongoing_credit, self.ongoing_debt = cdfs.credit_value_to_accounts_n_compensate(
+        cre_value=credit_value, cre_account=self.ongoing_credit, deb_account=self.ongoing_debt
+      )
+
+  def raise_va_if_some_paydates_are_after_paymonth(self) -> None:
     paydates = [p.date for p in self.payments]
-    firstdate = self.retrodate_ifinmora
+    # firstdate = self.retrodate_ifinmora
     lastdate = self.postdate_ifinmora
-    outofmonthdates =  [d for d in paydates if lastdate < d < firstdate ]
+    outofmonthdates =  [d for d in paydates if lastdate < d]  #  < firstdate
     if len(outofmonthdates) > 0:
-      errmsg = f"Error: some dates ({outofmonthdates}) do not belong to pay month."
+      errmsg = f"Error: some dates ({outofmonthdates}) are after paymonth."
       raise ValueError(errmsg)
 
   def raise_va_if_some_payvalues_are_negative(self) -> None:
@@ -341,13 +341,16 @@ class PaymentProcessor(pydantic.BaseModel):
       errmsg = f"Error: payments ({allpayvalues}) cannot contain negative values."
       raise ValueError(errmsg)
 
-  def check_processors_data_consistency_or_raise_va(self) -> None:
-    # debt cannot be positive at the beginning
-    self.raise_va_if_debt_is_positive()
-    # payments cannot contain dates outside pay month
-    self.raise_va_if_some_paydate_are_not_in_paymonth()
+  def check_consistency_in_payment_list(self) -> None:
+    # payments cannot contain dates after paymonth (though it can contain a date in a previous month)
+    self.raise_va_if_some_paydates_are_after_paymonth()
     # payments cannot contain negative values
     self.raise_va_if_some_payvalues_are_negative()
+
+  def check_processors_data_consistency_or_raise_va(self) -> None:
+    # debt cannot be positive at the beginning
+    self.raise_va_if_debt_is_positive_or_credit_negative()
+    self.check_consistency_in_payment_list()
 
   def process_payments_in_month(self) -> None:
     """

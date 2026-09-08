@@ -44,6 +44,25 @@ def raise_va_simmetry_or_zero_or_ret_cre_deb_accounts(
   return cre_account, deb_account
 
 
+def raise_va_if_credit_n_debit_are_not_compensated_oneanother(cre_account, deb_account):
+  """
+  Raises VA if, when either credit or debit has value, the other is not zero.
+    For the cases where 'compensation' is included.
+  """
+  if cre_account > DECIMAL_ZERO:
+    if deb_account != DECIMAL_ZERO:
+      # oh, oh, error if compensation should've happened
+      errmsg = (f"Error: in compensating, when cre_account has value ({cre_account}),"
+                f" deb_account ({deb_account}) must be zero.")
+      raise ValueError(errmsg)
+  if deb_account < DECIMAL_ZERO:
+    if cre_account != DECIMAL_ZERO:
+      # oh, oh, error if compensation should've happened
+      errmsg = (f"Error: in compensating, when deb_account has value ({deb_account}),"
+                f" cre_account ({cre_account}) must be zero.")
+      raise ValueError(errmsg)
+
+
 def compensate_cred_debt_accounts_one_against_the_other(
     cre_account: Decimal, deb_account: Decimal,
   ):

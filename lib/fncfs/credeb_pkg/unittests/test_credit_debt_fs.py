@@ -319,6 +319,8 @@ class TestCase1(unittest.TestCase):
     for val in values:
       value = Decimal(val)
       cre_account, deb_account = cdfs.credit_or_debt_value_to_accounts_n_compensate(value, cre_account, deb_account)
+      cdfs.raise_va_if_credit_n_debit_are_not_compensated_oneanother(cre_account, deb_account)
+    # ===============
     # keep the first one for the last comparison in this test
     cre_account1, deb_account1 = cre_account, deb_account
     values_sum1 = sum(values)  # by hand, it's 292
@@ -340,6 +342,8 @@ class TestCase1(unittest.TestCase):
     for val in values:
       value = Decimal(val)
       cre_account, deb_account = cdfs.credit_or_debt_value_to_accounts_n_compensate(value, cre_account, deb_account)
+      cdfs.raise_va_if_credit_n_debit_are_not_compensated_oneanother(cre_account, deb_account)
+    # ===============
     # keep the second one for the last comparison in this test
     cre_account2, deb_account2 = cre_account, deb_account
     values_sum2 = sum(values)  # by hand, it's -292

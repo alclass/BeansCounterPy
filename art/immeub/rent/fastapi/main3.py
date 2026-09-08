@@ -27,12 +27,12 @@ BILLINGCARD_COLLNAME = init.BILLINGCARD_COLLNAME
 # ==========================================
 # MONGOENGINE ODM LAYOUT (Synchronous)
 # ==========================================
-class Person(pers.PydtcPerson, Document):
+class Person(Document):
   """
   TODO In fact, Tenant should inherit from Person
   """
-  name = StringField(required=True)
-  email = StringField(required=True)
+  nomecompleto = StringField(required=True)
+  emails = ListField(required=True)
 
   class Settings:
     name = PERSON_COLLNAME
@@ -41,17 +41,16 @@ class Person(pers.PydtcPerson, Document):
   def to_api_dict(self):
     return {
       "_id": str(self.id),
-      "name": self.name,
-      "email": self.email
+      "nomecompleto": self.nomecompleto,
+      "emails": self.emails
     }
 
 
 class Immeuble(Document):
   """
-  TODO In fact, Tenant should inherit from Person
   """
   imm_nickname = StringField(required=True)
-  email = StringField(required=True)
+  owners_cpfs = ListField(required=True)
 
   class Settings:
     name = IMMEUBLE_COLLNAME
@@ -61,8 +60,8 @@ class Immeuble(Document):
   def to_api_dict(self):
     return {
       "_id": str(self.id),
-      "name": self.name,
-      "email": self.email
+      "imm_nickname": self.imm_nickname,
+      "owners_cpfs": self.owners_cpfs
     }
 
 

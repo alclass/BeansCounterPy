@@ -410,6 +410,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     if self._payment_lst is None:
       errmsg = f"payment_lst has not been entered to processing. Program cannot continue. Please, retry entering it."
       raise RuntimeError(errmsg)
+    # notice below payment_lst is passed by reference and its setter method already ensured its time-ascending order
     self.fech_pagts_n_mora.payments = self.payment_lst
     if not self.fech_pagts_n_mora.payment_process_finished:
       self.fech_pagts_n_mora.payments.sort(key=lambda obj: obj.date)
@@ -472,11 +473,34 @@ class PydtcBillingCard(pydantic.BaseModel):
   @payment_lst.setter
   def payment_lst(self, p_payments: list[bipydtc.PydtcPayment]) -> None:
     """
-    pydantic emits a UserWarning: Pydantic serializer warnings if incoming parameter is not of type-hint.
-    @see function transpose_payment_via_interface() that the client caller may call to adjust type to the type-hint.
+    Sets payment_lst which is the list of payments to the monthly billing.
+    This list may have one element, more than one or be empty.
+
+    This setter does the following two consistency checks:
+      1) if there is a time/value repeat (though it doesn't complain if only datetimes repeat);
+      2) if there is an object 'out of' the interface (the case of AttributeError);
+    The subsequent payment_processor will further check payments upon the following:
+      3) payments cannot contain dates after paymonth (though it can contain a date in a previous month)
+         (when the contract finishes, a later payment may either be treated outside or with dates adjusted)
+      4) payments cannot contain negative values (@see below the case of 'estorno')
+
+    Notice that, by design, '3' (after month) and '4' (negative number) are not done here,
+      postponed to payment_processor.
+
+    Because (further on in payment_processor) a payment cannot be negative,
+      in case of a needed 'estorno' (a failed or wrong payment), two actions might be:
+        1) either 'retrocede it' via a subsequent billingitem;
+        2) or perform a reprocess (which may or not cause a domino effect for subsequent months);
+
+    Observation about the use of interfaces:
+      pydantic emits a UserWarning: Pydantic serializer warnings if incoming parameter is not of type-hint.
+      Because of that, we removed the use of obj.date/obj.value interfaces and applied the pydantic class directly.
     """
     self._payment_lst = p_payments
+    # the consistency function below checks: 1) time/value repeat; 2) an object 'out of' the interface
     payfs.verify_paymentlist_consistency_or_raise_va(p_payments)
+    # ensure payment is in date-ascendent order
+    self._payment_lst.sort(key=lambda obj: obj.datahora)
     # when payments are set, flag ready_for_closing becomes True (i.e., closing process may happen)
     self.ready_for_closing = True
 
@@ -487,12 +511,14 @@ class PydtcBillingCard(pydantic.BaseModel):
     _lastpaydate = lastpayment.date
     return _lastpaydate
 
-  def has_been_paid_after_payment_processed(self):
-    if self.debito_no_fecho == DECIMAL_ZERO:
-      return True
+  def has_been_paid_after_payment_processed(self) -> bool:
+    if self.fech_pagts_n_mora is not None:
+      retval = self.fech_pagts_n_mora.is_monthsbill_fully_paid()
+      if retval:  # retval may be None (process not yet happened) or boolean (False|True)
+        return True
     return False
 
-  def str_table_billingitems(self):
+  def prettytable_billingitems(self):
     """
     outstr = f"{self.descr} | {self.refmmm} | {fmt_value} | {self.mora} | {self.total_item}"
     """
@@ -504,46 +530,6 @@ class PydtcBillingCard(pydantic.BaseModel):
       table.add_row(values)
     str_table = str(table)
     return str_table
-
-  def report_quinhoes_days_vals(self) -> str:
-    """
-    quinhoes_days_vals is a tuple list whose tuples contain:
-      (ndays, moravalue)
-    WHERE:
-      ndays is the number of numbers that received 'mora'
-      moravalue is the increased value due to the 'mora'
-
-    What else can be reported?
-    The elements in quinhoes_days_vals are related to payments.
-
-    Example:
-      if a payment was late (post duedate), it will:
-      a) create one item to quinhoes_days_vals if it's fully compensates debt
-      b) create two items in quinhoes_days_vals if a residue debt was left
-    """
-    tardypaymentsdict = {o.date.day: o for o in self.payments}
-    if len(tardypaymentsdict) == 0:
-      return "No tardy payments"
-    lines = []
-    line = 'Report/report_quinhoes_days_vals():'
-    lines.append(line)
-    _, ndaysinmonth = calendar.monthrange(self.duedate.year, self.duedate.month)
-    # report_tuple = None
-    for tupl in self.quinhoes_days_vals:
-      # report_tuple = tupl
-      # payment = None
-      try:
-        ndays, moravalue = tupl
-        payment = tardypaymentsdict[ndays]
-        line = f"mora {moravalue:.2f} foi gerada por {ndays} dias em {payment.date} com o pagt {payment.value}"
-        lines.append(line)
-      except KeyError:
-        pass
-    report_text = '\n'.join(lines)
-    return report_text
-
-  def print_str_table_billingitems(self):
-    print(self.str_table_billingitems())
 
   @property
   def refmmmyyyy(self) -> str:
@@ -561,7 +547,7 @@ class PydtcBillingCard(pydantic.BaseModel):
     Locação: {self.rentcontract.contrnumber} | Inquilino responsável: {self.rentcontract.main_tenant.get_first_last_names_n_fmt_cpf()}
     Endereço: {self.rentcontract.location.address}\n"""
     # at this version, billingitems will be [dynamically] created at this point
-    ostr += self.str_table_billingitems()
+    ostr += self.prettytable_billingitems()
     fatura_total = self.mesreftotal
     fmt_total_mes = f"{fatura_total:.02f}"
     strtotal = f"\n               Total mês: {fmt_total_mes}\n"
@@ -612,7 +598,7 @@ class PydtcBillingCard(pydantic.BaseModel):
 
   def process_close(self):
     """
-    Closes, after payments in month, the monthly billing card.,
+    Closes, after payment(s) happened in month -- or paymonth ended --, the monthly billing card.,
     """
     self.process_payments_in_month_n_close()
 
@@ -668,8 +654,7 @@ def adhoctest1():
 
 def adhoctest2():
   contrnumber = 'CDouto202401'
-  # refmonth 2026-5
-  refmonth = rmfs.make_refmonth_or_raise('2026-5')
+  refmonth = rmfs.make_refmonth_or_raise('2026-4')
   billingcard = make_n_get_billingcard_w_1contrnumber_2refmonth(contrnumber, refmonth)
   payments = []
   # noinspection argument-list
