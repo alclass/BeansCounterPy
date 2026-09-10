@@ -347,3 +347,5 @@ fastapi
 mongoengine
 dinero
 tabulate
+django
+djangorestframework
